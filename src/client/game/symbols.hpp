@@ -73,15 +73,66 @@ namespace game
 	WEAK symbol<void(int localClientNum, const char* message)> CG_GameMessageBold{0x15B110, 0x3122F0};
 	WEAK symbol<void(int localClientNum, /*mp::cg_s**/void* cg, 
 		const char* dvar, const char* value)> CG_SetClientDvarFromServer{0x0, 0x0};
-	WEAK symbol<char*(const unsigned int weapon, 
+	WEAK symbol<char*(const unsigned int weapon,
 		bool isAlternate, char* outputBuffer, int bufferLen)> CG_GetWeaponDisplayName{0x192B80, 0x104B70};
 	WEAK symbol<mp::cg_s* ()> CG_GetLocalClientGlobals{0x0, 0x5CB80};
-	WEAK symbol<int(int localClientNum, int serverTime, int demoType, int cubemapShot, int cubemapSize, int renderScreen, 
+	// CG_SelectWeapon: confirmed by matching weaponSelectTime=serverTime, weaponSelect compare, CG_MenuShowNotify(1), CL_SetADS(0)
+	// PS4 ELF: 0x220150 | H1 PC (confirmed): 0x11A300
+	// [demo_game.hpp owns] WEAK symbol<bool(int localClientNum, unsigned int weapon, int useAltMode)> CG_SelectWeapon{0x0, 0x11A300};
+	// CG_MenuShowNotify: confirmed via "weaponinfo"/"weaponinfo_lowdef" string refs (case 1/3)
+	WEAK symbol<void(int localClientNum, int menuToShow)> CG_MenuShowNotify{0x0, 0x109DA0};
+	WEAK symbol<int(int localClientNum, int serverTime, int demoType, int cubemapShot, int cubemapSize, int renderScreen,
 		unsigned int a7)> CG_DrawActiveFrame{0x0, 0xF5D40};
+	// CG_VisionSetStartLerp_To: confirmed via unique offset +0x958 and 212-byte memcpy (2026-06-23)
+	// PS4 ELF: 0x213690 | H1 PC (confirmed): offset 0x958 is unique in client range
+	WEAK symbol<bool(int localClientNum, unsigned int slot, void* visionSet, int duration, unsigned int flags)> CG_VisionSetStartLerp_To{0x0, 0x335CD0};
 
 	WEAK symbol<bool()> CL_IsCgameInitialized{0x1A3210, 0x33C640};
 	WEAK symbol<void(int a1)> CL_VirtualLobbyShutdown{0x0, 0x0};
 	WEAK symbol<const char* (int configStringIndex)> CL_GetConfigString{0x0, 0x33B820};
+
+	// Demo system hooks (confirmed by structural analysis, 2026-06-22)
+	// CL_SetCGameTime: feeds serverTime to cgame each frame; driver of demo playback
+	// PS4 ELF: 0x233b80 | H1 PC (confirmed): structural match + string xref
+	// [demo_game.hpp owns] WEAK symbol<void(int localClientNum)> CL_SetCGameTime{0x0, 0x33C950};
+	// CL_WritePacket: sends user commands to server; suppressed during demo playback
+	// H1 PC (confirmed): string xref + party.cpp invoke comment
+	// [demo_game.hpp owns] WEAK symbol<void(int localClientNum)> CL_WritePacket{0x0, 0x13D490};
+	// CL_FirstSnapshot: called at CA_PRIMED->CA_ACTIVE transition
+	WEAK symbol<void(int localClientNum)> CL_FirstSnapshot{0x0, 0x33B6B0};
+	// CL_GetPredictedPlayerInformationForServerTime: searches snapshot ring for player state at time
+	// PS4 ELF: 0x249800 | H1 PC (confirmed): structural match (snapshot ring, % 256 loop)
+	// [demo_game.hpp owns] WEAK symbol<bool(int64_t cl, int serverTime, int* outInfo)> CL_GetPredictedPlayerInformationForServerTime{0x0, 0x3409C0};
+	// CL_AddReliableCommand, CL_Disconnect: confirmed from h1-mod party.cpp
+	WEAK symbol<void(int localClientNum, const char* cmd)> CL_AddReliableCommand{0x0, 0x12B810};
+	WEAK symbol<void(int localClientNum)> CL_Disconnect{0x0, 0x12F080};
+
+	// Snapshot network serialization
+	// MSG_ReadDeltaPlayerstate: PS4 ELF: 0x4895c0 | H1 PC (confirmed): calls Omnvar count fns + CL_GetPredictedPlayer
+	WEAK symbol<void()> MSG_ReadDeltaPlayerstate{0x0, 0x4EE63E};
+	// Netchan_Transmit: confirmed via string "Netchan_Transmit: length = %i"
+	WEAK symbol<void()> Netchan_Transmit{0x0, 0x4F24A0};
+
+	// Server-side snapshot chain (for sv recording hooks)
+	// SV_GetCachedSnapshotInternal: confirmed via string "** Too many entities %d > %d to cache snapshot data. ***\n"
+	// XB360 IW6: 0x82446EA8
+	WEAK symbol<void()> SV_GetCachedSnapshotInternal{0x0, 0x55E1F0};
+	// SV_GetCachedSnapshot: high confidence - sole caller of SV_GetCachedSnapshotInternal
+	// XB360 IW6: 0x824472E8
+	WEAK symbol<void()> SV_GetCachedSnapshot{0x0, 0x55F040};
+	// SV_BuildClientSnapshot: candidate - sole non-self caller of SV_GetCachedSnapshot wrapper
+	// XB360 IW6: 0x82445938 | H1 size mismatch (0x492 vs XB360 0x1570); Populate* sub-fns likely split out
+	WEAK symbol<void()> SV_BuildClientSnapshot{0x0, 0x460510};
+
+	// LUI / Omnvar
+	// LUI_IntermissionBegan: confirmed via string "intermission_began"
+	// [demo_game.hpp owns] WEAK symbol<void(int localClientNum, int a2)> LUI_IntermissionBegan{0x0, 0x26B550};
+	// LUI_NotifyOmnvarChanged: confirmed via strings "omnvar_update","omnvar"
+	WEAK symbol<void()> LUI_NotifyOmnvarChanged{0x0, 0x26E430};
+	// CG_UpdateOmnvars: confirmed via callee chain (calls CG_GetLocalClientGlobals, LUI_NotifyOmnvarChanged)
+	// [demo_game.hpp owns] WEAK symbol<void(int localClientNum, void* snap, int a3)> CG_UpdateOmnvars{0x0, 0x331E90};
+	// Omnvar_GetDef: confirmed - tiny fn returning &off_C927A80 + 8 * index
+	// [demo_game.hpp owns] WEAK symbol<void*(unsigned int index)> Omnvar_GetDef{0x0, 0x5A4460};
 
 	WEAK symbol<void(int a1)> CL_ShowSystemCursor{0x0, 0x5BAA60};
 	WEAK symbol<void(tagPOINT* position)> CL_GetCursorPos{0x0, 0x5BA800};
@@ -160,7 +211,26 @@ namespace game
 
 	WEAK symbol<Material*(const char* material)> Material_RegisterHandle{0x56EA20, 0x692360};
 
+	// MSG functions (confirmed by structural analysis 2026-06-23)
+	// MSG_Init: zeros msg_t struct (data ptr at +8, maxsize at +18h)
+	WEAK symbol<void(msg_t* buf, void* data, int length)> MSG_Init{0x0, 0x4EB1D0};
+	// MSG_BeginReading: sets readcount from cursize, clears bit/overflow fields
+	WEAK symbol<void(msg_t* msg)> MSG_BeginReading{0x0, 0x4EB190};
+	// MSG_WriteByte: direct byte write to buf[cursize], increments cursize (+1Ch)
+	WEAK symbol<void(msg_t* msg, int c)> MSG_WriteByte{0x0, 0x4EBF30};
+	// MSG_WriteLong: direct 4-byte write, increments cursize by 4
+	WEAK symbol<void(msg_t* msg, int c)> MSG_WriteLong{0x0, 0x4EBFF0};
+	// MSG_WriteData: bounds-checked memcpy into msg buf
+	WEAK symbol<void(msg_t* buf, const void* data, int length)> MSG_WriteData{0x0, 0x4EB570};
+	// MSG_ReadByte: single-byte dual-buffer read body (0x278EC5 is an obfuscation trampoline redirecting here)
+	WEAK symbol<int(msg_t* msg)> MSG_ReadByte{0x0, 0x4EB525};
+	// MSG_ReadLong: reads 4 bytes little-endian from dual-buffer, returns -1 on overflow
+	// [demo_game.hpp owns] WEAK symbol<int(msg_t* msg)> MSG_ReadLong{0x0, 0x4EB7D0};
+	// MSG_ReadData: reads N bytes from dual-buffer msg struct
+	WEAK symbol<void(msg_t* msg, void* data, int len)> MSG_ReadData{0x0, 0x4EB660};
 	WEAK symbol<char*(msg_t* msg, char* buffer, unsigned int max_chars)> MSG_ReadStringLine{0x0, 0x4EB9D0};
+	// MSG_ClearLastReferencedEntity: writes -1 to msg->lastReferencedEntity (+0x2C)
+	WEAK symbol<void(msg_t* msg)> MSG_ClearLastReferencedEntity{0x0, 0x4EC1E0};
 
 	WEAK symbol<void(netadr_s*, sockaddr*)> NetadrToSockadr{0x416580, 0x59E580};
 	WEAK symbol<void(netsrc_t, netadr_s*, const char*)> NET_OutOfBandPrint{0x3AA550, 0x4F1EB0};
@@ -277,6 +347,11 @@ namespace game
 	WEAK symbol<scr_string_t(const char* str, unsigned int user)> SL_GetString{0x3C1210, 0x5083A0};
 	WEAK symbol<const char*(scr_string_t stringValue)> SL_ConvertToString{0x3C0C50, 0x507CD0};
 	WEAK symbol<unsigned int(const char* str)> SL_GetCanonicalString{0x3BDA20, 0x504A00};
+
+	// SV_WriteSnapshotToClient: confirmed via "EXE_TRANSMITERROR" string xref (2026-06-23)
+	WEAK symbol<void()> SV_WriteSnapshotToClient{0x0, 0x562F30};
+	// SV_SendSnapshots: confirmed as sole caller of SV_WriteSnapshotToClient
+	WEAK symbol<void()> SV_SendSnapshots{0x0, 0x552CE0};
 
 	WEAK symbol<void(int index, char* buffer, int bufferSize)> SV_GetConfigstring{ 0x0, 0x552E90 };
 

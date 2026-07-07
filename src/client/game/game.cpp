@@ -194,7 +194,7 @@ namespace game
 	}
 }
 
-size_t operator"" _b(const size_t ptr)
+size_t operator""_b(const size_t ptr)
 {
 	return game::base_address + ptr;
 }

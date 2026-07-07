@@ -79,7 +79,7 @@ namespace game
 	unsigned int SND_SV_LookupSoundLength(const char* name);
 }
 
-size_t operator"" _b(const size_t ptr);
+size_t operator""_b(const size_t ptr);
 size_t reverse_b(const size_t ptr);
 size_t reverse_b(const void* ptr);
 

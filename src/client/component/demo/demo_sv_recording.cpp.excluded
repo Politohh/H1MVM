@@ -1,0 +1,664 @@
+#include "std_include.hpp"
+#include "loader/component_loader.hpp"
+
+#include "demo_sv_recording.hpp"
+#include "demo_utils.hpp"
+
+#include "component/command.hpp"
+#include "component/console.hpp"
+#include "component/scheduler.hpp"
+#include "utils/hook.hpp"
+#include "utils/string.hpp"
+
+using namespace demo_utils;
+
+namespace // checked client num class
+{
+	inline constexpr std::size_t SV_MAX_CLIENTS =
+		sizeof(game::mp::serverStatic_t::clients) / sizeof(game::mp::serverStatic_t::clients[0]);
+
+	class sv_client_num_t
+	{
+	public:
+		explicit sv_client_num_t(std::size_t client_num);
+		explicit sv_client_num_t(std::string_view client_id);
+
+		[[nodiscard]] bool valid() const;
+		[[nodiscard]] std::uint8_t value() const;
+
+	private:
+		[[nodiscard]] static std::optional<std::uint8_t> check_client_num(std::size_t client_num);
+		[[nodiscard]] static std::optional<std::uint8_t> parse_client_id(std::string_view str);
+
+		const std::optional<std::uint8_t> client_num_;
+	};
+
+	sv_client_num_t::sv_client_num_t(std::size_t client_num)
+		: client_num_(check_client_num(client_num))
+	{
+		assert(valid());
+	}
+
+	sv_client_num_t::sv_client_num_t(std::string_view client_id)
+		: client_num_(parse_client_id(client_id))
+	{}
+
+	bool sv_client_num_t::valid() const
+	{
+		return client_num_.has_value();
+	}
+
+	std::uint8_t sv_client_num_t::value() const
+	{
+		assert(valid());
+
+		return client_num_.value();
+	}
+
+	std::optional<std::uint8_t> sv_client_num_t::check_client_num(std::size_t client_num)
+	{
+		if (client_num >= SV_MAX_CLIENTS)
+		{
+			return {};
+		}
+
+		if (client_num >= static_cast<std::size_t>(game::mp::svs->clientCount))
+		{
+			return {};
+		}
+
+		assert(game::mp::svs->clientCount == game::Dvar_FindVar("sv_maxclients")->current.integer);
+		assert(client_num == static_cast<std::size_t>(game::mp::svs->clients[client_num].gentity->s.number));
+
+		return static_cast<std::uint8_t>(client_num);
+	}
+
+	std::optional<std::uint8_t> sv_client_num_t::parse_client_id(std::string_view str)
+	{
+		if (str.starts_with("pid"))
+		{
+			const auto pid = std::string_view(str.begin() + 3, str.end());
+			const auto all_digits = std::all_of(pid.begin(), pid.end(), [](unsigned char c)
+			{
+				return std::isdigit(c);
+			});
+
+			auto value = std::numeric_limits<std::size_t>::max();
+			const auto ec = std::from_chars(pid.data(), pid.data() + pid.size(), value).ec;
+
+			if (all_digits && ec == std::errc{})
+			{
+				const auto client_num = check_client_num(value);
+				if (client_num)
+				{
+					return client_num;
+				}
+			}
+		}
+
+		for (const auto& cl : game::mp::svs->clients)
+		{
+			if (cl.header.state != game::CS_ACTIVE || str != utils::string::strip(cl.name, true))
+			{
+				continue;
+			}
+
+			const auto client_num = check_client_num(cl.gentity->s.number);
+			if (client_num)
+			{
+				return client_num;
+			}
+		}
+
+		return {};
+	}
+}
+
+namespace // server demos class
+{
+	game::dvar_t* sv_demos;
+	game::dvar_t* sv_demo_autorecord;
+
+	bool sv_execute_demo_start_command_internal(sv_client_num_t client_num, std::string_view file_name, bool overwrite);
+
+	class server_rotation_t
+	{
+		struct data_t
+		{
+			bool svr_restart_bit{};
+			std::size_t map_hash{};
+			std::size_t gametype_hash{};
+		};
+
+	public:
+		[[nodiscard]] bool has_changed()
+		{
+			const auto svr_restart_bit = static_cast<bool>(game::mp::svs->snapFlagServerBit & 4);
+			const auto has_value = data_.has_value();
+
+			if (!has_value || data_->svr_restart_bit != svr_restart_bit)
+			{
+				const auto dvar_mapname = get_mapname(false);
+				const auto dvar_gametype = get_gametype(false);
+
+				if (dvar_mapname.empty() || dvar_gametype.empty())
+				{
+					console::error("the server demo recording code may not function properly if dvars mapname or g_gametype are not available\n");
+				}
+
+				const auto map_hash = std::hash<std::string_view>()(dvar_mapname);
+				const auto gametype_hash = std::hash<std::string_view>()(dvar_gametype);
+
+				if (!has_value || (data_->map_hash != map_hash || data_->gametype_hash != gametype_hash))
+				{
+					data_.emplace(data_t{
+						.svr_restart_bit = svr_restart_bit,
+						.map_hash = map_hash,
+						.gametype_hash = gametype_hash
+						});
+
+					return has_value;
+				}
+
+				// server has not rotated despite restart bit change
+				data_->svr_restart_bit = svr_restart_bit;
+			}
+
+			return false;
+		}
+
+	private:
+		std::optional<data_t> data_;
+	};
+
+	struct client_data_t
+	{
+	private:
+		struct stored_times_t
+		{
+			std::int32_t first_svr_time{};
+			std::int32_t cur_svr_time{};
+			std::optional<std::int32_t> last_conn_time;
+		};
+
+	public:
+		[[nodiscard]] bool is_buffer_active() const
+		{
+			return buffer_active;
+		}
+
+		[[nodiscard]] bool is_recording() const
+		{
+			return file_active;
+		}
+
+		bool buffer_active{};
+		bool file_active{};
+		stored_times_t times;
+		buffer_t buffer;
+		std::ofstream file;
+	};
+
+	struct sv_demo_recordings_t
+	{
+	public:
+		sv_demo_recordings_t() = default;
+		~sv_demo_recordings_t();
+		sv_demo_recordings_t(const sv_demo_recordings_t&) = delete;
+		sv_demo_recordings_t(sv_demo_recordings_t&&) noexcept = delete;
+		sv_demo_recordings_t& operator=(const sv_demo_recordings_t&) = delete;
+		sv_demo_recordings_t& operator=(sv_demo_recordings_t&&) noexcept = delete;
+
+		[[nodiscard]] bool is_recording(sv_client_num_t client_num) const;
+		[[nodiscard]] bool start(sv_client_num_t client_num, const std::filesystem::path& path);
+		[[nodiscard]] bool stop(sv_client_num_t client_num);
+
+		void write_data(sv_client_num_t client_num, const game::mp::client_t& cl,
+			std::span<const std::uint8_t> network_data, bool client_loading);
+		void shutdown_watcher();
+
+	private:
+		[[nodiscard]] const client_data_t& get_client(sv_client_num_t client_num) const;
+		[[nodiscard]] client_data_t& get_client(sv_client_num_t client_num);
+
+		bool stop_internal(client_data_t& client, bool reset_client);
+		bool update_state(sv_client_num_t client_num, std::int32_t last_conn_time, bool client_loading);
+		void process_old_data();
+
+		server_rotation_t svr_rotation_data_;
+		std::array<client_data_t, SV_MAX_CLIENTS> client_data_{};
+	} demos;
+
+	sv_demo_recordings_t::~sv_demo_recordings_t()
+	{
+		process_old_data();
+	}
+
+	const client_data_t& sv_demo_recordings_t::get_client(sv_client_num_t client_num) const
+	{
+		assert(client_num.valid());
+
+		return client_data_[client_num.value()];
+	}
+
+	client_data_t& sv_demo_recordings_t::get_client(sv_client_num_t client_num)
+	{
+		assert(client_num.valid());
+
+		return client_data_[client_num.value()];
+	}
+
+	bool sv_demo_recordings_t::is_recording(sv_client_num_t client_num) const
+	{
+		return client_num.valid() && get_client(client_num).is_recording();
+	}
+
+	bool sv_demo_recordings_t::start(sv_client_num_t client_num, const std::filesystem::path& path)
+	{
+		if (!client_num.valid())
+		{
+			return false;
+		}
+
+		auto& client = get_client(client_num);
+
+		if (client.is_buffer_active())
+		{
+			if (!client.is_recording())
+			{
+				std::ofstream file(path, std::ios::binary);
+
+				if (file.good() && file.is_open())
+				{
+					const auto buffer = client.buffer.get();
+
+					client.file = std::move(file);
+					client.file.write(reinterpret_cast<const char*>(buffer.data()), buffer.size());
+					client.file.flush();
+					client.file_active = true;
+
+					return true;
+				}
+			}
+		}
+		else
+		{
+			console::error("client pid %d cannot be recorded at this time; sv_demos was possibly enabled too late!\n", client_num.value());
+		}
+
+		return false;
+	}
+
+	bool sv_demo_recordings_t::stop_internal(client_data_t& client, bool reset_client)
+	{
+		if (client.is_recording())
+		{
+			write_general_footer(client.file, client.times.first_svr_time, client.times.cur_svr_time);
+			write_end_of_file(client.file);
+
+			client.file.flush();
+			client.file.close();
+			client.file_active = {};
+		}
+
+		if (reset_client)
+		{
+			client.buffer_active = {};
+			client.times = {};
+			client.buffer.clear();
+		}
+
+		return client.file.good() && !client.file.is_open();
+	}
+
+	bool sv_demo_recordings_t::stop(sv_client_num_t client_num)
+	{
+		return client_num.valid() && stop_internal(get_client(client_num), false);
+	}
+
+	void sv_demo_recordings_t::process_old_data()
+	{
+		for (auto& client : client_data_)
+		{
+			stop_internal(client, true);
+		}
+
+		svr_rotation_data_ = {};
+	}
+
+	void sv_demo_recordings_t::shutdown_watcher()
+	{
+		auto execute_on_shutdown = [this, sv_loaded = false]() mutable
+		{
+			if (!sv_loaded && game::SV_Loaded())
+			{
+				sv_loaded = true;
+			}
+
+			if (sv_loaded && !game::SV_Loaded())
+			{
+				sv_loaded = false;
+				process_old_data();
+			}
+		};
+
+		scheduler::loop(execute_on_shutdown, scheduler::main);
+	}
+
+	bool sv_demo_recordings_t::update_state(sv_client_num_t client_num, std::int32_t last_conn_time, bool client_loading)
+	{
+		// handle server map change: close files and reset data for all clients; should ignore fast restarts
+		if (svr_rotation_data_.has_changed())
+		{
+			process_old_data();
+		}
+
+		auto& client = get_client(client_num);
+		if (!client_loading && !client.is_buffer_active())
+		{
+			// sv_demos was possibly enabled too late for this player for this match!
+			return false;
+		}
+
+		// handle client last connect time change: close file and reset data 
+		if (!client.times.last_conn_time || *client.times.last_conn_time != last_conn_time)
+		{
+			if (client.times.last_conn_time)
+			{
+				stop_internal(client, true);
+			}
+
+			client.times.last_conn_time = last_conn_time;
+		}
+
+		// write general, mod and map headers to the buffer once
+		if (!client.is_buffer_active())
+		{
+			// reserve memory (low size if auto recording is enabled, because then the demo writes almost directly to disk)
+			const auto reserve_size = (sv_demo_autorecord && sv_demo_autorecord->current.enabled) ? 8192 : 512 * 1024;
+			client.buffer.reserve_memory(reserve_size);
+
+			sv_write_general_header(client.buffer, game::mp::svs->clients[client_num.value()].name);
+			write_mod_header(client.buffer);
+
+			if (write_map_header(client.buffer))
+			{
+				client.buffer_active = true;
+			}
+		}
+
+		// store first and current server times to keep track of demo length
+		client.times.cur_svr_time = game::mp::svs->time;
+		if (!client_loading && !client.times.first_svr_time && client.times.cur_svr_time)
+		{
+			client.times.first_svr_time = client.times.cur_svr_time;
+		}
+
+		// if not already recording, start demo for client when auto recording is enabled
+		if (!client.is_recording() && sv_demo_autorecord && sv_demo_autorecord->current.enabled)
+		{
+			if (!sv_execute_demo_start_command_internal(client_num, std::string_view{}, false))
+			{
+				console::error("failed to start demo automatically for client num %d\n", client_num.value());
+			}
+		}
+
+		return true;
+	}
+
+	void sv_demo_recordings_t::write_data(sv_client_num_t client_num,
+		const game::mp::client_t& cl, std::span<const std::uint8_t> network_data, bool client_loading)
+	{
+		if (!client_num.valid() || !update_state(client_num, cl.lastConnectTime, client_loading))
+		{
+			return;
+		}
+
+		auto write_data_internal = [&cl, network_data, client_loading](auto& output)
+		{
+			const auto send_msg_count = static_cast<std::size_t>(cl.header.sendMessageCount);
+			const auto svr_msg_sequence = static_cast<std::size_t>(cl.header.netchan.outgoingSequence);
+
+			if (!client_loading)
+			{
+				sv_write_predicted_data(output, cl.gentity->client->ps, send_msg_count);
+			}
+
+			write_id_and_size(output, 4 + network_data.size(), demo_data_id::network_data);
+			output.write(reinterpret_cast<const char*>(&svr_msg_sequence), 4);
+			output.write(reinterpret_cast<const char*>(network_data.data()), network_data.size());
+		};
+
+		auto& client = get_client(client_num);
+
+		if (client.is_buffer_active())
+		{
+			write_data_internal(client.buffer);
+		}
+		if (client.is_recording())
+		{
+			write_data_internal(client.file);
+
+			if (static_cast<std::size_t>(cl.header.sendMessageCount) % 512 == 0)
+			{
+				client.file.flush();
+			}
+		}
+	}
+}
+
+namespace // hooks
+{
+	utils::hook::detour SV_Netchan_Transmit_hook;
+
+	bool sv_capture_data(game::mp::client_t& cl, const char* data, std::int32_t length)
+	{
+		const auto valid_player = cl.gentity && cl.gentity->client && cl.testClient == game::TC_NONE
+			&& (cl.header.state == game::CS_CLIENTLOADING || cl.header.state == game::CS_ACTIVE);
+
+		if (sv_demos && sv_demos->current.enabled && valid_player)
+		{
+			const auto client_num = sv_client_num_t(static_cast<std::size_t>(cl.gentity->s.number));
+
+			if (!client_num.valid())
+			{
+				console::error("invalid client num %d\n", cl.gentity->s.number);
+			}
+			else
+			{
+				const auto client_loading = (cl.header.state == game::CS_CLIENTLOADING);
+				const auto size = static_cast<std::size_t>(length);
+
+				if ((!client_loading || cl.gamestateMessageNum == cl.header.netchan.outgoingSequence) && size < MAX_SIZE)
+				{
+					const std::span<const std::uint8_t> network_data(reinterpret_cast<const std::uint8_t*>(data), size);
+					demos.write_data(client_num, cl, network_data, client_loading);
+				}
+				else
+				{
+					console::warn("invalid data for client num %d, message count %d, message size %zu\n",
+						client_num.value(), cl.header.sendMessageCount, size);
+				}
+			}
+		}
+
+		return SV_Netchan_Transmit_hook.invoke<bool>(&cl, data, length);
+	}
+}
+
+namespace // command execution
+{
+	bool sv_execute_demo_start_command_internal(sv_client_num_t client_num, std::string_view file_name, bool overwrite)
+	{
+		if (game::Live_SyncOnlineDataFlags(0))
+		{
+			console::error("server must be initialized to record a demo\n");
+			return false;
+		}
+
+		if (const auto* sv_running = game::Dvar_FindVar("sv_running"); !sv_running || !sv_running->current.enabled)
+		{
+			console::error("server must be online to record a demo\n");
+			return false;
+		}
+
+		if (!sv_demos || !sv_demos->current.enabled)
+		{
+			console::error("cannot record a demo with sv_demos disabled\n");
+			return false;
+		}
+
+		if (!client_num.valid())
+		{
+			console::error("invalid client num\n");
+			return false;
+		}
+
+		const auto state = game::mp::svs->clients[client_num.value()].header.state;
+		if (state != game::CS_CLIENTLOADING && state != game::CS_ACTIVE)
+		{
+			console::error("client needs to be fully connected\n");
+			return false;
+		}
+
+		const auto client_type = game::mp::svs->clients[client_num.value()].testClient;
+		if (client_type != game::TC_NONE)
+		{
+			console::error("can only record actual players\n");
+			return false;
+		}
+
+		if (demos.is_recording(client_num))
+		{
+			console::error("already recording client\n");
+			return false;
+		}
+
+		const auto opt_dir_path = sv_create_demo_directory();
+		if (!opt_dir_path)
+		{
+			console::error("could not create demo directory\n");
+			return false;
+		}
+
+		const auto& cl = game::mp::svs->clients[client_num.value()];
+		const auto empty_guid = (cl.playerGuid[0] == '\0');
+		if (empty_guid)
+		{
+			console::warn("player guid appears empty\n");
+		}
+
+		const auto opt_server_path = (file_name.empty())
+			? sv_create_path_server_demo(*opt_dir_path, (!empty_guid) ? cl.playerGuid : utils::string::strip(cl.name, true))
+			: sv_create_path_server_demo(*opt_dir_path, file_name, overwrite);
+
+		if (!opt_server_path)
+		{
+			console::error("could not create demo file\n");
+			return false;
+		}
+
+		if (!demos.start(client_num, *opt_server_path))
+		{
+			console::error("could not create demo file %s\n", opt_server_path->string().c_str());
+			return false;
+		}
+
+		return true;
+	}
+
+	void sv_execute_demo_start_command(const command::params& params)
+	{
+		if (params.size() < 2 || params.size() > 4 || (params.size() == 4 && std::string_view(params.get(3)) != "overwrite"))
+		{
+			console::info("usage: sv_demostart <client_num | player_name>, <file_name>(optional), overwrite(optional)\n");
+			return;
+		}
+
+		assert(params.size() != 4 || (params.size() == 4 && std::string_view(params.get(3)) == "overwrite"));
+		sv_execute_demo_start_command_internal(
+			sv_client_num_t(params.get(1)), (params.size() >= 3) ? params.get(2) : std::string_view{}, (params.size() == 4));
+	}
+
+	void sv_execute_demo_stop_command(const command::params& params)
+	{
+		if (params.size() != 2)
+		{
+			console::info("usage: sv_demostop <client_num | player_name>\n");
+			return;
+		}
+
+		const sv_client_num_t client_num(params.get(1));
+		if (!client_num.valid())
+		{
+			console::error("invalid client num %s\n", params.get(1));
+		}
+		else if (!demos.stop(client_num))
+		{
+			console::error("could not stop demo\n");
+		}
+	}
+}
+
+namespace demo_sv_recording
+{
+	bool sv_recording(std::size_t client_num)
+	{
+		return demos.is_recording(sv_client_num_t(client_num));
+	}
+
+	bool sv_startrecord(std::size_t client_num, std::string_view file_name, bool overwrite)
+	{
+		return sv_execute_demo_start_command_internal(sv_client_num_t(client_num), file_name, overwrite);
+	}
+
+	bool sv_stoprecord(std::size_t client_num)
+	{
+		return demos.stop(sv_client_num_t(client_num));
+	}
+
+	class component final : public component_interface
+	{
+	public:
+		void post_unpack() override
+		{
+			if (!game::environment::is_dedi())
+			{
+				return;
+			}
+
+			// check run-time address assertions
+			check_address_assertions();
+
+			// capture outgoing packets to client
+			SV_Netchan_Transmit_hook.create(game::SV_Netchan_Transmit, sv_capture_data);
+
+			// execute server demo code based on this value; if it's is enabled mid-match, 
+			// then the demos recorded during that match (if any) are likely corrupt!
+			sv_demos = game::Dvar_RegisterBool(
+				"sv_demos", false, game::DVAR_FLAG_NONE, "Enable server demos");
+
+			// add support to auto record all players
+			sv_demo_autorecord = game::Dvar_RegisterBool(
+				"sv_demoautorecord", false, game::DVAR_FLAG_NONE,
+				"Automatically start recording a demo for each connected client.");
+
+			// add console command support to record server demos
+			command::add("sv_demostart", sv_execute_demo_start_command);
+			command::add("sv_demostop", sv_execute_demo_stop_command);
+
+			scheduler::on_game_initialized([]()
+			{
+				demos.shutdown_watcher();
+
+				// check if demo directory exists / could be created
+				if (!sv_can_create_demo_directory())
+				{
+					console::error("could not create demo directory\n");
+				}
+			}, scheduler::main);
+		}
+	};
+}
+
+REGISTER_COMPONENT(demo_sv_recording::component)
