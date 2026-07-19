@@ -287,6 +287,13 @@ pchsource "src/client/std_include.cpp"
 
 linkoptions {"/IGNORE:4254", "/DYNAMICBASE:NO", "/SAFESEH:NO", "/LARGEADDRESSAWARE", "/PDBCompress"}
 
+-- v145+ toolset flags some warnings the demo code + vendored deps hit that older MSVC didn't;
+-- fatalwarnings{"All"} makes them fatal, so silence the benign ones:
+--   C4875 - non-string-literal arg to [[gsl::suppress]] (vendored GSL headers) [v145]
+--   C4459 - local 'cl' hides the global game::mp::cl (intentional throughout the demo code)
+--   C4127 - conditional expression is constant (benign; v143 flags it, v145 didn't)
+disablewarnings {"4875", "4459", "4127"}
+
 files {"./src/client/**.rc", "./src/client/**.hpp", "./src/client/**.cpp", "./src/client/resources/**.*"}
 
 includedirs {"./src/client", "./src/common", "%{prj.location}/src"}

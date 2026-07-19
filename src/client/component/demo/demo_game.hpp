@@ -74,6 +74,30 @@ namespace game
 	WEAK symbol<void(int localClientNum, msg_t* msg)> CL_ParseServerMessage{0x0, 0x3425B0};       // HIGH
 	WEAK symbol<void(int localClientNum)> CL_WritePacket{0x0, 0x13D490};                            // HIGH (h1-mod party.cpp)
 	WEAK symbol<void(int localClientNum)> CL_SetCGameTime{0x0, 0x33C950};                           // HIGH (self-string)
+	// CG_CalcViewValues (sub_13DF80): computes the per-frame render view. The theater camera
+	// hooks it post-invoke to override (*game::refdef)->view (org/axis/fov) for freecam/dolly.
+	// (Same fn the view-angle work identified: cg->ps.delta_angles -> cg->refdef.view.axis.)
+	WEAK symbol<std::uint64_t(int localClientNum, void* a2)> CG_CalcViewValues{0x0, 0x13DF80};      // HIGH (sub_13DF80)
+	// IN_MouseMove accumulator (sub_5BA950): the WM_MOUSEMOVE handler that accumulates raw mouse
+	// delta into dword_C9DC3FC/400 (skipping the -100000 recenter sentinel). The theater freecam
+	// hooks it to mirror the SAME smooth delta into its own accumulator (no GetCursorPos recenter
+	// fight = the old jitter). Clean, hookable entry (CL_MouseMove@0x5BA4D0 is an Arxan jmp stub).
+	WEAK symbol<void(int x, int y)> IN_MouseMove{0x0, 0x5BA950};                                    // HIGH (sub_5BA950)
+	// LUI_Layout (sub_26BC30): the per-frame LUI layout root. Computed deltaTime (arg2/r8, a REAL
+	// Sys_Milliseconds frame delta) is what drives EVERY LUI animation (killfeed, hitmarker, etc.)
+	// -- it's passed straight into Lua as element.deltaTime. Confirmed by the "root"+"deltaTime"
+	// string refs, mapped from the named Ghosts/IW6 PPC IDB (?LUI_Layout@@...). Hooking it to scale
+	// deltaTime by the demo's timescale (0 when paused) makes the whole HUD slow + freeze with the
+	// demo -- the only clean lever, since the LUI clock is otherwise a real-time countdown.
+	WEAK symbol<void(int localClientNum, const char* rootName, int deltaTime, void* luaVM)> LUI_Layout{0x0, 0x26BC30}; // HIGH (Ghosts-bridged)
+	// UI_UpdateTime (sub_1E7000): sets the UI draw-context clock uiDC.realTime (dword_352E588) =
+	// its `realtime` arg each frame, and computes frameTime/FPS. CL_CGameRendering(sub_3432F0)
+	// feeds it dword_2ED2080 (MWR's real UI clock / cls.realtime analog -- can't override that
+	// global, it's used all over CL_WritePacket/frame code). The .menu/UI-expression HUD (and the
+	// obituary the killfeed samples) reads uiDC.realTime, so it runs at real time regardless of the
+	// demo. Hooking this to feed serverTime during playback makes that clock slow + freeze too.
+	// arg0 = localClientNum (ignored, single global uiDC), arg1 = realtime. (Ghosts-bridged UI_UpdateTime.)
+	WEAK symbol<void(int localClientNum, int realtime)> UI_UpdateTime{0x0, 0x1E7000};                // HIGH (Ghosts-bridged)
 	WEAK symbol<int(msg_t* msg, int bits)> MSG_ReadBits{0x0, 0x4EB320};                             // HIGH
 	WEAK symbol<void(msg_t* msg, int value, int bits)> MSG_WriteBits{0x0, 0x4EBD40};                // HIGH
 	// real standalone MSG_ReadLong (does its own bounds-check + -1 overflow return; NOT identical
@@ -108,6 +132,13 @@ namespace game
 	// Bound to the real wrapper here so process_server_commands() executes every intermediate
 	// command in order and never desyncs the two counters.
 	WEAK symbol<void(int localClientNum, int latestSequence)> CG_ExecuteNewServerCommands{0x0, 0xFC3D0}; // HIGH (only caller of the per-command executor 0x11A410; matches native per-snapshot usage)
+	// sub_1022E0: returns the REAL game cgs base -- serverCommandSequence lives at +0x18, and this
+	// is the counter CG_ExecuteNewServerCommands (0xFC3D0) walks per snapshot (`*(int*)(base+24)`).
+	// game::mp::cgs (below) is only an h1-mod STUB (static storage), so writes to it never reach the
+	// game; a mid-match recording's command baseline (e.g. 612) was therefore never seeded into the
+	// real counter -> the native walker runs 0..612, past the 256-entry ring -> "Lost reliable
+	// commands". Arxan-encrypts the backing global, so CALL this accessor (never read it directly).
+	WEAK symbol<void*()> CG_GetServerCommandsState{0x0, 0x1022E0}; // HIGH (real cgs; sub_FC3D0 calls it)
 	namespace mp { struct snapshot_t; }
 	WEAK symbol<void(int localClientNum, const mp::snapshot_t* oldSnap, const mp::snapshot_t* newSnap)>
 		CG_UpdateOmnvars{0x0, 0x331E90};                                                            // HIGH
@@ -260,7 +291,10 @@ namespace game
 			int commandTime;          // +0x138 TODO(h1)
 			int remoteControlEnt;     // +0x13C TODO(h1)
 			int viewlocked_entNum;    // +0x140 TODO(h1)
-			int weapon;               // +0x144 TODO(h1)
+			// WRONG-ON-MWR (was `weapon`, an iw6 offset): live-verified cg+0x144 == 0 while an MP5
+			// was held. The real held weapon is ps+0x394 (or +0x388 when +0x398 & 0x2) -- use
+			// game::ps_held_weapon()/game::cg_held_weapon(). Renamed so nothing reads it by mistake.
+			int _unused_iw6_weapon;   // +0x144  DO NOT USE
 			vec3_t viewangles;        // +0x148 TODO(h1)
 			PlayerVehicleState vehicleState; // +0x154 TODO(h1)
 			char _pad_end[0x100];
@@ -300,8 +334,17 @@ namespace game
 		struct clientActive_t
 		{
 			clSnapshot_t snap;        // +0x0000  (ends at 19076)  cl->snap.valid/serverTime/deltaNum/ps
-			int serverTime;           // +19076 (0x4A84)  cl->serverTime   TODO(h1) confirm (v3[4769])
-			char _pad_A88[19100 - 19080];
+			int serverTime;           // +19076 (0x4A84)  cl->serverTime (v3[4769]) VERIFIED
+			char _pad_A88[19096 - 19080];
+			// serverTimeDelta (v3[4774]): CL_SetCGameTime computes cl->serverTime =
+			// max(cl->serverTime, serverTimeDelta + com_frameTime) every frame, and
+			// CL_FirstSnapshot (sub_33B6B0) sets serverTimeDelta = snap.serverTime -
+			// com_frameTime -- the textbook Quake3 serverTimeDelta. This is the ONLY
+			// lever that moves the playback clock forward-and-keeps-moving: bumping
+			// cl->serverTime directly just gets frozen by the max() clamp until real
+			// time catches up. fast_forward_demo + the pause freeze bump THIS, not
+			// serverTime (the h1 analog of iw6's cls.realtime).
+			int serverTimeDelta;      // +19096 (0x4A98)  VERIFIED (CL_SetCGameTime/CL_FirstSnapshot)
 			int newSnapshots;         // +19100 (0x4A9C)  cl->newSnapshots VERIFIED
 			char _pad_A9C[27520 - 19104];
 			ClientArchiveData clientArchive[256]; // +27520 (0x6B80) stride 36 VERIFIED (ends 36736)
@@ -316,6 +359,7 @@ namespace game
 			char _pad_end[0x400];
 		};
 		static_assert(offsetof(clientActive_t, serverTime) == 19076, "cl serverTime");
+		static_assert(offsetof(clientActive_t, serverTimeDelta) == 19096, "cl serverTimeDelta");
 		static_assert(offsetof(clientActive_t, newSnapshots) == 19100, "cl newSnapshots");
 		static_assert(offsetof(clientActive_t, clientArchive) == 27520, "cl clientArchive");
 		static_assert(offsetof(clientActive_t, clientArchiveIndex) == 36736, "cl clientArchiveIndex");
@@ -501,10 +545,30 @@ namespace game
 		WEAK centities_accessor centities{};
 	} // namespace mp
 
-	// CG_SelectWeapon: write cg->weaponSelect.data directly (WWII-port approach).
-	inline bool CG_SelectWeapon(int /*localClientNum*/, int weapon, int /*useAltMode*/)
+	// ps HELD WEAPON -- VERIFIED LIVE on MWR (CheatEngine, 2026-07-15).
+	//
+	// The demo playerState_t's `weapon` field was an iw6 port at +0x144 which on MWR is ALWAYS 0
+	// (live-read cg+0x144 = 0 while an MP5 was in hand). The REAL held weapon is at ps+0x394
+	// (live: 0x00040050 = base 80 (MP5), variant 2), and the engine's own getter (sub_2E1270)
+	// picks ps+0x388 instead when ps+0x398 has bit 0x2 set. Reading the wrong field is what made
+	// cod4_captureps refuse ("ps.weapon is 0"), CG_SelectWeapon equip nothing, and the viewmodel
+	// stay empty. ALWAYS use this accessor -- never playerState_t::_unused_iw6_weapon.
+	inline int ps_held_weapon(const mp::playerState_t* ps)
 	{
-		mp::cg->weaponSelect.data = static_cast<std::uint64_t>(weapon);
-		return true;
+		if (!ps) return 0;
+		const auto* base = reinterpret_cast<const char*>(ps);
+		const int selector = *reinterpret_cast<const int*>(base + 0x398);
+		return *reinterpret_cast<const int*>(base + ((selector & 0x2) ? 0x388 : 0x394));
 	}
+	inline int cg_held_weapon()
+	{
+		return mp::cg ? ps_held_weapon(&mp::cg->ps) : 0;
+	}
+
+	// CG_SelectWeapon -- the REAL engine function (H1 PC 0x11A300, CONFIRMED in symbols.hpp:79-81
+	// by weaponSelectTime=serverTime / weaponSelect compare / CG_MenuShowNotify(1) / CL_SetADS(0)).
+	// The previous implementation here was a WWII-port STUB that merely wrote cg->weaponSelect.data
+	// -- it never ran the equip, so the per-hand viewmodel DObj (qword_390B130) was never built and
+	// sub_128360 drew nothing ("no viewmodel set for player"). Calling the real one actually equips.
+	WEAK symbol<bool(int localClientNum, unsigned int weapon, int useAltMode)> CG_SelectWeapon{0x0, 0x11A300};
 } // namespace game

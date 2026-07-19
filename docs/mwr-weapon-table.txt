@@ -1,0 +1,68 @@
+# MWR (h1) weapon table: index -> name, from CL_GetConfigString(3945+N) live in a backlot match.
+# Captured 2026-07-16 via cod4_mwr_weapons. This is the MWR half of the cod4->MWR weapon Rosetta.
+# ps.weapon low 16 bits = index N; the weapon name is at configstring 3945+N.
+# Base weapons are h1_<core>_mp (indices 50-93). Indices 200+ are ATTACHMENT modifiers
+# (silencermwr*, acogmwr*, reflexmwr*, glmwr*, etc.) applied on top of a base weapon.
+# 1-44: h1_* future/melee/DLC weapons; 45-49: airstrike/artillery/briefcase/defaultweapon.
+
+# ---- BASE WEAPONS (the ones a cod4 weapon maps to) ----
+50  h1_ak47_mp
+51  h1_ak74u_mp
+52  h1_barrett_mp
+53  h1_beretta_mp
+54  h1_c4_mp
+55  h1_claymore_mp
+56  h1_colt45_mp
+57  h1_coltanaconda_mp
+58  h1_concussiongrenade_mp
+59  h1_deserteagle55_mp
+60  h1_deserteagle_mp
+61  h1_dragunov_mp
+62  h1_fal_mp
+63  h1_flashgrenade_mp
+64  h1_fraggrenade_mp
+65  h1_fraggrenadeshort_mp
+66  h1_g36c_mp
+67  h1_g3_mp
+68  h1_galil_mp
+69  h1_m1014_mp
+70  h1_m14_mp
+71  h1_m16_mp
+72  h1_m21_mp
+73  h1_m240_mp
+74  h1_m40a3_mp
+75  h1_m4_mp
+76  h1_m60e4_mp
+77  h1_mac10_mp
+79  h1_mp44_mp
+80  h1_mp5_mp
+81  h1_p90_mp
+82  h1_pp2000_mp
+83  h1_remington700_mp
+84  h1_rpd_mp
+85  h1_rpg_mp
+86  h1_saw_mp
+87  h1_skorpion_mp
+89  h1_striker_mp
+90  h1_usp_mp
+91  h1_uzi_mp
+92  h1_vssvintorez_mp
+93  h1_winchester1200_mp
+45  airstrike_mp
+46  artillery_mp
+49  defaultweapon_mp
+94  helicopter_mp
+95  radar_mp
+
+# ---- CoD4 cs2258 core -> MWR index (verified: user held h1_saw_mp=86, h1_usp_mp=90) ----
+# cod4 core (after stripping attachments + _mp)  ->  MWR base index
+#   mp5            -> 80   (h1_mp5_mp)          [cod4 mp5sd, mp5 all -> 80 base]
+#   usp            -> 90   (h1_usp_mp)          [cod4 usp, usp_silencer -> 90 base + silencer attachment]
+#   ak47           -> 50 ; ak74u -> 51 ; m4 -> 75 ; m16 -> 71 ; g3 -> 67 ; g36(c) -> 66
+#   m14 / m14_scout-> 70 ; m40a3 -> 74 ; remington700 -> 83 ; barrett(m82) -> 52 ; dragunov -> 61
+#   rpd -> 84 ; saw -> 86 ; m60(e4) -> 76 ; p90 -> 81 ; skorpion -> 87 ; uzi(mini_uzi) -> 91
+#   winchest1200/winchester1200 -> 93 ; m1014 -> 69 ; deserteagle(desert_eagle) -> 60
+#   beretta -> 53 ; colt(colt1911/colt45) -> 56 ; mp44 -> 79 ; galil -> 68 ; fal(g3?) -> 62
+# NOTE: CoD4 encodes attachments as SEPARATE weapon files (mp5_reflex_mp, usp_silencer_mp).
+#   MWR uses BASE weapon (h1_usp_mp) + a separate attachment id (silencermwrusp=313, reflexmwrmp5=292).
+#   For the VIEWMODEL/gun to render we only need the BASE index; attachments are a later refinement.

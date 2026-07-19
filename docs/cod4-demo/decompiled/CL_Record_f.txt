@@ -1,0 +1,313 @@
+int sub_4688D0()
+{
+  int v0; // ebx
+  int v1; // ecx
+  int v2; // eax
+  int result; // eax
+  const char *v4; // eax
+  int i; // ebp
+  int v6; // esi
+  int v7; // edi
+  _DWORD *v8; // edx
+  int v9; // eax
+  int v10; // eax
+  int v11; // ecx
+  int *v12; // eax
+  int v13; // eax
+  int v14; // ebx
+  int *v15; // ebp
+  int v16; // eax
+  _DWORD *v17; // edi
+  int v18; // edx
+  _DWORD *v19; // ecx
+  char *v20; // edi
+  size_t v21; // esi
+  int j; // edi
+  char v23; // [esp+0h] [ebp-298h]
+  char Buffer; // [esp+17h] [ebp-281h] BYREF
+  int v25; // [esp+18h] [ebp-280h] BYREF
+  int v26; // [esp+1Ch] [ebp-27Ch] BYREF
+  _DWORD *v27; // [esp+24h] [ebp-274h]
+  int v28; // [esp+2Ch] [ebp-26Ch]
+  int v29; // [esp+30h] [ebp-268h]
+  int v30; // [esp+3Ch] [ebp-25Ch]
+  int v31; // [esp+44h] [ebp-254h]
+  void *v32; // [esp+48h] [ebp-250h]
+  char *v33; // [esp+4Ch] [ebp-24Ch]
+  int v34; // [esp+50h] [ebp-248h]
+  int v35; // [esp+54h] [ebp-244h]
+  int v36; // [esp+58h] [ebp-240h]
+  int v37; // [esp+5Ch] [ebp-23Ch]
+  char Destination[64]; // [esp+60h] [ebp-238h] BYREF
+  char ArgList[504]; // [esp+A0h] [ebp-1F8h] BYREF
+
+  v0 = dword_D5C3934; /*0x4688e2*/
+  v33 = (char *)&unk_CAF9A50 + dword_D5C3934; /*0x4688ef*/
+  v1 = dword_D5C3934 + 0x20000; /*0x4688f3*/
+  dword_D5C3934 += 0x40000; /*0x4688fa*/
+  v2 = dword_13E81F4[dword_13E81B0]; /*0x468904*/
+  v31 = v0; /*0x468917*/
+  v32 = (char *)&unk_CAF9A50 + v1; /*0x46891b*/
+  if ( v2 > 2 ) /*0x46891f*/
+  {
+    result = sub_4FC7A0(0, "record <demoname>\n", v23); /*0x468928*/
+LABEL_3:
+    dword_D5C3934 = v0; /*0x46892d*/
+    return result; /*0x46893d*/
+  }
+  if ( dword_933DE8 ) /*0x46894b*/
+  {
+    result = sub_4FC7A0(0, "Already recording.\n", v23); /*0x468952*/
+    goto LABEL_3; /*0x468952*/
+  }
+  if ( *(_DWORD *)dword_C36F70 != 9 ) /*0x468957*/
+  {
+    result = sub_4FC7A0(0, "You must be in a level to record.\n", v23); /*0x46895e*/
+    goto LABEL_3; /*0x46895e*/
+  }
+  if ( v2 == 2 ) /*0x468963*/
+  {
+    v4 = (const char *)sub_42A9C0(9); /*0x46896e*/
+    strncpy(Destination, v4, 0x3Fu); /*0x468979*/
+    Destination[63] = 0; /*0x468998*/
+    sub_570CE0("demos/%s.dm_%d", Destination, 1); /*0x4689a0*/
+  }
+  else
+  {
+    for ( i = 0; i <= 9999; ++i ) /*0x4689aa*/
+    {
+      sub_570CE0("demo%04i", i); /*0x4689bf*/
+      sub_570CE0("demos/%s.dm_%d", Destination, 1); /*0x4689da*/
+      if ( !sub_55A460() ) /*0x4689e4*/
+        break; /*0x4689eb*/
+    }
+  }
+  sub_4FC7A0(0, "recording to %s.\n", (char)ArgList); /*0x468a0c*/
+  dword_933DFC = sub_55A7A0(); /*0x468a27*/
+  if ( !dword_933DFC )
+  {
+    result = sub_4FC860(0, "ERROR: couldn't open.\n", v23);
+    dword_D5C3934 = v0; /*0x468a3c*/
+    return result; /*0x468a49*/
+  }
+  dword_933DE8 = 1; /*0x468a56*/
+  strncpy(byte_933DA8, Destination, 0x3Fu); /*0x468a5c*/
+  byte_933DE7 = 0; /*0x468a72*/
+  dword_933DF4 = 1; /*0x468a79*/
+  sub_5049F0(v33, 0x20000); /*0x468a7f*/
+  v6 = v29; /*0x468a84*/
+  v7 = v28; /*0x468a88*/
+  v8 = v27; /*0x468a8c*/
+  v9 = v29 + 4; /*0x468a90*/
+  if ( v29 + 4 > v28 ) /*0x468a98*/
+  {
+    v26 = 1; /*0x468aab*/
+  }
+  else
+  {
+    *(_DWORD *)((char *)v27 + v29) = dword_8F3D8C; /*0x468aa0*/
+    v6 = v9; /*0x468aa3*/
+    v29 = v9; /*0x468aa5*/
+  }
+  if ( v6 >= v7 ) /*0x468ab1*/
+  {
+    v26 = 1; /*0x468abf*/
+  }
+  else
+  {
+    *((_BYTE *)v8 + v6) = 1; /*0x468ab3*/
+    v29 = ++v6; /*0x468ab9*/
+  }
+  v10 = v6 + 4; /*0x468ac3*/
+  if ( v6 + 4 > v7 ) /*0x468ac8*/
+  {
+    v26 = 1; /*0x468adb*/
+  }
+  else
+  {
+    *(_DWORD *)((char *)v8 + v6) = dword_913D98; /*0x468ad0*/
+    v6 += 4; /*0x468ad3*/
+    v29 = v10; /*0x468ad5*/
+  }
+  if ( v6 >= v7 ) /*0x468ae1*/
+  {
+    v26 = 1; /*0x468aef*/
+  }
+  else
+  {
+    *((_BYTE *)v8 + v6) = 2; /*0x468ae3*/
+    v29 = ++v6; /*0x468ae9*/
+  }
+  v11 = 0; /*0x468af3*/
+  v12 = &dword_C39F60; /*0x468af5*/
+  do /*0x468b37*/
+  {
+    if ( *(v12 - 1) ) /*0x468b00*/
+      ++v11; /*0x468b06*/
+    if ( *v12 ) /*0x468b08*/
+      ++v11; /*0x468b0d*/
+    if ( v12[1] ) /*0x468b0f*/
+      ++v11; /*0x468b15*/
+    if ( v12[2] ) /*0x468b17*/
+      ++v11; /*0x468b1d*/
+    if ( v12[3] ) /*0x468b1f*/
+      ++v11; /*0x468b25*/
+    if ( v12[4] ) /*0x468b27*/
+      ++v11; /*0x468b2d*/
+    v12 += 6; /*0x468b2f*/
+  }
+  while ( (int)v12 < (int)dword_C3C588 ); /*0x468b37*/
+  v13 = v6 + 2; /*0x468b39*/
+  if ( v6 + 2 > v7 ) /*0x468b3e*/
+  {
+    v26 = 1; /*0x468b4c*/
+  }
+  else
+  {
+    *(_WORD *)((char *)v8 + v6) = v11; /*0x468b40*/
+    v6 += 2; /*0x468b44*/
+    v29 = v13; /*0x468b46*/
+  }
+  v14 = 0; /*0x468b50*/
+  v15 = dword_C39F5C; /*0x468b52*/
+  do /*0x468bc1*/
+  {
+    if ( !*v15 ) /*0x468b5c*/
+      goto LABEL_52; /*0x468b5c*/
+    v16 = v30; /*0x468b64*/
+    if ( (v30 & 7) != 0 ) /*0x468b6a*/
+      goto LABEL_50; /*0x468b6a*/
+    if ( v6 < v28 ) /*0x468b70*/
+    {
+      v16 = 8 * v6; /*0x468b7c*/
+      *((_BYTE *)v8 + v6) = 0; /*0x468b83*/
+      v29 = v6 + 1; /*0x468b8a*/
+LABEL_50:
+      v30 = v16 + 1; /*0x468b8e*/
+      goto LABEL_51; /*0x468b91*/
+    }
+    v26 = 1; /*0x468b72*/
+LABEL_51:
+    sub_504A40(v14, 12); /*0x468b95*/
+    sub_504E40(); /*0x468ba8*/
+    v6 = v29; /*0x468bad*/
+    v8 = v27; /*0x468bb1*/
+LABEL_52:
+    ++v15; /*0x468bb5*/
+    ++v14; /*0x468bb8*/
+  }
+  while ( (int)v15 < (int)byte_C3C584 ); /*0x468bc1*/
+  flt_CABB028 = flt_955E30; /*0x468bcb*/
+  flt_CABB02C = flt_955E34; /*0x468bdd*/
+  flt_CABB030 = flt_955E38; /*0x468bf1*/
+  v34 = 0; /*0x468bf7*/
+  v35 = 0; /*0x468bfb*/
+  v36 = 0; /*0x468bff*/
+  v37 = 0; /*0x468c03*/
+  memset(&ArgList[256], 0, 0xF4u); /*0x468c07*/
+  v17 = &unk_CFFA70; /*0x468c0f*/
+  do /*0x468c65*/
+  {
+    if ( *v17 ) /*0x468c14*/
+    {
+      if ( v6 >= v28 ) /*0x468c1d*/
+      {
+        v26 = 1; /*0x468c30*/
+      }
+      else
+      {
+        *((_BYTE *)v27 + v6) = 3; /*0x468c23*/
+        v29 = v6 + 1; /*0x468c2a*/
+      }
+      sub_509B10(&v26, -90000, 1); /*0x468c4d*/
+      v6 = v29; /*0x468c52*/
+    }
+    v17 += 61; /*0x468c59*/
+  }
+  while ( (int)v17 < (int)dword_D3CA70 ); /*0x468c65*/
+  v18 = v28; /*0x468c67*/
+  v19 = v27; /*0x468c6d*/
+  if ( v6 < v28 ) /*0x468c71*/
+    *((_BYTE *)v27 + v6++) = 7; /*0x468c73*/
+  if ( v6 + 4 <= v18 ) /*0x468c7f*/
+  {
+    *(_DWORD *)((char *)v19 + v6) = dword_8F3C5C; /*0x468c87*/
+    v6 += 4; /*0x468c8a*/
+  }
+  if ( v6 + 4 <= v18 ) /*0x468c91*/
+  {
+    *(_DWORD *)((char *)v19 + v6) = dword_8F3D88; /*0x468c99*/
+    v6 += 4; /*0x468c9c*/
+  }
+  if ( v6 < v18 ) /*0x468ca0*/
+    *((_BYTE *)v19 + v6) = 7; /*0x468ca2*/
+  v20 = (char *)v32; /*0x468cab*/
+  *(_DWORD *)v32 = *v19; /*0x468caf*/
+  v21 = sub_504C30(v20 + 4) + 4; /*0x468cd1*/
+  Buffer = 0; /*0x468cd4*/
+  sub_55B4B0(&Buffer, 1u, dword_933DFC); /*0x468cd9*/
+  v25 = dword_913D94; /*0x468ceb*/
+  sub_55B4B0(&v25, 4u, dword_933DFC); /*0x468cf5*/
+  v25 = v21; /*0x468d06*/
+  sub_55B4B0(&v25, 4u, dword_933DFC); /*0x468d0a*/
+  sub_55B4B0(v20, v21, dword_933DFC); /*0x468d19*/
+  for ( j = 0; j < 256; ++j ) /*0x468d21*/
+    sub_4686C0(j); /*0x468d2e*/
+  result = v31; /*0x468d47*/
+  dword_933DA4 = dword_CA066C; /*0x468d4c*/
+  dword_D5C3934 = v31; /*0x468d52*/
+  return result; /*0x468936*/
+}
+
+// ---- refs ----
+// 0xd5c3934 dword_D5C3934
+// 0xcaf9a50 unk_CAF9A50
+// 0x13e81f4 dword_13E81F4
+// 0x13e81b0 dword_13E81B0
+// 0x4fc7a0 sub_4FC7A0
+// 0x6cf33c aRecordDemoname "record <demoname>\n"
+// 0x6cf350 aAlreadyRecordi "Already recording.\n"
+// 0x933de8 dword_933DE8
+// 0x6cf364 aYouMustBeInALe "You must be in a level to record.\n"
+// 0xc36f70 dword_C36F70
+// 0x42a9c0 sub_42A9C0
+// 0x66f7a0 _strncpy
+// 0x570ce0 sub_570CE0
+// 0x6cf388 aDemosSDmD "demos/%s.dm_%d"
+// 0x6cf398 aDemo04i "demo%04i"
+// 0x55a460 sub_55A460
+// 0x6cf3a4 aRecordingToS "recording to %s.\n"
+// 0x933dfc dword_933DFC
+// 0x55a7a0 sub_55A7A0
+// 0x4fc860 sub_4FC860
+// 0x6cf3b8 aErrorCouldnTOp "ERROR: couldn't open.\n"
+// 0x933da8 byte_933DA8
+// 0x933de7 byte_933DE7
+// 0x933df4 dword_933DF4
+// 0x5049f0 sub_5049F0
+// 0x8f3d8c dword_8F3D8C
+// 0x913d98 dword_913D98
+// 0xc39f60 dword_C39F60
+// 0xc3c588 dword_C3C588
+// 0xc39f5c dword_C39F5C
+// 0x504a40 sub_504A40
+// 0x504e40 sub_504E40
+// 0xc3c584 byte_C3C584
+// 0xcabb028 flt_CABB028
+// 0x955e30 flt_955E30
+// 0xcabb02c flt_CABB02C
+// 0x955e34 flt_955E34
+// 0xcabb030 flt_CABB030
+// 0x955e38 flt_955E38
+// 0x67b040 _memset
+// 0xcffa70 unk_CFFA70
+// 0x509b10 sub_509B10
+// 0xd3ca70 dword_D3CA70
+// 0x8f3c5c dword_8F3C5C
+// 0x8f3d88 dword_8F3D88
+// 0x504c30 sub_504C30
+// 0x55b4b0 sub_55B4B0
+// 0x913d94 dword_913D94
+// 0x4686c0 sub_4686C0
+// 0x933da4 dword_933DA4
+// 0xca066c dword_CA066C

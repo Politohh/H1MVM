@@ -9,6 +9,7 @@
 #include "party.hpp"
 #include "scheduler.hpp"
 #include "server_list.hpp"
+#include "demo/demo_playback.hpp" // demo playback state, to suppress spectator menus on rewind
 
 #include "game/game.hpp"
 #include "game/dvars.hpp"
@@ -299,6 +300,22 @@ namespace server_list
 #ifdef _DEBUG
 			console::info("[LUI] %s\n", menuName);
 #endif
+
+			// While spectating a demo, swallow the change-class / team-select / loadout menus
+			// the game auto-opens (notably on rewind, when the restart re-runs the spawn flow,
+			// and when a cinematic seeks). Reuses this existing LUI_OpenMenu hook so we never
+			// add a second detour on the same function (a double-hook hung the game earlier).
+			if (menuName && demo_playback::playing() && demo_playback::is_replay_armed())
+			{
+				const auto lower = utils::string::to_lower(menuName);
+				if (lower.find("class") != std::string::npos || lower.find("team") != std::string::npos
+					|| lower.find("loadout") != std::string::npos || lower.find("spectat") != std::string::npos
+					|| lower.find("depot") != std::string::npos || lower.find("cac") != std::string::npos
+					|| lower.find("options") != std::string::npos || lower.find("choose") != std::string::npos)
+				{
+					return;
+				}
+			}
 
 			if (!strcmp(menuName, "menu_systemlink_join"))
 			{

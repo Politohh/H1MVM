@@ -1,0 +1,35 @@
+int sub_468E10()
+{
+  char *v0; // esi
+  int result; // eax
+  char v2; // [esp+0h] [ebp-Ch]
+  unsigned int v3; // [esp+8h] [ebp-4h] BYREF
+
+  if ( sub_55B3D0((char *)&v3, 4u, dword_933DFC) == 4 ) /*0x468e2c*/
+  {
+    if ( v3 <= 0xFF ) /*0x468e3b*/
+    {
+      v0 = (char *)&unk_C9D66C + 48 * v3; /*0x468e4e*/
+      sub_55B3D0(v0 + 4, 0xCu, dword_933DFC); /*0x468e5a*/
+      sub_55B3D0(v0 + 16, 0xCu, dword_933DFC); /*0x468e6f*/
+      sub_55B3D0(v0 + 32, 4u, dword_933DFC); /*0x468e83*/
+      sub_55B3D0(v0 + 28, 4u, dword_933DFC); /*0x468e98*/
+      sub_55B3D0(v0, 4u, dword_933DFC); /*0x468eaa*/
+      sub_55B3D0(v0 + 36, 0xCu, dword_933DFC); /*0x468ebf*/
+      result = v3 + 1; /*0x468ecb*/
+      dword_CA066C = v3 + 1; /*0x468ece*/
+      return result; /*0x468ed7*/
+    }
+    sub_4FC7A0(14, "Demo file was corrupt.\n", v2); /*0x468edf*/
+  }
+  return sub_468D60(); /*0x468ed3*/
+}
+
+// ---- refs ----
+// 0xc9d66c unk_C9D66C
+// 0x55b3d0 sub_55B3D0
+// 0x933dfc dword_933DFC
+// 0xca066c dword_CA066C
+// 0x4fc7a0 sub_4FC7A0
+// 0x6cf3f8 aDemoFileWasCor "Demo file was corrupt.\n"
+// 0x468d60 sub_468D60

@@ -1,0 +1,156 @@
+char *__cdecl sub_474650(int a1, _DWORD *a2)
+{
+  int v2; // eax
+  unsigned int v3; // edx
+  int v4; // esi
+  char *result; // eax
+  int v6; // edi
+  int v7; // esi
+  char *v8; // esi
+  char v9; // [esp+0h] [ebp-3Ch]
+  _DWORD v10[2]; // [esp+10h] [ebp-2Ch] BYREF
+  char *v11; // [esp+18h] [ebp-24h]
+  int v12; // [esp+1Ch] [ebp-20h]
+  int v13; // [esp+20h] [ebp-1Ch]
+  char *v14; // [esp+24h] [ebp-18h]
+  int v15; // [esp+28h] [ebp-14h]
+  int v16; // [esp+2Ch] [ebp-10h]
+  int v17; // [esp+30h] [ebp-Ch]
+  int v18; // [esp+34h] [ebp-8h]
+
+  v2 = *(_DWORD *)(dword_D5C3874 + 12); /*0x474655*/
+  if ( v2 == 1 ) /*0x47466a*/
+  {
+    sub_4FC7A0(14, "%i ", a2[5]); /*0x474677*/
+  }
+  else if ( v2 >= 2 ) /*0x474684*/
+  {
+    sub_4FC7A0(14, "------------------\n", v9); /*0x47468d*/
+  }
+  if ( !dword_148159C ) /*0x47469c*/
+  {
+    dword_148159C = 1; /*0x47469e*/
+    sub_5071C0(); /*0x4746a8*/
+  }
+  v3 = a2[5] - a2[7]; /*0x4746b0*/
+  v4 = 0; /*0x4746bd*/
+  v10[0] = 0; /*0x4746d3*/
+  v14 = 0; /*0x4746d7*/
+  v16 = 0; /*0x4746db*/
+  v17 = 0; /*0x4746df*/
+  v18 = 0; /*0x4746e3*/
+  v11 = (char *)&unk_D8E9008; /*0x4746e7*/
+  v13 = 0x20000; /*0x4746ef*/
+  v10[1] = 0; /*0x4746f7*/
+  v12 = 0; /*0x4746fb*/
+  v15 = 0; /*0x4746ff*/
+  if ( v3 > 0x20000 ) /*0x474703*/
+    sub_4FCF10(1, "Compressed msg overflow in CL_ParseServerMessage", v9); /*0x47470c*/
+  result = (char *)sub_504C80(&unk_D8E9008, a2[5] - a2[7]); /*0x474727*/
+  v14 = result; /*0x474731*/
+  while ( 1 )
+  {
+    if ( v4 >= (int)&result[v15] ) /*0x47474c*/
+    {
+      v10[0] = 1; /*0x474799*/
+      v6 = -1; /*0x4747a1*/
+      goto LABEL_16; /*0x4747a4*/
+    }
+    if ( v4 < (int)result ) /*0x474750*/
+    {
+      result = v11; /*0x47475e*/
+      v6 = (unsigned __int8)v11[v4]; /*0x474762*/
+    }
+    else
+    {
+      v6 = *(unsigned __int8 *)(v12 - (_DWORD)result + v4); /*0x474758*/
+    }
+    v16 = ++v4; /*0x47476c*/
+    if ( v6 == 7 ) /*0x474770*/
+      break; /*0x474770*/
+LABEL_16:
+    if ( *(int *)(dword_D5C3874 + 12) >= 2 ) /*0x474780*/
+    {
+      if ( off_725B10[v6] ) /*0x474782*/
+        result = (char *)sub_4FC7A0(14, "%3i:%s\n", v4 - 1); /*0x4747b2*/
+      else
+        result = (char *)sub_4FC7A0(14, "%3i:BAD CMD %i\n", v4 - 1); /*0x474797*/
+    }
+    switch ( v6 )
+    {
+      case 0:
+        goto LABEL_28;
+      case 1:
+        result = (char *)sub_473CE0(a1, v10); /*0x474816*/
+        goto LABEL_27; /*0x47481e*/
+      case 4:
+        v7 = sub_504FB0(v10); /*0x4747d7*/
+        result = (char *)sub_505060(); /*0x4747d9*/
+        if ( dword_913D98 < v7 ) /*0x4747e4*/
+        {
+          dword_913D98 = v7; /*0x4747e6*/
+          v8 = (char *)&unk_913DA0 + 1024 * (v7 & 0x7F); /*0x4747f8*/
+          result = strncpy(v8, result, 0x3FFu); /*0x4747ff*/
+          v8[1023] = 0; /*0x474807*/
+        }
+        goto LABEL_27; /*0x47480e*/
+      case 5:
+        result = (char *)sub_474440(a1); /*0x474830*/
+        goto LABEL_27; /*0x474830*/
+      case 6:
+        result = (char *)sub_473710(); /*0x474824*/
+LABEL_27:
+        v4 = v16; /*0x474838*/
+LABEL_28:
+        if ( v10[0] ) /*0x474841*/
+          goto LABEL_33; /*0x474841*/
+        result = v14; /*0x474740*/
+        break; /*0x474740*/
+      default:
+        sub_4FC860(1, "CL_ParseServerMessage: Illegible server message %d\n", v6);
+        result = (char *)a2[7]; /*0x47489d*/
+        a2[5] = result; /*0x4748a3*/
+        goto LABEL_34; /*0x4748a6*/
+    }
+  }
+  if ( *(int *)(dword_D5C3874 + 12) >= 2 ) /*0x474853*/
+    result = (char *)sub_4FC7A0(14, "%3i:%s\n", v4 - 1); /*0x474865*/
+  if ( v10[0] ) /*0x474872*/
+  {
+LABEL_33:
+    a2[5] = a2[7]; /*0x474874*/
+LABEL_34:
+    a2[6] = 0; /*0x47487a*/
+    *a2 = 1; /*0x474881*/
+  }
+  return result; /*0x474888*/
+}
+
+// ---- refs ----
+// 0xd5c3874 dword_D5C3874
+// 0x4fc7a0 sub_4FC7A0
+// 0x6c68e8 aI_1 "%i "
+// 0x6d1a4c asc_6D1A4C "------------------
+"
+// 0x148159c dword_148159C
+// 0x5071c0 sub_5071C0
+// 0xd8e9008 unk_D8E9008
+// 0x4fcf10 sub_4FCF10
+// 0x6d1a60 aCompressedMsgO "Compressed msg overflow in CL_ParseServerMessage"
+// 0x504c80 sub_504C80
+// 0x6d15f0 a3iS "%3i:%s
+"
+// 0x6d1aa4 a3iBadCmdI "%3i:BAD CMD %i
+"
+// 0x725b10 off_725B10
+// 0x473ce0 sub_473CE0
+// 0x504fb0 sub_504FB0
+// 0x505060 sub_505060
+// 0x913d98 dword_913D98
+// 0x913da0 unk_913DA0
+// 0x66f7a0 _strncpy
+// 0x474440 sub_474440
+// 0x473710 sub_473710
+// 0x4fc860 sub_4FC860
+// 0x6d1ab4 aClParseserverm "CL_ParseServerMessage: Illegible server message %d
+"

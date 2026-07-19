@@ -1,0 +1,1311 @@
+[
+ {
+  "i": 0,
+  "name": "commandTime",
+  "offset": 0,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 1,
+  "name": "viewangles[1]",
+  "offset": 268,
+  "bits": -87,
+  "hint": 0
+ },
+ {
+  "i": 2,
+  "name": "viewangles[0]",
+  "offset": 264,
+  "bits": -87,
+  "hint": 0
+ },
+ {
+  "i": 3,
+  "name": "viewangles[2]",
+  "offset": 272,
+  "bits": -87,
+  "hint": 0
+ },
+ {
+  "i": 4,
+  "name": "origin[0]",
+  "offset": 28,
+  "bits": -88,
+  "hint": 3
+ },
+ {
+  "i": 5,
+  "name": "origin[1]",
+  "offset": 32,
+  "bits": -88,
+  "hint": 3
+ },
+ {
+  "i": 6,
+  "name": "bobCycle",
+  "offset": 8,
+  "bits": 8,
+  "hint": 3
+ },
+ {
+  "i": 7,
+  "name": "velocity[1]",
+  "offset": 44,
+  "bits": -88,
+  "hint": 3
+ },
+ {
+  "i": 8,
+  "name": "velocity[0]",
+  "offset": 40,
+  "bits": -88,
+  "hint": 3
+ },
+ {
+  "i": 9,
+  "name": "movementDir",
+  "offset": 172,
+  "bits": -8,
+  "hint": 3
+ },
+ {
+  "i": 10,
+  "name": "eventSequence",
+  "offset": 180,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 11,
+  "name": "legsAnim",
+  "offset": 140,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 12,
+  "name": "origin[2]",
+  "offset": 36,
+  "bits": -88,
+  "hint": 3
+ },
+ {
+  "i": 13,
+  "name": "weaponTime",
+  "offset": 60,
+  "bits": -16,
+  "hint": 0
+ },
+ {
+  "i": 14,
+  "name": "aimSpreadScale",
+  "offset": 1576,
+  "bits": -88,
+  "hint": 0
+ },
+ {
+  "i": 15,
+  "name": "torsoTimer",
+  "offset": 144,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 16,
+  "name": "pm_flags",
+  "offset": 12,
+  "bits": 21,
+  "hint": 0
+ },
+ {
+  "i": 17,
+  "name": "weapAnim",
+  "offset": 1572,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 18,
+  "name": "weaponstate",
+  "offset": 236,
+  "bits": 5,
+  "hint": 0
+ },
+ {
+  "i": 19,
+  "name": "velocity[2]",
+  "offset": 48,
+  "bits": -88,
+  "hint": 3
+ },
+ {
+  "i": 20,
+  "name": "events[0]",
+  "offset": 184,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 21,
+  "name": "events[1]",
+  "offset": 188,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 22,
+  "name": "events[2]",
+  "offset": 192,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 23,
+  "name": "events[3]",
+  "offset": 196,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 24,
+  "name": "eventParms[0]",
+  "offset": 200,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 25,
+  "name": "eventParms[1]",
+  "offset": 204,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 26,
+  "name": "eventParms[2]",
+  "offset": 208,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 27,
+  "name": "eventParms[3]",
+  "offset": 212,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 28,
+  "name": "torsoAnim",
+  "offset": 148,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 29,
+  "name": "holdBreathScale",
+  "offset": 1492,
+  "bits": -88,
+  "hint": 0
+ },
+ {
+  "i": 30,
+  "name": "eFlags",
+  "offset": 176,
+  "bits": -98,
+  "hint": 0
+ },
+ {
+  "i": 31,
+  "name": "viewHeightCurrent",
+  "offset": 280,
+  "bits": -88,
+  "hint": 0
+ },
+ {
+  "i": 32,
+  "name": "fWeaponPosFrac",
+  "offset": 244,
+  "bits": -88,
+  "hint": 0
+ },
+ {
+  "i": 33,
+  "name": "legsTimer",
+  "offset": 136,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 34,
+  "name": "viewHeightTarget",
+  "offset": 276,
+  "bits": -8,
+  "hint": 0
+ },
+ {
+  "i": 35,
+  "name": "sprintState.lastSprintStart",
+  "offset": 1472,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 36,
+  "name": "sprintState.lastSprintEnd",
+  "offset": 1476,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 37,
+  "name": "weapon",
+  "offset": 232,
+  "bits": 7,
+  "hint": 0
+ },
+ {
+  "i": 38,
+  "name": "weaponDelay",
+  "offset": 64,
+  "bits": -16,
+  "hint": 0
+ },
+ {
+  "i": 39,
+  "name": "sprintState.sprintStartMaxLength",
+  "offset": 1480,
+  "bits": 14,
+  "hint": 0
+ },
+ {
+  "i": 40,
+  "name": "weapFlags",
+  "offset": 16,
+  "bits": 9,
+  "hint": 0
+ },
+ {
+  "i": 41,
+  "name": "groundEntityNum",
+  "offset": 112,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 42,
+  "name": "damageTimer",
+  "offset": 160,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 43,
+  "name": "weapons[0]",
+  "offset": 1372,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 44,
+  "name": "weapons[1]",
+  "offset": 1376,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 45,
+  "name": "weaponold[0]",
+  "offset": 1388,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 46,
+  "name": "delta_angles[1]",
+  "offset": 104,
+  "bits": -100,
+  "hint": 0
+ },
+ {
+  "i": 47,
+  "name": "offHandIndex",
+  "offset": 224,
+  "bits": 7,
+  "hint": 0
+ },
+ {
+  "i": 48,
+  "name": "pm_time",
+  "offset": 24,
+  "bits": -16,
+  "hint": 0
+ },
+ {
+  "i": 49,
+  "name": "otherFlags",
+  "offset": 20,
+  "bits": 5,
+  "hint": 0
+ },
+ {
+  "i": 50,
+  "name": "moveSpeedScaleMultiplier",
+  "offset": 1500,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 51,
+  "name": "perks",
+  "offset": 1532,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 52,
+  "name": "killCamEntity",
+  "offset": 2208,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 53,
+  "name": "throwBackGrenadeOwner",
+  "offset": 72,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 54,
+  "name": "actionSlotType[2]",
+  "offset": 1544,
+  "bits": 2,
+  "hint": 0
+ },
+ {
+  "i": 55,
+  "name": "delta_angles[0]",
+  "offset": 100,
+  "bits": -100,
+  "hint": 0
+ },
+ {
+  "i": 56,
+  "name": "speed",
+  "offset": 96,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 57,
+  "name": "viewlocked_entNum",
+  "offset": 1436,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 58,
+  "name": "gravity",
+  "offset": 88,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 59,
+  "name": "actionSlotType[0]",
+  "offset": 1536,
+  "bits": 2,
+  "hint": 0
+ },
+ {
+  "i": 60,
+  "name": "dofNearBlur",
+  "offset": 1608,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 61,
+  "name": "dofFarBlur",
+  "offset": 1612,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 62,
+  "name": "clientNum",
+  "offset": 220,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 63,
+  "name": "damageEvent",
+  "offset": 312,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 64,
+  "name": "viewHeightLerpTarget",
+  "offset": 288,
+  "bits": -8,
+  "hint": 0
+ },
+ {
+  "i": 65,
+  "name": "damageYaw",
+  "offset": 316,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 66,
+  "name": "viewmodelIndex",
+  "offset": 260,
+  "bits": 9,
+  "hint": 0
+ },
+ {
+  "i": 67,
+  "name": "damageDuration",
+  "offset": 164,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 68,
+  "name": "damagePitch",
+  "offset": 320,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 69,
+  "name": "flinchYawAnim",
+  "offset": 168,
+  "bits": 2,
+  "hint": 0
+ },
+ {
+  "i": 70,
+  "name": "weaponShotCount",
+  "offset": 240,
+  "bits": 3,
+  "hint": 0
+ },
+ {
+  "i": 71,
+  "name": "viewHeightLerpDown",
+  "offset": 292,
+  "bits": 1,
+  "hint": 2
+ },
+ {
+  "i": 72,
+  "name": "cursorHint",
+  "offset": 1440,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 73,
+  "name": "cursorHintString",
+  "offset": 1444,
+  "bits": -8,
+  "hint": 0
+ },
+ {
+  "i": 74,
+  "name": "cursorHintEntIndex",
+  "offset": 1448,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 75,
+  "name": "viewHeightLerpTime",
+  "offset": 284,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 76,
+  "name": "offhandSecondary",
+  "offset": 228,
+  "bits": 1,
+  "hint": 2
+ },
+ {
+  "i": 77,
+  "name": "radarEnabled",
+  "offset": 1456,
+  "bits": 1,
+  "hint": 2
+ },
+ {
+  "i": 78,
+  "name": "pm_type",
+  "offset": 4,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 79,
+  "name": "fTorsoPitch",
+  "offset": 1484,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 80,
+  "name": "holdBreathTimer",
+  "offset": 1496,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 81,
+  "name": "actionSlotParam[2]",
+  "offset": 1560,
+  "bits": 7,
+  "hint": 0
+ },
+ {
+  "i": 82,
+  "name": "jumpTime",
+  "offset": 128,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 83,
+  "name": "mantleState.flags",
+  "offset": 1516,
+  "bits": 5,
+  "hint": 0
+ },
+ {
+  "i": 84,
+  "name": "fWaistPitch",
+  "offset": 1488,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 85,
+  "name": "grenadeTimeLeft",
+  "offset": 68,
+  "bits": -16,
+  "hint": 0
+ },
+ {
+  "i": 86,
+  "name": "proneDirection",
+  "offset": 1420,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 87,
+  "name": "mantleState.timer",
+  "offset": 1508,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 88,
+  "name": "damageCount",
+  "offset": 324,
+  "bits": 7,
+  "hint": 0
+ },
+ {
+  "i": 89,
+  "name": "shellshockTime",
+  "offset": 1584,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 90,
+  "name": "shellshockDuration",
+  "offset": 1588,
+  "bits": 16,
+  "hint": 2
+ },
+ {
+  "i": 91,
+  "name": "sprintState.sprintButtonUpRequired",
+  "offset": 1464,
+  "bits": 1,
+  "hint": 2
+ },
+ {
+  "i": 92,
+  "name": "shellshockIndex",
+  "offset": 1580,
+  "bits": 4,
+  "hint": 0
+ },
+ {
+  "i": 93,
+  "name": "proneTorsoPitch",
+  "offset": 1428,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 94,
+  "name": "sprintState.sprintDelay",
+  "offset": 1468,
+  "bits": 1,
+  "hint": 2
+ },
+ {
+  "i": 95,
+  "name": "actionSlotParam[3]",
+  "offset": 1564,
+  "bits": 7,
+  "hint": 0
+ },
+ {
+  "i": 96,
+  "name": "weapons[3]",
+  "offset": 1384,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 97,
+  "name": "actionSlotType[3]",
+  "offset": 1548,
+  "bits": 2,
+  "hint": 0
+ },
+ {
+  "i": 98,
+  "name": "proneDirectionPitch",
+  "offset": 1424,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 99,
+  "name": "jumpOriginZ",
+  "offset": 132,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 100,
+  "name": "mantleState.yaw",
+  "offset": 1504,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 101,
+  "name": "mantleState.transIndex",
+  "offset": 1512,
+  "bits": 4,
+  "hint": 0
+ },
+ {
+  "i": 102,
+  "name": "weaponrechamber[0]",
+  "offset": 1404,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 103,
+  "name": "throwBackGrenadeTimeLeft",
+  "offset": 76,
+  "bits": -16,
+  "hint": 0
+ },
+ {
+  "i": 104,
+  "name": "weaponold[3]",
+  "offset": 1400,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 105,
+  "name": "weaponold[1]",
+  "offset": 1392,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 106,
+  "name": "foliageSoundTime",
+  "offset": 84,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 107,
+  "name": "vLadderVec[0]",
+  "offset": 116,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 108,
+  "name": "viewlocked",
+  "offset": 1432,
+  "bits": 2,
+  "hint": 0
+ },
+ {
+  "i": 109,
+  "name": "deltaTime",
+  "offset": 2204,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 110,
+  "name": "viewAngleClampRange[1]",
+  "offset": 308,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 111,
+  "name": "viewAngleClampBase[1]",
+  "offset": 300,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 112,
+  "name": "viewAngleClampRange[0]",
+  "offset": 304,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 113,
+  "name": "vLadderVec[1]",
+  "offset": 120,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 114,
+  "name": "locationSelectionInfo",
+  "offset": 1460,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 115,
+  "name": "meleeChargeTime",
+  "offset": 1528,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 116,
+  "name": "meleeChargeYaw",
+  "offset": 1520,
+  "bits": -100,
+  "hint": 0
+ },
+ {
+  "i": 117,
+  "name": "meleeChargeDist",
+  "offset": 1524,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 118,
+  "name": "iCompassPlayerInfo",
+  "offset": 1452,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 119,
+  "name": "weapons[2]",
+  "offset": 1380,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 120,
+  "name": "actionSlotType[1]",
+  "offset": 1540,
+  "bits": 2,
+  "hint": 0
+ },
+ {
+  "i": 121,
+  "name": "weaponold[2]",
+  "offset": 1396,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 122,
+  "name": "vLadderVec[2]",
+  "offset": 124,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 123,
+  "name": "weaponRestrictKickTime",
+  "offset": 80,
+  "bits": -16,
+  "hint": 0
+ },
+ {
+  "i": 124,
+  "name": "delta_angles[2]",
+  "offset": 108,
+  "bits": -100,
+  "hint": 0
+ },
+ {
+  "i": 125,
+  "name": "spreadOverride",
+  "offset": 252,
+  "bits": 6,
+  "hint": 0
+ },
+ {
+  "i": 126,
+  "name": "spreadOverrideState",
+  "offset": 256,
+  "bits": 2,
+  "hint": 0
+ },
+ {
+  "i": 127,
+  "name": "actionSlotParam[0]",
+  "offset": 1552,
+  "bits": 7,
+  "hint": 0
+ },
+ {
+  "i": 128,
+  "name": "actionSlotParam[1]",
+  "offset": 1556,
+  "bits": 7,
+  "hint": 0
+ },
+ {
+  "i": 129,
+  "name": "dofNearStart",
+  "offset": 1592,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 130,
+  "name": "dofNearEnd",
+  "offset": 1596,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 131,
+  "name": "dofFarStart",
+  "offset": 1600,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 132,
+  "name": "dofFarEnd",
+  "offset": 1604,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 133,
+  "name": "dofViewmodelStart",
+  "offset": 1616,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 134,
+  "name": "dofViewmodelEnd",
+  "offset": 1620,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 135,
+  "name": "viewAngleClampBase[0]",
+  "offset": 296,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 136,
+  "name": "weaponrechamber[1]",
+  "offset": 1408,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 137,
+  "name": "weaponrechamber[2]",
+  "offset": 1412,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 138,
+  "name": "weaponrechamber[3]",
+  "offset": 1416,
+  "bits": 32,
+  "hint": 0
+ },
+ {
+  "i": 139,
+  "name": "leanf",
+  "offset": 92,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 140,
+  "name": "adsDelayTime",
+  "offset": 248,
+  "bits": 32,
+  "hint": 1
+ },
+ {
+  "i": 141,
+  "name": "origin[0]",
+  "offset": 4,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 142,
+  "name": "origin[1]",
+  "offset": 8,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 143,
+  "name": "origin[2]",
+  "offset": 12,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 144,
+  "name": "icon",
+  "offset": 24,
+  "bits": 12,
+  "hint": 0
+ },
+ {
+  "i": 145,
+  "name": "entNum",
+  "offset": 16,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 146,
+  "name": "teamNum",
+  "offset": 20,
+  "bits": 4,
+  "hint": 0
+ },
+ {
+  "i": 147,
+  "name": "color.rgba",
+  "offset": 36,
+  "bits": -85,
+  "hint": 0
+ },
+ {
+  "i": 148,
+  "name": "fadeStartTime",
+  "offset": 44,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 149,
+  "name": "fromColor.rgba",
+  "offset": 40,
+  "bits": -85,
+  "hint": 0
+ },
+ {
+  "i": 150,
+  "name": "y",
+  "offset": 8,
+  "bits": -91,
+  "hint": 0
+ },
+ {
+  "i": 151,
+  "name": "type",
+  "offset": 0,
+  "bits": 4,
+  "hint": 0
+ },
+ {
+  "i": 152,
+  "name": "materialIndex",
+  "offset": 64,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 153,
+  "name": "height",
+  "offset": 60,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 154,
+  "name": "width",
+  "offset": 56,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 155,
+  "name": "x",
+  "offset": 4,
+  "bits": -92,
+  "hint": 0
+ },
+ {
+  "i": 156,
+  "name": "fadeTime",
+  "offset": 48,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 157,
+  "name": "z",
+  "offset": 12,
+  "bits": -90,
+  "hint": 0
+ },
+ {
+  "i": 158,
+  "name": "value",
+  "offset": 120,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 159,
+  "name": "alignScreen",
+  "offset": 32,
+  "bits": 6,
+  "hint": 0
+ },
+ {
+  "i": 160,
+  "name": "sort",
+  "offset": 128,
+  "bits": 0,
+  "hint": 0
+ },
+ {
+  "i": 161,
+  "name": "alignOrg",
+  "offset": 28,
+  "bits": 4,
+  "hint": 0
+ },
+ {
+  "i": 162,
+  "name": "offscreenMaterialIdx",
+  "offset": 68,
+  "bits": 8,
+  "hint": 0
+ },
+ {
+  "i": 163,
+  "name": "fontScale",
+  "offset": 20,
+  "bits": -86,
+  "hint": 0
+ },
+ {
+  "i": 164,
+  "name": "text",
+  "offset": 124,
+  "bits": 9,
+  "hint": 0
+ },
+ {
+  "i": 165,
+  "name": "font",
+  "offset": 24,
+  "bits": 4,
+  "hint": 0
+ },
+ {
+  "i": 166,
+  "name": "scaleStartTime",
+  "offset": 80,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 167,
+  "name": "scaleTime",
+  "offset": 84,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 168,
+  "name": "fromWidth",
+  "offset": 72,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 169,
+  "name": "fromHeight",
+  "offset": 76,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 170,
+  "name": "targetEntNum",
+  "offset": 16,
+  "bits": 10,
+  "hint": 0
+ },
+ {
+  "i": 171,
+  "name": "glowColor.rgba",
+  "offset": 132,
+  "bits": -85,
+  "hint": 0
+ },
+ {
+  "i": 172,
+  "name": "fxBirthTime",
+  "offset": 136,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 173,
+  "name": "soundID",
+  "offset": 152,
+  "bits": 5,
+  "hint": 0
+ },
+ {
+  "i": 174,
+  "name": "fxLetterTime",
+  "offset": 140,
+  "bits": 12,
+  "hint": 0
+ },
+ {
+  "i": 175,
+  "name": "fxDecayStartTime",
+  "offset": 144,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 176,
+  "name": "fxDecayDuration",
+  "offset": 148,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 177,
+  "name": "flags",
+  "offset": 156,
+  "bits": 3,
+  "hint": 0
+ },
+ {
+  "i": 178,
+  "name": "label",
+  "offset": 52,
+  "bits": 9,
+  "hint": 0
+ },
+ {
+  "i": 179,
+  "name": "time",
+  "offset": 112,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 180,
+  "name": "moveStartTime",
+  "offset": 104,
+  "bits": -97,
+  "hint": 0
+ },
+ {
+  "i": 181,
+  "name": "moveTime",
+  "offset": 108,
+  "bits": 16,
+  "hint": 0
+ },
+ {
+  "i": 182,
+  "name": "fromX",
+  "offset": 88,
+  "bits": -99,
+  "hint": 0
+ },
+ {
+  "i": 183,
+  "name": "fromY",
+  "offset": 92,
+  "bits": -99,
+  "hint": 0
+ },
+ {
+  "i": 184,
+  "name": "fromAlignScreen",
+  "offset": 100,
+  "bits": 6,
+  "hint": 0
+ },
+ {
+  "i": 185,
+  "name": "fromAlignOrg",
+  "offset": 96,
+  "bits": 4,
+  "hint": 0
+ },
+ {
+  "i": 186,
+  "name": "duration",
+  "offset": 116,
+  "bits": 32,
+  "hint": 0
+ }
+]

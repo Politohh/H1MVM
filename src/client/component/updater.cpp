@@ -351,11 +351,9 @@ namespace updater
 
 	bool auto_updates_enabled()
 	{
-#ifdef _DEBUG
+		// Auto-update check removed (inherited annoyance: pings the update server on every launch).
+		// Re-enable by returning cl_auto_update->current.enabled if it's ever wanted again.
 		return false;
-#else
-		return cl_auto_update->current.enabled;
-#endif
 	}
 
 	bool is_update_check_done()

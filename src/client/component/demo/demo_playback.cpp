@@ -11,6 +11,7 @@
 #include "utils/command_line.hpp"
 #include "utils/hook.hpp"
 
+
 using namespace demo_utils;
 
 namespace // demo class
@@ -31,10 +32,25 @@ namespace // demo class
 		[[nodiscard]] bool is_gamestate_applied() const { return gamestate_applied_; }
 		void set_gamestate_applied(bool value) { gamestate_applied_ = value; }
 		[[nodiscard]] std::optional<std::string> peek_mapname();
+		[[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> peek_duration();
 		void bootstrap_map_load();
 		[[nodiscard]] std::optional<std::reference_wrapper<std::filesystem::path>> restart();
 		template <typename Func, typename... Args> auto use_predicted_data(Func func, Args&&... args);
 		template <typename Func, typename... Args> auto handle_fast_forward(Func func, Args&&... args);
+
+		[[nodiscard]] bool is_paused() const { return paused_; }
+		void set_paused(bool value) { paused_ = value; }
+		void toggle_paused() { paused_ = !paused_; }
+
+		// A user scrub/seek (demoforward/demorewind) must still complete while paused, so mark
+		// one in progress; handle_demo_reading then keeps parsing until it settles at the new
+		// spot and re-freezes. seek_ttl_ gives the fast-forward machinery a few frames to apply.
+		void begin_seek() { seeking_ = true; seek_ttl_ = 4; }
+		[[nodiscard]] bool is_seeking() const { return seeking_; }
+		void advance_seek();
+		[[nodiscard]] std::optional<std::int32_t> get_current_time() const;
+		[[nodiscard]] const std::optional<std::pair<std::int32_t, std::int32_t>>& get_time_bounds() const { return time_bounds_; }
+		[[nodiscard]] const std::filesystem::path& get_path() const { return path_; }
 
 		void parse_demo_wrapper();
 		void stop();
@@ -48,10 +64,14 @@ namespace // demo class
 		bool skip_map_preload_{}; // demoinstantplay: reuse current live map, don't start_map
 		bool replay_armed_{};     // becomes true once the client reaches CA_ACTIVE (handshake done)
 		bool gamestate_applied_{}; // becomes true once the recorded gamestate has been applied once
+		bool paused_{};           // freezes cl->serverTime + stops feeding new chunks (see handle_demo_reading)
+		bool seeking_{};          // a scrub/seek is settling (keep parsing even while paused)
+		int seek_ttl_{};          // min frames to let fast_forward_demo apply before a seek can settle
 		std::size_t post_map_header_file_offset_{};
 		std::size_t pred_data_index_{};
 		std::array<predicted_data_t, 256> pred_data_{};
 		std::optional<std::int32_t> rewind_snap_svr_time_;
+		std::optional<std::pair<std::int32_t, std::int32_t>> time_bounds_; // {first_svr_time, last_svr_time}, from gen_footer
 		std::optional<gamestate_t> gs_;
 		std::vector<std::uint8_t> buffer_;
 		std::filesystem::path path_;
@@ -71,6 +91,32 @@ namespace // demo class
 	bool demo_playback_t::is_demo_repeating() const
 	{
 		return repeat_;
+	}
+
+	std::optional<std::int32_t> demo_playback_t::get_current_time() const
+	{
+		if (!is_demo_playing() || !replay_armed_ || !game::mp::cl.get())
+		{
+			return std::nullopt;
+		}
+
+		return game::mp::cl->snap.serverTime;
+	}
+
+	void demo_playback_t::advance_seek()
+	{
+		// give the fast-forward machinery a few frames to bump serverTimeDelta + have it reflected
+		// in serverTime, and (for a rewind) to consume its target, before we call the seek settled.
+		if (seek_ttl_ > 0)
+		{
+			--seek_ttl_;
+			return;
+		}
+		const auto* cl = game::mp::cl.get();
+		if (cl && !rewind_snap_svr_time_.has_value() && cl->snap.serverTime >= cl->serverTime)
+		{
+			seeking_ = false; // freshly-read snapshots caught up to the sought clock -> re-freeze
+		}
 	}
 
 	const std::optional<gamestate_t>& demo_playback_t::get_gamestate() const
@@ -136,9 +182,16 @@ namespace // demo class
 
 		// (re)set data
 		repeat_ = repeat;
+		paused_ = false;
 		gs_.reset();
 		path_ = std::move(path);
 		get_persistent_data() = {};
+
+		// cache the demo's [first_svr_time, last_svr_time] (from its gen_footer chunk, written
+		// when the original recording stopped) once, up front, so a timeline UI can show total
+		// duration without re-scanning the file every frame. Absent on a demo that never got a
+		// clean gen_footer (e.g. the recorder crashed mid-write); callers must handle nullopt.
+		time_bounds_ = peek_duration();
 
 		if (auto* demo_timescale = game::Dvar_FindVar("demotimescale"); demo_timescale)
 		{
@@ -213,6 +266,69 @@ namespace // demo class
 		return result;
 	}
 
+	// Scan the demo file for its gen_footer chunk ({first_svr_time, last_svr_time}, written once
+	// when the original recording stopped) so a timeline UI can show total duration up front,
+	// without decoding/decompressing any network_data payloads. Restores the file position
+	// afterward (safe to call at any time, not just before playback starts).
+	std::optional<std::pair<std::int32_t, std::int32_t>> demo_playback_t::peek_duration()
+	{
+		if (!file_.good() || !file_.is_open())
+		{
+			return std::nullopt;
+		}
+
+		const auto restore_pos = file_.tellg();
+		file_.clear();
+		file_.seekg(0, std::ios::beg);
+
+		std::optional<std::pair<std::int32_t, std::int32_t>> result;
+
+		for (int guard = 0; guard < 1'000'000 && !result; ++guard)
+		{
+			std::uint8_t id_byte = 0;
+			file_.read(reinterpret_cast<char*>(&id_byte), 1);
+			if (!file_.good())
+			{
+				break;
+			}
+
+			const bool one_byte = (id_byte & 0x80) != 0; // one_byte_flag
+			const int id = id_byte & 0x1F;               // strip flag bits (0xE0)
+
+			if (id == static_cast<int>(demo_data_id::eof))
+			{
+				break;
+			}
+
+			std::size_t size = 0;
+			file_.read(reinterpret_cast<char*>(&size), one_byte ? 1 : 4);
+			if (!file_.good() || size > MAX_SIZE)
+			{
+				break;
+			}
+
+			if (id == static_cast<int>(demo_data_id::gen_footer) && size >= 8)
+			{
+				std::int32_t first_time = 0;
+				std::int32_t last_time = 0;
+				file_.read(reinterpret_cast<char*>(&first_time), 4);
+				file_.read(reinterpret_cast<char*>(&last_time), 4);
+				if (file_.good())
+				{
+					result = std::make_pair(first_time, last_time);
+				}
+				break;
+			}
+
+			file_.seekg(static_cast<std::streamoff>(size), std::ios::cur);
+		}
+
+		file_.clear();
+		file_.seekg(restore_pos);
+
+		return result;
+	}
+
 	// demoplay bootstrap: at the menu CL_SetCGameTime is dead so parse_demo never runs
 	// process_map_header. Drive the map load here from a clean (disconnected) state so the
 	// demo replays into a FRESH session (its snapshot numbers exceed the empty session's,
@@ -264,10 +380,14 @@ namespace // demo class
 		skip_map_preload_ = {};
 		replay_armed_ = {};
 		gamestate_applied_ = {};
+		paused_ = {};
+		seeking_ = {};
+		seek_ttl_ = {};
 		post_map_header_file_offset_ = {};
 		pred_data_index_ = {};
 		pred_data_.fill({});
 		rewind_snap_svr_time_ = {};
+		time_bounds_.reset();
 		gs_.reset();
 		buffer_.clear();
 		file_.clear();
@@ -296,6 +416,24 @@ namespace // demo class
 		game::mp::cgs->serverCommandSequence = {};
 		get_persistent_data() = {};
 
+		// NOTE(h1): continue_demo_reading()'s gate is `cl->snap.serverTime <= cl->serverTime`.
+		// Neither side of that was ever reset here, so whatever cl->serverTime happened to be
+		// clamped to at the moment of restart (now that fast_forward_demo actually writes it --
+		// e.g. rewind_demo's own "workaround" fast_forward_demo(1000) call right before this
+		// runs) can permanently outrun cl->snap.serverTime, which itself stays at its stale
+		// pre-restart value since nothing feeds a fresh snapshot to update it. Once that happens
+		// the gate never reopens -- parse_demo's while-loop body never executes again (it exits
+		// immediately every single frame), and the demo is stuck at the restart point forever;
+		// pausing/unpausing doesn't help because the same permanently-closed gate applies either
+		// way. Reset both sides to a consistent, ungated state (matching what a truly fresh
+		// bootstrap session already has for free) so feeding resumes immediately.
+		if (auto* cl = game::mp::cl.get(); cl)
+		{
+			cl->serverTime = 0;
+			cl->snap.serverTime = 0;
+			cl->snap.valid = 0;
+		}
+
 		if (auto* demo_timescale = game::Dvar_FindVar("demotimescale"); demo_timescale)
 		{
 			if (!retain_timescale_)
@@ -321,11 +459,19 @@ namespace // hooks
 	utils::hook::detour CG_DrawActiveFrame_hook;
 	utils::hook::detour CL_GetPredictedPlayerInformationForServerTime_hook;
 	utils::hook::detour CL_GetPredictedVehicleForServerTime_hook;
+	utils::hook::detour CG_CalcViewValues_hook;
+
+	// Render time captured by draw_active_frame_stub, consumed by cg_calc_view_values_stub (which
+	// gets no time argument of its own). draw_active_frame runs immediately before CG_CalcViewValues.
+	int g_demo_view_time = 0;
+
 	utils::hook::detour CL_SetCGameTime_hook;
 	utils::hook::detour CL_WritePacket_hook;
 	utils::hook::detour GetRemoteEyeValues_hook;
 	utils::hook::detour LUI_IntermissionBegan_hook;
 	utils::hook::detour VehicleCam_UpdatePlayerControlCam_hook;
+	utils::hook::detour CG_ExecuteNewServerCommands_hook;
+
 
 	game::dvar_t* demo_vision;
 
@@ -474,11 +620,15 @@ namespace // hooks
 
 		// sometimes the hud isn't updated after a weapon change; force update the weapon name and ammo (clip) when changing weapons
 		// various other Call of Duty games are also affected by this bug
-		if (game::mp::cg->weaponSelect.data != static_cast<std::size_t>(game::mp::cg->ps.weapon))
+		// NOTE(h1): held weapon is ps+0x394 (game::cg_held_weapon), NOT the old iw6 ps.weapon@+0x144
+		// which always reads 0 on MWR.
+		if (const int held = game::cg_held_weapon();
+			game::mp::cg->weaponSelect.data != static_cast<std::size_t>(held))
 		{
-			game::CG_SelectWeapon(0, game::mp::cg->ps.weapon, 0);
+			game::CG_SelectWeapon(0, static_cast<unsigned int>(held), 0);
 		}
 	}
+
 
 	void handle_demo_reading(const std::int32_t client_num)
 	{
@@ -553,12 +703,42 @@ namespace // hooks
 			if (game::CL_IsCgameInitialized())
 			{
 				handle_vision(); // inert unless the demovision dvar is modified
-				// handle_demo_patches(); // TODO(h1): cosmetic (writes cg->demoType/weaponSelect
-				// at UNVERIFIED cg offsets). Disabled so the core network replay can be tested
-				// without cg-write corruption. Confirmed so far: cg->weaponSelect @ +0xE99F8.
 			}
 
-			demo.parse_demo_wrapper();
+			const bool seeking = demo.is_seeking();
+
+			if (demo.is_paused() && !seeking)
+			{
+				// Freeze playback: don't feed any further chunks, and pin cl->serverTime to the
+				// latest applied snapshot each frame. Pinning serverTime alone is NOT enough:
+				// CL_SetCGameTime derives serverTime = max(serverTime, serverTimeDelta +
+				// com_frameTime), and com_frameTime keeps advancing in real time while paused. If
+				// we only pinned serverTime, then on UNPAUSE the max() clamp would let serverTime
+				// jump forward by the entire paused wall-clock duration -- a burst catch-up
+				// through everything that "would have played". To prevent that, fold this frame's
+				// real-time advance into serverTimeDelta: subtracting (serverTime - snap.serverTime)
+				// after CL_SetCGameTime keeps serverTimeDelta == (snap.serverTime - com_frameTime),
+				// so the clock stays frozen now AND resumes seamlessly (advancing by only ~one
+				// frame, not the whole paused duration) the instant we unpause.
+				if (auto* cl = game::mp::cl.get(); cl)
+				{
+					cl->serverTimeDelta -= (cl->serverTime - cl->snap.serverTime);
+					cl->serverTime = cl->snap.serverTime;
+				}
+			}
+			else
+			{
+				// Playing, OR paused-but-seeking: feed chunks so the clock/seek can advance. A
+				// seek requested while paused MUST run here -- the freeze pin above would otherwise
+				// undo fast_forward_demo's serverTimeDelta bump, so the scrub could never land.
+				demo.parse_demo_wrapper();
+			}
+
+			// let an in-flight scrub settle, then it re-freezes at the new spot (if still paused)
+			if (seeking)
+			{
+				demo.advance_seek();
+			}
 		}
 	}
 
@@ -576,10 +756,17 @@ namespace // hooks
 
 	bool get_predicted_player_data(const game::mp::clientActive_t& cl, std::int32_t ps_time, game::mp::playerState_t& ps)
 	{
+
 		if (!demo.is_demo_playing() || !demo.is_replay_armed())
 		{
 			return CL_GetPredictedPlayerInformationForServerTime_hook.invoke<bool>(&cl, ps_time, &ps);
 		}
+
+		// EMPTY-GUN FIX: populate the FULL playerstate from the real prediction first, so weapon/
+		// health/flags/stance come from the fed snapshot ps. Without this, ps.weapon stays 0 and the
+		// viewmodel setup (sub_128360 -> held weapon @ps+0x394) draws NOTHING ("no viewmodel set").
+		// override ONLY the view-driving fields (origin/velocity/delta_angles/bobCycle) below.
+		CL_GetPredictedPlayerInformationForServerTime_hook.invoke<bool>(&cl, ps_time, &ps);
 
 		bool found = false;
 		demo.use_predicted_data([&ps, ps_time, &found](const std::array<predicted_data_t, 256>& pred_data, std::size_t pred_data_index)
@@ -610,26 +797,49 @@ namespace // hooks
 
 		static_cast<void>(found); // false only if no predicted_data chunk is near ps_time (old demos)
 
+
 		// must return true otherwise branch is taken that undoes the work of this function
 		return true;
 	}
+
+
 
 	std::int32_t draw_active_frame_stub(const std::int32_t local_client_num, const std::int32_t server_time,
 		std::int32_t demo_type, const std::int32_t cubemap_shot, const std::int32_t cubemap_size,
 		const std::int32_t render_screen, const unsigned int a7)
 	{
+
 		// force the engine's own DEMO_TYPE_CLIENT path (its 3rd param, confirmed by h1-mod's own
 		// symbols.hpp signature, matching the AW-family s1-mod demo mod's identical override) --
 		// this is what actually suppresses local mouse/keyboard input (movement, fire, ADS) and
 		// avoids frame-interpolation issues, entirely inside the engine's own logic. Replaces the
 		// old (unverified-offset, never-enabled) approach of writing cg->demoType by hand.
+		std::int32_t frame_time = server_time;
+
 		if (demo.is_demo_playing() && demo.is_replay_armed())
 		{
 			demo_type = game::mp::DEMO_TYPE_CLIENT;
+
+			// Freeze the client-game clock while paused so animations/FX/interpolation stop too
+			// (pinning cl->serverTime isn't enough -- CG_DrawActiveFrame's server_time arg is what
+			// drives cg->time, and it can still carry the frame's real-time advance). Don't freeze
+			// during a scrub/seek: the render must follow the demo to the new spot.
+			if (demo.is_paused() && !demo.is_seeking())
+			{
+				if (auto* cl = game::mp::cl.get(); cl)
+				{
+					frame_time = cl->snap.serverTime;
+				}
+			}
+
+			// Hand the render time to cg_calc_view_values_stub, which is where the angles actually
+			// get applied (see the note there -- writing them HERE is too early, CG_DrawActiveFrame
+			// re-predicts cg->ps from the snapshot and wipes them before CG_CalcViewValues reads).
+			g_demo_view_time = frame_time;
 		}
 
 		return CG_DrawActiveFrame_hook.invoke<std::int32_t>(
-			local_client_num, server_time, demo_type, cubemap_shot, cubemap_size, render_screen, a7);
+			local_client_num, frame_time, demo_type, cubemap_shot, cubemap_size, render_screen, a7);
 	}
 
 	bool get_predicted_vehicle_data(const game::mp::clientActive_t& cl, std::int32_t ps_time, game::PlayerVehicleState& ps_vehicle)
@@ -675,15 +885,48 @@ namespace // hooks
 		return false;
 	}
 
+	// The team / class(loadout) / spectator selection menus are driven by omnvars the LUI
+	// watches. On a demo rewind the CA_ACTIVE->CA_PRIMED->CA_ACTIVE "respawn" re-raises them
+	// (the game treats it as a fresh spawn), which is why the change-class menu keeps popping.
+	// They aren't opened via LUI_OpenMenu (confirmed by logging that hook), so we can't
+	// name-match them there -- kill them at the omnvar source instead. Resolve indices by name
+	// once (they sit right after ui_options_menu but don't hardcode) and cache them.
+	int g_omnvar_loadout = -2, g_omnvar_team = -2, g_omnvar_spectator = -2; // -2 unresolved, -1 missing
+
+	int resolve_omnvar_index(const char* name)
+	{
+		for (int i = 0; i <= 194; ++i) // 194 (ui_alien_show_eog_score) is a known-valid upper bound
+		{
+			const char* n = *reinterpret_cast<const char* const*>(game::Omnvar_GetDef(i));
+			if (n && std::string_view(n) == name)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	void control_ui_element(const std::int32_t client_num, const game::mp::snapshot_t& old_snap, game::mp::snapshot_t& new_snap)
 	{
 		// it appeared easier to prevent these menus from being shown instead of closing or hiding them
 
 		if (demo.is_demo_playing())
 		{
-			// skip team selection menu (and loadout selection menu)
+			// skip the options / pause menu
 			assert(std::string_view(*reinterpret_cast<const char**>(game::Omnvar_GetDef(103))) == "ui_options_menu");
 			new_snap.omnvars[103] = {};
+
+			// skip the team / class(loadout) / spectator selection menus -- the ones that pop on
+			// rewind because the reconnect looks like a fresh spawn.
+			if (g_omnvar_loadout == -2)
+			{
+				g_omnvar_loadout = resolve_omnvar_index("ui_loadout_selected");
+				g_omnvar_team = resolve_omnvar_index("ui_team_selected");
+				g_omnvar_spectator = resolve_omnvar_index("ui_spectator_selected");
+			}
+			if (g_omnvar_loadout >= 0) new_snap.omnvars[g_omnvar_loadout] = {};
+			if (g_omnvar_team >= 0) new_snap.omnvars[g_omnvar_team] = {};
+			if (g_omnvar_spectator >= 0) new_snap.omnvars[g_omnvar_spectator] = {};
 
 			if (demo.is_demo_repeating())
 			{
@@ -712,13 +955,34 @@ namespace // hooks
 				game::mp::cs_data_count = gs->dataCount; // the REAL, separately-addressed cursor
 				game::mp::clc->serverCommandSequence = gs->svr_cmd_seq;
 				game::mp::clc->lastExecutedServerCommand = gs->svr_cmd_seq;
-				game::mp::cgs->serverCommandSequence = gs->svr_cmd_seq;
+				game::mp::cgs->serverCommandSequence = gs->svr_cmd_seq; // (h1-mod stub; kept for our reads)
+				// The stub cgs above does NOT reach the game -- record the baseline so playback keeps
+				// the REAL cgs->serverCommandSequence seeded to it each feed (fixes mid-match demos'
+				// "Lost reliable commands"; see process_server_commands / CG_GetServerCommandsState).
+				note_command_baseline(gs->svr_cmd_seq);
 				demo.set_gamestate_applied(true);
 			}
 		}
 
 		// call MSG_ReadLong that this hook replaces
 		return game::MSG_ReadLong(&msg);
+	}
+
+	// Clamp the reliable-command walker's target to what clc has actually received, so a loopback
+	// GSC snapshot referencing a command the demo's (reset-to-baseline) clc never reaches can't
+	// Com_Error EXE_ERR_NOT_RECEIVED. Only acts during playback; a no-op for our own explicit call
+	// (which already passes clc->serverCommandSequence) and for normal live play.
+	void exec_server_commands_clamped(int local_client_num, int latest_sequence)
+	{
+		if (demo.is_demo_playing())
+		{
+			const int clc_seq = game::mp::clc->serverCommandSequence;
+			if (latest_sequence > clc_seq)
+			{
+				latest_sequence = clc_seq;
+			}
+		}
+		CG_ExecuteNewServerCommands_hook.invoke<void>(local_client_num, latest_sequence);
 	}
 
 	void ignore_mouse_input_killstreak_reward_1(const std::int32_t client_num, game::mp::cg_t& cg, game::vec3_t& out_view_origin, game::vec3_t& out_view_angles)
@@ -883,7 +1147,13 @@ namespace // command execution
 
 		if constexpr (!force_playback)
 		{
-			if (!demo.is_demo_playing() && game::CL_IsCgameInitialized())
+			// NOTE(h1): MWR keeps the "virtual lobby" hub world loaded (CL_IsCgameInitialized()
+			// stays true) even after backing all the way out to the main menu -- gating on that
+			// alone made demoplay permanently unusable outside of an actual match. The virtual
+			// lobby isn't a real match/server (see game::VirtualLobby_Loaded(), the same check
+			// used throughout h1-mod to tell the hub apart from a real connection), so only block
+			// when genuinely still connected to a match.
+			if (!demo.is_demo_playing() && game::CL_IsCgameInitialized() && !game::VirtualLobby_Loaded())
 			{
 				console::warn("could not play demo; please disconnect first\n");
 				return false;
@@ -957,7 +1227,20 @@ namespace // command execution
 		if (const auto path = demo.restart(); path)
 		{
 			console::error("could not play demo %s\n", path->get().string().c_str());
+			return;
 		}
+
+		// NOTE(h1): restart() reopens the file with skip_map_preload_ cleared (stop() resets
+		// it), so parse_demo will naturally call process_map_header -> party::start_map when
+		// it reaches that chunk. But we're still connected (connstate >= CA_PRIMED) from the
+		// demo we just replaced, so the very next handle_demo_reading frame re-arms replay
+		// BEFORE parse_demo has a chance to run start_map -- then the moment start_map's
+		// disconnect/reconnect drops connstate to CA_DISCONNECTED, the (already-armed)
+		// disconnect guard stops the demo mid-reconnect, leaving the client stuck on the
+		// loading screen forever with nothing left to drive it. Explicitly bootstrap the map
+		// load here (same as demoplay) so skip_map_preload_ is set and start_map runs BEFORE
+		// any frame gets a chance to arm.
+		demo.bootstrap_map_load();
 	}
 
 	void execute_playback_rewind_command(const command::params& params)
@@ -977,6 +1260,7 @@ namespace // command execution
 				return;
 			}
 
+			demo.begin_seek(); // so it completes even if the demo is paused
 			if (!demo.rewind_demo(msec))
 			{
 				console::error("demo must be playing to rewind\n");
@@ -1005,6 +1289,7 @@ namespace // command execution
 
 		if (demo.is_demo_playing())
 		{
+			demo.begin_seek(); // so it completes even if the demo is paused
 			fast_forward_demo(static_cast<std::uint32_t>(msec));
 		}
 		else
@@ -1039,6 +1324,53 @@ namespace demo_playback
 	void stopplay()
 	{
 		demo.stop();
+	}
+
+	bool paused()
+	{
+		return demo.is_paused();
+	}
+
+	void toggle_pause()
+	{
+		demo.toggle_paused();
+	}
+
+	std::optional<std::int32_t> current_time()
+	{
+		return demo.get_current_time();
+	}
+
+	std::optional<std::pair<std::int32_t, std::int32_t>> time_bounds()
+	{
+		return demo.get_time_bounds();
+	}
+
+	const std::filesystem::path& current_path()
+	{
+		return demo.get_path();
+	}
+
+	bool handle_key_event(const int key, const int down)
+	{
+		// Space (K_SPACE) normally binds to +gostand; harmless but pointless to also forward
+		// while a demo plays (local input is already suppressed via CG_DrawActiveFrame's
+		// demoType override), so swallow it here instead and use it to toggle pause.
+		if (key == game::K_SPACE && down && demo.is_demo_playing() && demo.is_replay_armed())
+		{
+			// ...but only when focus is on gameplay. If the console / chat / a menu owns the
+			// keyboard (keyCatchers != 0) the user is typing -- let the space through so it types
+			// a space instead of pausing the demo.
+			if (*game::keyCatchers != 0)
+			{
+				return false;
+			}
+
+			demo.toggle_paused();
+			return true;
+		}
+
+		return false;
 	}
 
 	class component final : public component_interface
@@ -1079,6 +1411,22 @@ namespace demo_playback
 			// suppress team/loadout menus during playback (only acts when a demo is playing)
 			CG_UpdateOmnvars_hook.create(game::CG_UpdateOmnvars, control_ui_element);
 
+			// Never let the reliable-command walker request a command the client hasn't received.
+			// During playback the loopback server runs the map's GSC (custom_weapons/classes ->
+			// setConfigstring reliable commands), and its per-snapshot serverCommandSequence can sit
+			// ABOVE the demo's own clc (which is reset to the recorded baseline). Walking up to that
+			// target hits Com_Error EXE_ERR_NOT_RECEIVED (server shutdown mid-load) -- only bites
+			// low-baseline (local) demos, since a high baseline already sits above those commands.
+			CG_ExecuteNewServerCommands_hook.create(game::CG_ExecuteNewServerCommands, exec_server_commands_clamped);
+
+
+
+			// NOTE: do NOT hook CG_CalcViewValues (0x13DF80). Tried it to apply the demo view angles
+			// after CG_DrawActiveFrame's internal re-prediction -- it HUNG the game at startup
+			// (process spinning, Responding=False, 234s CPU before it even reached the main menu).
+			// It's a hot render-path function; we now write the SNAPSHOT's delta_angles instead and
+			// let the engine's own prediction carry them into cg->ps (see draw_active_frame_stub).
+
 			// allow user to override visual settings
 			// TODO(h1): re-enable with the h1 CG_VisionSetStartLerp address (iw6 0x1402A3200 is INVALID on h1).
 			// CG_VisionSetStartLerp_To_hook.create(<h1 addr>, handle_vision_override);
@@ -1107,6 +1455,7 @@ namespace demo_playback
 #endif
 
 			// add console command support to play demos
+
 			command::add("demoplay", execute_playback_command<false>);
 
 			// add experimental command console support to play demos,
@@ -1121,6 +1470,18 @@ namespace demo_playback
 
 			// fast forward demo by N msec
 			command::add("demoforward", execute_playback_fast_forward_command);
+
+			// pause/unpause demo playback (also bound to Space, see input.cpp)
+			command::add("demopause", []
+			{
+				if (!demo.is_demo_playing())
+				{
+					console::error("demo must be playing to pause\n");
+					return;
+				}
+
+				demo.toggle_paused();
+			});
 
 			// add command line support to play demos; this makes it possible to double click on a demo file to play it
 			const auto& args = utils::command_line::get_args();

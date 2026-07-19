@@ -1,0 +1,369 @@
+_DWORD *__cdecl sub_5340B0(int ArgList)
+{
+  int v1; // ebp
+  _DWORD *result; // eax
+  int v3; // edx
+  int v4; // ecx
+  int v5; // ebp
+  char *v6; // ebx
+  char *v7; // esi
+  int v8; // ebx
+  _DWORD *v9; // edx
+  int v10; // ecx
+  int v11; // esi
+  _DWORD *v12; // ebp
+  int v13; // ecx
+  char *v14; // edi
+  bool v15; // cc
+  int v16; // ebx
+  int v17; // ecx
+  int v18; // esi
+  bool v19; // zf
+  int v20; // eax
+  int v21; // ebx
+  _BYTE *v22; // ebx
+  int *v23; // esi
+  int v24; // ecx
+  int v25; // eax
+  int v26; // eax
+  int v27; // ecx
+  int v28; // eax
+  int v29; // ebx
+  char *v30; // esi
+  int v31; // ecx
+  int v32; // eax
+  int i; // esi
+  int v34; // eax
+  int v35; // ecx
+  int v36; // ecx
+  int v37; // edi
+  int v38; // ebx
+  char *v39; // esi
+  int v40; // ecx
+  int v41; // eax
+  int v42; // ecx
+  int v43; // ecx
+  int v44; // esi
+  int v45; // eax
+  char *v46; // [esp-8h] [ebp-120h]
+  char v47; // [esp+0h] [ebp-118h]
+  int v48; // [esp+14h] [ebp-104h]
+  _DWORD v49[2]; // [esp+18h] [ebp-100h] BYREF
+  char *v50; // [esp+20h] [ebp-F8h]
+  void *v51; // [esp+24h] [ebp-F4h]
+  char *v52; // [esp+28h] [ebp-F0h]
+  char *v53; // [esp+2Ch] [ebp-ECh]
+  int v54; // [esp+30h] [ebp-E8h]
+  int v55; // [esp+34h] [ebp-E4h]
+  int v56; // [esp+38h] [ebp-E0h]
+  int v57; // [esp+3Ch] [ebp-DCh]
+  int v58; // [esp+40h] [ebp-D8h]
+  int v59; // [esp+44h] [ebp-D4h]
+  _BYTE Src[104]; // [esp+48h] [ebp-D0h] BYREF
+  _BYTE v61[104]; // [esp+B0h] [ebp-68h] BYREF
+
+  v1 = dword_7A78120[2 * (ArgList % 1200)]; /*0x5340e2*/
+  if ( v1 < dword_9A7A6A0 - 0x2000000 ) /*0x5340f8*/
+    return 0; /*0x5340f8*/
+  v3 = dword_9A7A6AC - 512; /*0x53410d*/
+  if ( dword_9A7A6AC - 512 < 0 ) /*0x534115*/
+    v3 = 0; /*0x534117*/
+  v4 = dword_9A7A6AC - 1; /*0x534119*/
+  if ( dword_9A7A6AC - 1 < v3 ) /*0x53411e*/
+    goto LABEL_11; /*0x53411e*/
+  while ( 1 ) /*0x534140*/
+  {
+    result = (_DWORD *)(28 * (v4 % 512) + 25377536); /*0x534140*/
+    if ( dword_1833B00[7 * (v4 % 512)] == ArgList ) /*0x534147*/
+      break; /*0x534147*/
+    if ( --v4 < v3 ) /*0x53414e*/
+      goto LABEL_11; /*0x53414e*/
+  }
+  v4 = dword_9A7A6A4 - 0x4000; /*0x534158*/
+  if ( result[3] < dword_9A7A6A4 - 0x4000 || result[5] < dword_9A7A6A8 - 4096 )
+  {
+LABEL_11:
+    v5 = v1 % 0x2000000; /*0x534178*/
+    v6 = (char *)dword_7A78124[2 * (ArgList % 1200)]; /*0x534188*/
+    v7 = (char *)&unk_2000000 - v5; /*0x534190*/
+    if ( (int)v6 > (int)((char *)&unk_2000000 - v5) ) /*0x534194*/
+    {
+      v8 = v6 - v7; /*0x5341cc*/
+      if ( !dword_148159C ) /*0x5341d5*/
+      {
+        dword_148159C = 1; /*0x5341d7*/
+        sub_5071C0(); /*0x5341e1*/
+      }
+      v4 = (int)&unk_7A7A6A0 + v5; /*0x5341e6*/
+      v50 = (char *)&unk_7A7A6A0 + v5; /*0x5341ef*/
+      v52 = &v7[v8]; /*0x5341f3*/
+      v53 = (char *)&unk_2000000 - v5; /*0x5341f7*/
+      v51 = &unk_7A7A6A0; /*0x5341fb*/
+      v54 = v8; /*0x534203*/
+    }
+    else
+    {
+      if ( !dword_148159C ) /*0x53419d*/
+      {
+        dword_148159C = 1; /*0x53419f*/
+        sub_5071C0(); /*0x5341a9*/
+      }
+      v50 = (char *)&unk_7A7A6A0 + v5; /*0x5341b4*/
+      v52 = v6; /*0x5341ba*/
+      v53 = v6; /*0x5341be*/
+      v51 = 0; /*0x5341c2*/
+      v54 = 0; /*0x5341c6*/
+    }
+    v49[1] = 1; /*0x53420d*/
+    v49[0] = 0; /*0x534215*/
+    v55 = 0; /*0x534219*/
+    v56 = 0; /*0x53421d*/
+    if ( sub_504BC0(v4, v49) )
+    {
+      v12 = (_DWORD *)(28 * (dword_9A7A6AC % 512) + 25377536); /*0x5346de*/
+      *v12 = ArgList; /*0x5346e5*/
+      v12[2] = 0; /*0x5346e8*/
+      v12[3] = dword_9A7A6A4; /*0x5346f1*/
+      v12[4] = 0; /*0x5346f4*/
+      v12[5] = dword_9A7A6A8; /*0x534700*/
+      v12[6] = 0; /*0x534703*/
+      v12[1] = sub_504FB0(v49); /*0x53470f*/
+      v57 = -1; /*0x534712*/
+      if ( sub_504BC0(v35, v49) )
+      {
+        do
+        {
+          if ( sub_504BC0(v36, v49) )
+          {
+            if ( *(_BYTE *)(dword_14BFF2C + 12) )
+              sub_4FC7A0(16, "Entity num: 1 bit (inc)\n", v47);
+            v37 = v57 + 1; /*0x534753*/
+          }
+          else
+          {
+            if ( *(_BYTE *)(dword_14BFF2C + 12) )
+              sub_4FC7A0(16, "Entity num: %i bits (full)\n", 8);
+            v37 = sub_504B30(v49, 6); /*0x534783*/
+          }
+          v19 = *(_BYTE *)(dword_14BFF2C + 12) == 0; /*0x53478a*/
+          v57 = v37; /*0x53478e*/
+          if ( !v19 ) /*0x534792*/
+            sub_4FC7A0(16, "Read entity num %i\n", v37); /*0x53479c*/
+          if ( v49[0] ) /*0x5347a9*/
+            sub_4FCF10(1, (char *)&byte_6E7090, v47); /*0x5347b2*/
+          v38 = v12[1]; /*0x5347d0*/
+          v39 = (char *)&unk_9A7A6B0 + 12236 * (dword_9A7A6A8 % 4096); /*0x5347e2*/
+          memset(Src, 0, 0x64u); /*0x5347e8*/
+          sub_506550(v38, Src, v39 + 4, 24, (int)&off_6B9EE0, 24); /*0x534809*/
+          v41 = sub_504BC0(v40, v49); /*0x534815*/
+          *(_DWORD *)v39 = v41; /*0x53481c*/
+          if ( v41 ) /*0x53481e*/
+            sub_5069B0(v12[1], 0, v39 + 104, 0); /*0x53482e*/
+          if ( ++dword_9A7A6A8 >= 2147483646 ) /*0x534848*/
+            sub_4FCF10(0, (char *)&byte_6E70B8, v47); /*0x534851*/
+          ++v12[4]; /*0x534859*/
+        }
+        while ( sub_504BC0(v42, v49) );
+      }
+      v57 = -1; /*0x53486e*/
+      while ( 1 )
+      {
+        if ( sub_504BC0(v36, v49) )
+        {
+          if ( *(_BYTE *)(dword_14BFF2C + 12) )
+            sub_4FC7A0(16, "Entity num: 1 bit (inc)\n", v47);
+          v44 = v57 + 1; /*0x5348ac*/
+        }
+        else if ( sub_504BC0(v43, v49) )
+        {
+          if ( *(_BYTE *)(dword_14BFF2C + 12) )
+            sub_4FC7A0(16, "Entity num: %i bits (full)\n", 12);
+          v44 = sub_504B30(v49, 10); /*0x53491a*/
+        }
+        else
+        {
+          if ( *(_BYTE *)(dword_14BFF2C + 12) )
+            sub_4FC7A0(16, "Entity num: %i bits (delta)\n", 6);
+          v45 = sub_504B30(v49, 4); /*0x5348df*/
+          v44 = v45 + v57; /*0x5348eb*/
+        }
+        v19 = *(_BYTE *)(dword_14BFF2C + 12) == 0; /*0x534922*/
+        v57 = v44; /*0x534926*/
+        if ( !v19 ) /*0x53492a*/
+          sub_4FC7A0(16, "Read entity num %i\n", v44); /*0x534934*/
+        if ( v44 == 1023 ) /*0x534942*/
+          break; /*0x534942*/
+        if ( v49[0] ) /*0x53494d*/
+          sub_4FCF10(1, (char *)&byte_6E7090, v47); /*0x534955*/
+        sub_506550( /*0x53499e*/
+          v12[1],
+          (char *)&unk_17D5964 + 376 * v44,
+          (char *)&unk_1837300 + 280 * (dword_9A7A6A4 % 0x4000),
+          69,
+          (int)&off_6B9A90,
+          69);
+        if ( ++dword_9A7A6A4 >= 2147483646 ) /*0x5349b7*/
+          sub_4FCF10(0, (char *)&byte_6E70E0, v47); /*0x5349c0*/
+        ++v12[2]; /*0x5349c8*/
+      }
+      v34 = dword_9A7A6AC + 1; /*0x5349d5*/
+    }
+    else
+    {
+      v10 = sub_504FB0(v9); /*0x534235*/
+      if ( v10 < dword_7A7811C - 1200 ) /*0x534243*/
+        return 0; /*0x534243*/
+      if ( dword_7A78120[2 * (v10 % 1200)] < dword_9A7A6A0 - 0x2000000 ) /*0x534275*/
+        return 0; /*0x534275*/
+      v11 = sub_5340B0(v10); /*0x534281*/
+      v59 = v11; /*0x534288*/
+      if ( !v11 ) /*0x53428c*/
+        return 0; /*0x534106*/
+      v12 = (_DWORD *)(28 * (dword_9A7A6AC % 512) + 25377536); /*0x5342ae*/
+      *v12 = ArgList; /*0x5342b5*/
+      v12[2] = 0; /*0x5342b8*/
+      v12[3] = dword_9A7A6A4; /*0x5342c1*/
+      v12[4] = 0; /*0x5342c4*/
+      v12[5] = dword_9A7A6A8; /*0x5342d1*/
+      v12[6] = 1; /*0x5342d4*/
+      v12[1] = sub_504FB0(v49); /*0x5342e0*/
+      v14 = 0; /*0x5342e3*/
+      v15 = *(_DWORD *)(v11 + 16) <= 0; /*0x5342e5*/
+      v58 = 0; /*0x5342e8*/
+      if ( v15 ) /*0x5342ec*/
+      {
+        v16 = 99999; /*0x5342ee*/
+        v48 = 99999; /*0x5342f3*/
+      }
+      else
+      {
+        v14 = (char *)&unk_9A7A6B0 + 12236 * (*(_DWORD *)(v11 + 20) % 4096); /*0x534312*/
+        v48 = *((_DWORD *)v14 + 1); /*0x53431b*/
+        v16 = v48; /*0x53431f*/
+      }
+      v57 = -1; /*0x534325*/
+      if ( sub_504BC0(v13, v49) )
+      {
+        while ( 1 )
+        {
+          if ( sub_504BC0(v17, v49) )
+          {
+            if ( *(_BYTE *)(dword_14BFF2C + 12) )
+              sub_4FC7A0(16, "Entity num: 1 bit (inc)\n", v47);
+            v18 = v57 + 1; /*0x534370*/
+          }
+          else
+          {
+            if ( *(_BYTE *)(dword_14BFF2C + 12) )
+              sub_4FC7A0(16, "Entity num: %i bits (full)\n", 8);
+            v18 = sub_504B30(v49, 6); /*0x5343a0*/
+          }
+          v19 = *(_BYTE *)(dword_14BFF2C + 12) == 0; /*0x5343a7*/
+          v57 = v18; /*0x5343ab*/
+          if ( !v19 ) /*0x5343af*/
+            sub_4FC7A0(16, "Read entity num %i\n", v18); /*0x5343b9*/
+          if ( v49[0] ) /*0x5343c6*/
+            sub_4FCF10(1, (char *)&byte_6E7090, v47); /*0x5343cf*/
+          v19 = v16 == v18; /*0x5343d7*/
+          if ( v16 < v18 ) /*0x5343d9*/
+          {
+            v20 = v58; /*0x5343e2*/
+            do /*0x53441e*/
+            {
+              if ( ++v20 < *(_DWORD *)(v59 + 16) ) /*0x5343eb*/
+              {
+                v14 = (char *)&unk_9A7A6B0 + 12236 * ((v20 + *(_DWORD *)(v59 + 20)) % 4096); /*0x53440f*/
+                v21 = *((_DWORD *)v14 + 1); /*0x534415*/
+              }
+              else
+              {
+                v21 = 99999; /*0x5343ed*/
+              }
+              v19 = v21 == v18; /*0x534418*/
+              v48 = v21; /*0x53441a*/
+            }
+            while ( v21 < v18 ); /*0x53441e*/
+            v58 = v20; /*0x534420*/
+          }
+          if ( v19 ) /*0x53442a*/
+          {
+            v22 = v14 + 4; /*0x534446*/
+            v23 = (int *)((char *)&unk_9A7A6B0 + 12236 * (dword_9A7A6A8 % 4096)); /*0x534449*/
+            if ( v14 == (char *)-4 ) /*0x534451*/
+            {
+              v22 = v61; /*0x534455*/
+              memset(v61, 0, 0x64u); /*0x534461*/
+            }
+            sub_506550(v12[1], v22, v23 + 1, 24, (int)&off_6B9EE0, 24); /*0x534483*/
+            v25 = sub_504BC0(v24, v49); /*0x53448f*/
+            *v23 = v25; /*0x534496*/
+            if ( v25 ) /*0x534498*/
+            {
+              v46 = (char *)(v23 + 26); /*0x5344a2*/
+              if ( *(_DWORD *)v14 ) /*0x53449d*/
+                sub_5069B0(v12[1], v14 + 104, v46, 0); /*0x5344ad*/
+              else
+                sub_5069B0(v12[1], 0, v46, 0); /*0x5344b9*/
+            }
+            if ( ++dword_9A7A6A8 >= 2147483646 ) /*0x5344d3*/
+              sub_4FCF10(0, (char *)&byte_6E70B8, v47); /*0x5344dc*/
+            v26 = v58; /*0x5344e4*/
+            v27 = v59; /*0x5344e8*/
+            ++v12[4]; /*0x5344ec*/
+            v28 = v26 + 1; /*0x5344f0*/
+            v15 = v28 < *(_DWORD *)(v27 + 16); /*0x5344f3*/
+            v58 = v28; /*0x5344f6*/
+            if ( v15 ) /*0x5344fa*/
+            {
+              v14 = (char *)&unk_9A7A6B0 + 12236 * ((v28 + *(_DWORD *)(v27 + 20)) % 4096); /*0x534524*/
+              v48 = *((_DWORD *)v14 + 1); /*0x53452d*/
+            }
+            else
+            {
+              v48 = 99999; /*0x5344fc*/
+            }
+          }
+          else
+          {
+            v29 = v12[1]; /*0x534546*/
+            v30 = (char *)&unk_9A7A6B0 + 12236 * (dword_9A7A6A8 % 4096); /*0x534558*/
+            memset(Src, 0, 0x64u); /*0x53455e*/
+            sub_506550(v29, Src, v30 + 4, 24, (int)&off_6B9EE0, 24); /*0x534581*/
+            v32 = sub_504BC0(v31, v49); /*0x53458d*/
+            *(_DWORD *)v30 = v32; /*0x534594*/
+            if ( v32 ) /*0x534596*/
+              sub_5069B0(v12[1], 0, v30 + 104, 0); /*0x5345a6*/
+            if ( ++dword_9A7A6A8 >= 2147483646 ) /*0x5345c0*/
+              sub_4FCF10(0, (char *)&byte_6E70B8, v47); /*0x5345c9*/
+            ++v12[4]; /*0x5345d1*/
+          }
+          if ( !sub_504BC0(v27, v49) ) /*0x5345d9*/
+            break; /*0x5345d9*/
+          v16 = v48; /*0x534340*/
+        }
+      }
+      v57 = -1; /*0x5345ef*/
+      for ( i = sub_505FA0(); i != 1023; i = sub_505FA0() ) /*0x534604*/
+      {
+        if ( v49[0] ) /*0x534615*/
+          sub_4FCF10(1, (char *)&byte_6E7090, v47); /*0x53461e*/
+        sub_506550( /*0x53466a*/
+          v12[1],
+          (char *)&unk_17D5964 + 376 * i,
+          (char *)&unk_1837300 + 280 * (dword_9A7A6A4 % 0x4000),
+          69,
+          (int)&off_6B9A90,
+          69);
+        if ( ++dword_9A7A6A4 >= 2147483646 ) /*0x534684*/
+          sub_4FCF10(0, (char *)&byte_6E70E0, v47); /*0x53468d*/
+        ++v12[2]; /*0x534695*/
+      }
+      v34 = dword_9A7A6AC + 1; /*0x5346ba*/
+    }
+    dword_9A7A6AC = v34; /*0x5349dc*/
+    if ( v34 >= 2147483646 ) /*0x5349e1*/
+      sub_4FCF10(0, (char *)&byte_6E7108, v47); /*0x5349ea*/
+    return v12; /*0x5349f2*/
+  }
+  return result; /*0x5340fc*/
+}

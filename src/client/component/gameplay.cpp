@@ -672,7 +672,7 @@ namespace gameplay
 				game::DVAR_FLAG_REPLICATED, "Enable Mid-Air Sprinting");
 			utils::hook::jump(0x2C98C0_b, pm_can_start_sprint_stub(), true);
 
-			auto* timescale = dvars::register_float("timescale", 1.0f, 0.1f, 50.0f, game::DVAR_FLAG_REPLICATED, "Changes Timescale of the game");
+			auto* timescale = dvars::register_float("timescale", 1.0f, 0.01f, 50.0f, game::DVAR_FLAG_REPLICATED, "Changes Timescale of the game");
 			utils::hook::inject(0x15B204_b, &timescale->current.value); // Com_GetTimeScale
 			utils::hook::inject(0x17D243_b, &timescale->current.value); // Com_Restart
 			utils::hook::inject(0x17E609_b, &timescale->current.value); // Com_SetSlowMotion

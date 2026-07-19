@@ -1,0 +1,31 @@
+int __fastcall sub_504BC0(int a1, _DWORD *a2)
+{
+  int v2; // ecx
+  int v3; // eax
+  int v5; // esi
+  int v6; // eax
+  int v7; // eax
+
+  v2 = a2[8] & 7; /*0x504bc3*/
+  if ( !v2 ) /*0x504bc7*/
+  {
+    v3 = a2[7]; /*0x504bcf*/
+    if ( v3 >= a2[5] + a2[6] ) /*0x504bd4*/
+    {
+      *a2 = 1; /*0x504bd6*/
+      return -1; /*0x504be0*/
+    }
+    a2[8] = 8 * v3; /*0x504beb*/
+    a2[7] = v3 + 1; /*0x504bee*/
+  }
+  v5 = a2[5]; /*0x504bf1*/
+  v6 = (int)a2[8] >> 3; /*0x504bfa*/
+  if ( v6 < v5 ) /*0x504bff*/
+    v7 = (int)*(unsigned __int8 *)(a2[2] + v6) >> v2; /*0x504c24*/
+  else
+    v7 = (int)*(unsigned __int8 *)(a2[3] - v5 + v6) >> v2; /*0x504c0f*/
+  ++a2[8]; /*0x504c11*/
+  return v7 & 1; /*0x504bdf*/
+}
+
+// ---- refs ----

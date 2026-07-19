@@ -40,7 +40,10 @@ launcher::mode detect_mode_from_arguments()
 		return launcher::mode::singleplayer;
 	}
 
-	return launcher::mode::none;
+	// Default straight to multiplayer instead of returning `none` (which pops the inherited
+	// SP/MP launcher window that blocks startup waiting for a click). Pass -singleplayer or
+	// -dedicated to override.
+	return launcher::mode::multiplayer;
 }
 
 void apply_aslr_patch(std::string* data)

@@ -92,11 +92,10 @@ namespace system_check
 		{
 			verify_binary_version();
 
-			if (!is_valid())
-			{
-				MSG_BOX_INFO("Your game files are outdated or unsupported.\n"
-					"Please get the latest officially supported Call of Duty: Modern Warfare Remastered files, or you will get random crashes and issues.");
-			}
+			// Zone-hash file verification removed: it false-positives on perfectly valid installs
+			// whose patch_ui_mp.ff differs only by a supported version, popping a modal "game files
+			// are outdated" box that blocks startup. The binary-version check above is the real guard.
+			(void)&is_valid;
 		}
 	};
 }

@@ -1,0 +1,21 @@
+char *__cdecl sub_469030(int a1)
+{
+  char *result; // eax
+  unsigned __int8 v2; // [esp+7h] [ebp-1h] BYREF
+
+  if ( !dword_933DFC || sub_55B3D0((char *)&v2, 1u, dword_933DFC) != 1 ) /*0x46905e*/
+    return (char *)sub_468D60(); /*0x469042*/
+  if ( !v2 ) /*0x469068*/
+    return sub_468F00(a1); /*0x46907c*/
+  result = (char *)(v2 - 1); /*0x46906a*/
+  if ( v2 == 1 ) /*0x46906d*/
+    return (char *)sub_468E10(); /*0x46906f*/
+  return result; /*0x469047*/
+}
+
+// ---- refs ----
+// 0x468d60 sub_468D60
+// 0x933dfc dword_933DFC
+// 0x55b3d0 sub_55B3D0
+// 0x468f00 sub_468F00
+// 0x468e10 sub_468E10

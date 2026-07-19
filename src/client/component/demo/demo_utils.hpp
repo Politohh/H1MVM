@@ -203,6 +203,13 @@ namespace demo_utils
 		bool parse_demo(std::ifstream& file, std::vector<std::uint8_t>& buffer,
 			std::size_t& post_map_header_file_offset, std::array<predicted_data_t, 256>& pred_data,
 			std::size_t& pred_data_index, std::optional<gamestate_t>& gs, bool skip_map_preload);
+
+		// [clocklog] cumulative count of chunks consumed by parse_demo's gated loop. See its definition.
+		extern int g_demo_chunks_read;
+
+		// Remember the recorded gamestate's server-command baseline (svr_cmd_seq) so playback can
+		// keep the REAL cgs command counter seeded at it (see process_server_commands). 0 disables.
+		void note_command_baseline(int svr_cmd_seq);
 	}
 	using namespace deserialization;
 

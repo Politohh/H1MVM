@@ -1,0 +1,86 @@
+int __usercall sub_5956E0@<eax>(int a1@<eax>, unsigned int a2@<ecx>, int a3)
+{
+  int v3; // ebx
+  int v5; // esi
+  unsigned int v6; // eax
+  unsigned int v7; // eax
+  size_t v8; // edi
+  void *v9; // ecx
+  unsigned int v10; // eax
+  unsigned int i; // ecx
+  int v12; // edi
+  int v13; // ebp
+  int v14; // eax
+
+  v3 = 0; /*0x5956e5*/
+  if ( !a1 ) /*0x5956ea*/
+    return -102; /*0x5956ea*/
+  v5 = *(_DWORD *)(a1 + 124); /*0x5956f6*/
+  if ( !v5 ) /*0x5956fb*/
+    return -102; /*0x5956f5*/
+  if ( !*(_DWORD *)v5 ) /*0x5956fd*/
+    return -100; /*0x59570a*/
+  if ( !a2 ) /*0x59570d*/
+    return 0; /*0x595715*/
+  *(_DWORD *)(v5 + 16) = a3; /*0x59571a*/
+  v6 = *(_DWORD *)(v5 + 80); /*0x59571d*/
+  *(_DWORD *)(v5 + 20) = a2; /*0x595722*/
+  if ( a2 > v6 ) /*0x595725*/
+    *(_DWORD *)(v5 + 20) = v6; /*0x595727*/
+  while ( *(_DWORD *)(v5 + 20) ) /*0x59572a*/
+  {
+    if ( !*(_DWORD *)(v5 + 8) ) /*0x595733*/
+    {
+      v7 = *(_DWORD *)(v5 + 76); /*0x595739*/
+      if ( v7 ) /*0x59573e*/
+      {
+        v8 = 0x4000; /*0x595740*/
+        if ( v7 < 0x4000 ) /*0x595747*/
+          v8 = *(_DWORD *)(v5 + 76); /*0x595749*/
+        if ( fseek(*(FILE **)(v5 + 84), *(_DWORD *)(v5 + 56) + *(_DWORD *)(v5 + 92), 0) /*0x595780*/
+          || fread(*(void **)v5, 1u, v8, *(FILE **)(v5 + 84)) != v8 )
+        {
+          return -1; /*0x595819*/
+        }
+        v9 = *(void **)v5; /*0x595786*/
+        *(_DWORD *)(v5 + 56) += v8; /*0x595788*/
+        *(_DWORD *)(v5 + 76) -= v8; /*0x59578b*/
+        *(_DWORD *)(v5 + 4) = v9; /*0x59578e*/
+        *(_DWORD *)(v5 + 8) = v8; /*0x595791*/
+      }
+    }
+    if ( *(_DWORD *)(v5 + 88) ) /*0x595794*/
+    {
+      v12 = *(_DWORD *)(v5 + 24); /*0x5957d9*/
+      v13 = sub_5929F0(); /*0x5957e4*/
+      v14 = *(_DWORD *)(v5 + 24); /*0x5957e6*/
+      *(_DWORD *)(v5 + 80) += v12 - v14; /*0x5957ed*/
+      v3 += v14 - v12; /*0x5957f2*/
+      if ( v13 == 1 ) /*0x5957f7*/
+        return v3; /*0x5957f7*/
+      if ( v13 ) /*0x5957fb*/
+        return v13; /*0x595811*/
+    }
+    else
+    {
+      v10 = *(_DWORD *)(v5 + 20); /*0x59579a*/
+      if ( v10 >= *(_DWORD *)(v5 + 8) ) /*0x5957a2*/
+        v10 = *(_DWORD *)(v5 + 8); /*0x5957a4*/
+      for ( i = 0; i < v10; ++i ) /*0x5957aa*/
+        *(_BYTE *)(i + *(_DWORD *)(v5 + 16)) = *(_BYTE *)(i + *(_DWORD *)(v5 + 4)); /*0x5957b9*/
+      *(_DWORD *)(v5 + 80) -= v10; /*0x5957c3*/
+      *(_DWORD *)(v5 + 8) -= v10; /*0x5957c6*/
+      *(_DWORD *)(v5 + 20) -= v10; /*0x5957c9*/
+      *(_DWORD *)(v5 + 16) += v10; /*0x5957cc*/
+      *(_DWORD *)(v5 + 4) += v10; /*0x5957cf*/
+      *(_DWORD *)(v5 + 24) += v10; /*0x5957d2*/
+      v3 += v10; /*0x5957d5*/
+    }
+  }
+  return v3; /*0x5956f1*/
+}
+
+// ---- refs ----
+// 0x671209 _fseek
+// 0x670d80 _fread
+// 0x5929f0 sub_5929F0

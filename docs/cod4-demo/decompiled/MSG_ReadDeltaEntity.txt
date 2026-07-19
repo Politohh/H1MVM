@@ -1,0 +1,116 @@
+int __usercall sub_5066C0@<eax>(_DWORD *a1@<eax>, _DWORD *a2@<ecx>, int a3, char *a4, int ArgList)
+{
+  _DWORD *v7; // edx
+  int v8; // ecx
+  int v9; // eax
+  int result; // eax
+  int v12; // eax
+  int v13; // eax
+  int v14; // ebp
+  int v15; // eax
+  char **v16; // ebx
+  unsigned int v17; // ecx
+  char **v18; // ebx
+  _DWORD *v19; // edx
+  unsigned int v20; // [esp+10h] [ebp-10h]
+  unsigned int v21; // [esp+14h] [ebp-Ch]
+  char **v22; // [esp+18h] [ebp-8h]
+  unsigned int *v23; // [esp+1Ch] [ebp-4h]
+
+  if ( sub_504BC0((int)a2, a2) == 1 )
+  {
+    if ( dword_D5C3874 )
+    {
+      v9 = *(_DWORD *)(dword_D5C3874 + 12); /*0x5066e0*/
+      if ( v9 >= 2 || v9 == -1 )
+        sub_4FC7A0(16, "%3i: #%-3i remove\n", a2[7]);
+    }
+    return 1; /*0x506705*/
+  }
+  else
+  {
+    result = sub_504BC0(v8, v7); /*0x506712*/
+    if ( result )
+    {
+      if ( !_BitScanReverse((unsigned int *)&v12, 0x3Du) ) /*0x506736*/
+        v12 = 63; /*0x50673b*/
+      v20 = sub_504B30(a2, 32 - (v12 ^ 0x1F)); /*0x506752*/
+      if ( dword_D5C3874 && ((v13 = *(_DWORD *)(dword_D5C3874 + 12), v13 >= 2) || v13 == -1) )
+      {
+        v14 = 1; /*0x50677d*/
+        sub_4FC7A0(16, "%3i: #%-3i ", a2[7]);
+      }
+      else
+      {
+        v14 = 0; /*0x50678c*/
+      }
+      *a1 = ArgList; /*0x5067a7*/
+      sub_506060(a3, a4, a1, &off_6B6AA0, v14, 0); /*0x5067a9*/
+      v15 = a1[1]; /*0x5067ae*/
+      if ( v15 > 17 ) /*0x5067b7*/
+        v15 = 17; /*0x5067b9*/
+      v16 = (&off_6BB010)[2 * v15]; /*0x5067be*/
+      v22 = v16; /*0x5067d7*/
+      v23 = (unsigned int *)(8 * v15 + 7057428); /*0x5067db*/
+      if ( v20 <= dword_6BB014[2 * v15] )
+      {
+        if ( *(_BYTE *)(dword_1494F04 + 12) )
+        {
+          sub_40BA70(); /*0x5067ff*/
+          sub_4FC7A0(14, "%3i: changed ent, eType %s\n", ArgList);
+        }
+        v17 = v20; /*0x506819*/
+        v18 = v16 + 4; /*0x50681d*/
+        if ( v20 > 1 ) /*0x506823*/
+        {
+          v21 = v20 - 1; /*0x506828*/
+          do /*0x506851*/
+          {
+            sub_506060(a3, a4, a1, v18, v14, 0); /*0x506841*/
+            v18 += 4; /*0x506849*/
+            --v21; /*0x50684c*/
+          }
+          while ( v21 ); /*0x506851*/
+          v17 = v20; /*0x506853*/
+        }
+        if ( v17 < *v23 ) /*0x506866*/
+        {
+          v19 = &v22[4 * v17 + 1]; /*0x506868*/
+          do /*0x506884*/
+          {
+            ++v17; /*0x506879*/
+            *(_DWORD *)((char *)a1 + *v19) = *(_DWORD *)&a4[*v19]; /*0x50687c*/
+            v19 += 4; /*0x50687f*/
+          }
+          while ( v17 < *v23 ); /*0x506884*/
+        }
+        return 0; /*0x506889*/
+      }
+      else
+      {
+        *a2 = 1; /*0x5067e1*/
+        return 0; /*0x5067e7*/
+      }
+    }
+    else
+    {
+      qmemcpy(a1, a4, 0xF4u); /*0x506724*/
+    }
+  }
+  return result; /*0x50670a*/
+}
+
+// ---- refs ----
+// 0xd5c3874 dword_D5C3874
+// 0x4fc7a0 sub_4FC7A0
+// 0x6e1ad0 a3i3iRemove "%3i: #%-3i remove\n"
+// 0x504bc0 sub_504BC0
+// 0x504b30 sub_504B30
+// 0x6e1ae4 a3i3i "%3i: #%-3i "
+// 0x506060 sub_506060
+// 0x6b6aa0 off_6B6AA0
+// 0x6bb010 off_6BB010
+// 0x40ba70 sub_40BA70
+// 0x6e1af0 a3iChangedEntEt "%3i: changed ent, eType %s\n"
+// 0x1494f04 dword_1494F04
+// 0x6bb014 dword_6BB014

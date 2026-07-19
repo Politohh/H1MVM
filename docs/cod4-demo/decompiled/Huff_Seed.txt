@@ -1,0 +1,21 @@
+int sub_504720()
+{
+  int result; // eax
+
+  sub_563DF0(&dword_14902F0, 0, 19476); /*0x50472c*/
+  dword_14902F8 = 20 * dword_14902F0 + 21563140; /*0x504740*/
+  dword_14906FC = 20 * dword_14902F0++ + 21563140; /*0x504746*/
+  *(_DWORD *)(dword_14902F8 + 16) = 256; /*0x504754*/
+  *(_DWORD *)(dword_14902F8 + 12) = 0; /*0x504760*/
+  *(_DWORD *)(dword_14902F8 + 8) = 0; /*0x50476d*/
+  *(_DWORD *)dword_14902F8 = 0; /*0x50477a*/
+  result = dword_14902F8; /*0x504780*/
+  *(_DWORD *)(dword_14902F8 + 4) = 0; /*0x504788*/
+  return result; /*0x50478f*/
+}
+
+// ---- refs ----
+// 0x563df0 sub_563DF0
+// 0x14902f0 dword_14902F0
+// 0x14902f8 dword_14902F8
+// 0x14906fc dword_14906FC

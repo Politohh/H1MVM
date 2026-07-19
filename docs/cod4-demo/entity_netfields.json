@@ -1,0 +1,5491 @@
+{
+ "etype_map": [
+  {
+   "eType": 0,
+   "fields_addr": "0x6b6aa0",
+   "count": 59
+  },
+  {
+   "eType": 1,
+   "fields_addr": "0x6b7200",
+   "count": 59
+  },
+  {
+   "eType": 2,
+   "fields_addr": "0x6b75b0",
+   "count": 59
+  },
+  {
+   "eType": 3,
+   "fields_addr": "0x6b8470",
+   "count": 59
+  },
+  {
+   "eType": 4,
+   "fields_addr": "0x6b96e0",
+   "count": 59
+  },
+  {
+   "eType": 5,
+   "fields_addr": "0x6b6aa0",
+   "count": 59
+  },
+  {
+   "eType": 6,
+   "fields_addr": "0x6b8820",
+   "count": 59
+  },
+  {
+   "eType": 7,
+   "fields_addr": "0x6b8bd0",
+   "count": 59
+  },
+  {
+   "eType": 8,
+   "fields_addr": "0x6b8f80",
+   "count": 59
+  },
+  {
+   "eType": 9,
+   "fields_addr": "0x6b9330",
+   "count": 59
+  },
+  {
+   "eType": 10,
+   "fields_addr": "0x6b6aa0",
+   "count": 59
+  },
+  {
+   "eType": 11,
+   "fields_addr": "0x6b6aa0",
+   "count": 59
+  },
+  {
+   "eType": 12,
+   "fields_addr": "0x6b7d10",
+   "count": 58
+  },
+  {
+   "eType": 13,
+   "fields_addr": "0x6b80b0",
+   "count": 60
+  },
+  {
+   "eType": 14,
+   "fields_addr": "0x6b7960",
+   "count": 59
+  },
+  {
+   "eType": 15,
+   "fields_addr": "0x6b6aa0",
+   "count": 59
+  },
+  {
+   "eType": 16,
+   "fields_addr": "0x6b6aa0",
+   "count": 59
+  },
+  {
+   "eType": 17,
+   "fields_addr": "0x6b6e50",
+   "count": 59
+  }
+ ],
+ "field_tables": {
+  "0x6b6aa0": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 1,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "lerp.u.anonymous.data[0]",
+    "offset": 84,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 46,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 47,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 48,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 49,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 50,
+    "name": "lerp.u.anonymous.data[1]",
+    "offset": 88,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 51,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 52,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 54,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 55,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 56,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 0
+   }
+  ],
+  "0x6b7200": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 1,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 2
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 2
+   },
+   {
+    "i": 3,
+    "name": "lerp.u.player.movementDir",
+    "offset": 88,
+    "bits": -8,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "lerp.u.player.leanf",
+    "offset": 84,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 35,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 36,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 37,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 1
+   },
+   {
+    "i": 38,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 39,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 40,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 41,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 42,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 43,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 44,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 45,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 1
+   },
+   {
+    "i": 46,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 47,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 48,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 49,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 50,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 51,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 52,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 54,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 55,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ],
+  "0x6b75b0": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 1,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "lerp.u.player.movementDir",
+    "offset": 88,
+    "bits": -8,
+    "hint": 1
+   },
+   {
+    "i": 19,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 20,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 1
+   },
+   {
+    "i": 21,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 1
+   },
+   {
+    "i": 22,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 1
+   },
+   {
+    "i": 23,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 1
+   },
+   {
+    "i": 24,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 25,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 1
+   },
+   {
+    "i": 26,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 1
+   },
+   {
+    "i": 27,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 1
+   },
+   {
+    "i": 28,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 1
+   },
+   {
+    "i": 29,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 1
+   },
+   {
+    "i": 30,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 1
+   },
+   {
+    "i": 31,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 1
+   },
+   {
+    "i": 32,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 33,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 34,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 1
+   },
+   {
+    "i": 35,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 1
+   },
+   {
+    "i": 36,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 1
+   },
+   {
+    "i": 37,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 38,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 39,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 40,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 41,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 42,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 43,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 44,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 1
+   },
+   {
+    "i": 45,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 46,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 47,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 48,
+    "name": "lerp.u.player.leanf",
+    "offset": 84,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 49,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 50,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 51,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 52,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 54,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 55,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ],
+  "0x6b8470": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 1,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 2
+   },
+   {
+    "i": 6,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 2
+   },
+   {
+    "i": 7,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 2
+   },
+   {
+    "i": 8,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 2
+   },
+   {
+    "i": 10,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 2
+   },
+   {
+    "i": 12,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": -97,
+    "hint": 2
+   },
+   {
+    "i": 13,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 2
+   },
+   {
+    "i": 14,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 2
+   },
+   {
+    "i": 15,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "lerp.u.anonymous.data[0]",
+    "offset": 84,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "lerp.u.anonymous.data[1]",
+    "offset": 88,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 46,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 47,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 48,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 49,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 1
+   },
+   {
+    "i": 50,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 1
+   },
+   {
+    "i": 51,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 52,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 54,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 55,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ],
+  "0x6b96e0": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 1,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "lerp.u.missile.launchTime",
+    "offset": 84,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "un2",
+    "offset": 216,
+    "bits": 1,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "lerp.u.anonymous.data[1]",
+    "offset": 88,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 46,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 47,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 48,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 49,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 1
+   },
+   {
+    "i": 50,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 1
+   },
+   {
+    "i": 51,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 52,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 54,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 55,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ],
+  "0x6b8820": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 1,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "lerp.u.anonymous.data[0]",
+    "offset": 84,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "lerp.u.anonymous.data[1]",
+    "offset": 88,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 46,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 47,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 48,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 49,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 50,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 51,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 0
+   },
+   {
+    "i": 52,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 53,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 54,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 55,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 56,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 0
+   }
+  ],
+  "0x6b8bd0": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 1,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 46,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 0
+   },
+   {
+    "i": 47,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 48,
+    "name": "lerp.u.soundBlend.lerp",
+    "offset": 84,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 49,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 50,
+    "name": "lerp.u.anonymous.data[1]",
+    "offset": 88,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 51,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 52,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 54,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 55,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ],
+  "0x6b8f80": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 1,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "lerp.u.anonymous.data[0]",
+    "offset": 84,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "lerp.u.anonymous.data[1]",
+    "offset": 88,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 46,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 47,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 48,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 49,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 1
+   },
+   {
+    "i": 50,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 1
+   },
+   {
+    "i": 51,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 52,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 54,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 55,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ],
+  "0x6b9330": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 1,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "lerp.u.loopFx.cullDist",
+    "offset": 84,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "lerp.u.loopFx.period",
+    "offset": 88,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 46,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 47,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 48,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 0
+   },
+   {
+    "i": 49,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 50,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 51,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 52,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 54,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 55,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ],
+  "0x6b7d10": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 1,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "lerp.u.vehicle.gunPitch",
+    "offset": 100,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "lerp.u.vehicle.gunYaw",
+    "offset": 104,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "un1.helicopterStage",
+    "offset": 212,
+    "bits": 3,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "lerp.u.vehicle.teamAndOwnerIndex",
+    "offset": 108,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "lerp.u.vehicle.materialTime",
+    "offset": 96,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 46,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 47,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 48,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 49,
+    "name": "lerp.u.vehicle.bodyPitch",
+    "offset": 84,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 50,
+    "name": "lerp.u.vehicle.bodyRoll",
+    "offset": 88,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 51,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 52,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 0
+   },
+   {
+    "i": 53,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 54,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 55,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ],
+  "0x6b80b0": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 1,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": 0,
+    "hint": 2
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": 0,
+    "hint": 2
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": 0,
+    "hint": 2
+   },
+   {
+    "i": 4,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 2
+   },
+   {
+    "i": 5,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 2
+   },
+   {
+    "i": 6,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 2
+   },
+   {
+    "i": 7,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 2
+   },
+   {
+    "i": 8,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 2
+   },
+   {
+    "i": 9,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 2
+   },
+   {
+    "i": 10,
+    "name": "lerp.u.vehicle.teamAndOwnerIndex",
+    "offset": 108,
+    "bits": 8,
+    "hint": 2
+   },
+   {
+    "i": 11,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 2
+   },
+   {
+    "i": 12,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "lerp.u.anonymous.data[0]",
+    "offset": 84,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 0
+   },
+   {
+    "i": 46,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 47,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 48,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 49,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 50,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 51,
+    "name": "lerp.u.anonymous.data[1]",
+    "offset": 88,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 52,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 54,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 55,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 58,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 59,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ],
+  "0x6b7960": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 1
+   },
+   {
+    "i": 1,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "lerp.u.vehicle.gunYaw",
+    "offset": 104,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "lerp.u.vehicle.materialTime",
+    "offset": 96,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "lerp.u.vehicle.gunPitch",
+    "offset": 100,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 46,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 47,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 48,
+    "name": "lerp.u.vehicle.bodyPitch",
+    "offset": 84,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 49,
+    "name": "lerp.u.vehicle.bodyRoll",
+    "offset": 88,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 50,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 51,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 0
+   },
+   {
+    "i": 52,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.vehicle.steerYaw",
+    "offset": 92,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 54,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 55,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ],
+  "0x6b6e50": [
+   {
+    "i": 0,
+    "name": "eType",
+    "offset": 4,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 1,
+    "name": "lerp.pos.trBase[0]",
+    "offset": 24,
+    "bits": -92,
+    "hint": 0
+   },
+   {
+    "i": 2,
+    "name": "lerp.pos.trBase[1]",
+    "offset": 28,
+    "bits": -91,
+    "hint": 0
+   },
+   {
+    "i": 3,
+    "name": "lerp.pos.trBase[2]",
+    "offset": 32,
+    "bits": -90,
+    "hint": 0
+   },
+   {
+    "i": 4,
+    "name": "eventParm",
+    "offset": 156,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 5,
+    "name": "surfType",
+    "offset": 132,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 6,
+    "name": "otherEntityNum",
+    "offset": 116,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 7,
+    "name": "un1",
+    "offset": 212,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 8,
+    "name": "lerp.u.anonymous.data[0]",
+    "offset": 84,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 9,
+    "name": "lerp.u.anonymous.data[1]",
+    "offset": 88,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 10,
+    "name": "attackerEntityNum",
+    "offset": 120,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 11,
+    "name": "lerp.apos.trBase[0]",
+    "offset": 60,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 12,
+    "name": "clientNum",
+    "offset": 140,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 13,
+    "name": "weapon",
+    "offset": 196,
+    "bits": 7,
+    "hint": 0
+   },
+   {
+    "i": 14,
+    "name": "weaponModel",
+    "offset": 200,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 15,
+    "name": "lerp.u.anonymous.data[2]",
+    "offset": 92,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 16,
+    "name": "index",
+    "offset": 136,
+    "bits": 10,
+    "hint": 0
+   },
+   {
+    "i": 17,
+    "name": "solid",
+    "offset": 152,
+    "bits": 24,
+    "hint": 0
+   },
+   {
+    "i": 18,
+    "name": "lerp.apos.trBase[1]",
+    "offset": 64,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 19,
+    "name": "lerp.apos.trBase[2]",
+    "offset": 68,
+    "bits": -100,
+    "hint": 0
+   },
+   {
+    "i": 20,
+    "name": "groundEntityNum",
+    "offset": 124,
+    "bits": -96,
+    "hint": 0
+   },
+   {
+    "i": 21,
+    "name": "lerp.u.anonymous.data[4]",
+    "offset": 100,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 22,
+    "name": "lerp.u.anonymous.data[5]",
+    "offset": 104,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 23,
+    "name": "iHeadIcon",
+    "offset": 144,
+    "bits": 4,
+    "hint": 0
+   },
+   {
+    "i": 24,
+    "name": "iHeadIconTeam",
+    "offset": 148,
+    "bits": 2,
+    "hint": 0
+   },
+   {
+    "i": 25,
+    "name": "events[0]",
+    "offset": 164,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 26,
+    "name": "eventParms[0]",
+    "offset": 180,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 27,
+    "name": "lerp.pos.trType",
+    "offset": 12,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 28,
+    "name": "lerp.apos.trType",
+    "offset": 48,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 29,
+    "name": "lerp.apos.trTime",
+    "offset": 52,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 30,
+    "name": "lerp.apos.trDelta[0]",
+    "offset": 72,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 31,
+    "name": "lerp.apos.trDelta[2]",
+    "offset": 80,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 32,
+    "name": "lerp.pos.trDelta[0]",
+    "offset": 36,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 33,
+    "name": "lerp.pos.trDelta[1]",
+    "offset": 40,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 34,
+    "name": "lerp.pos.trDelta[2]",
+    "offset": 44,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 35,
+    "name": "eventSequence",
+    "offset": 160,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 36,
+    "name": "lerp.pos.trTime",
+    "offset": 16,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 37,
+    "name": "events[1]",
+    "offset": 168,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 38,
+    "name": "events[2]",
+    "offset": 172,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 39,
+    "name": "eventParms[1]",
+    "offset": 184,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 40,
+    "name": "eventParms[2]",
+    "offset": 188,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 41,
+    "name": "events[3]",
+    "offset": 176,
+    "bits": -94,
+    "hint": 0
+   },
+   {
+    "i": 42,
+    "name": "eventParms[3]",
+    "offset": 192,
+    "bits": -93,
+    "hint": 0
+   },
+   {
+    "i": 43,
+    "name": "lerp.eFlags",
+    "offset": 8,
+    "bits": -98,
+    "hint": 0
+   },
+   {
+    "i": 44,
+    "name": "lerp.pos.trDuration",
+    "offset": 20,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 45,
+    "name": "lerp.apos.trDelta[1]",
+    "offset": 76,
+    "bits": 0,
+    "hint": 0
+   },
+   {
+    "i": 46,
+    "name": "time2",
+    "offset": 112,
+    "bits": -97,
+    "hint": 0
+   },
+   {
+    "i": 47,
+    "name": "loopSound",
+    "offset": 128,
+    "bits": 8,
+    "hint": 0
+   },
+   {
+    "i": 48,
+    "name": "un2",
+    "offset": 216,
+    "bits": 32,
+    "hint": 0
+   },
+   {
+    "i": 49,
+    "name": "torsoAnim",
+    "offset": 208,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 50,
+    "name": "legsAnim",
+    "offset": 204,
+    "bits": 10,
+    "hint": 1
+   },
+   {
+    "i": 51,
+    "name": "fWaistPitch",
+    "offset": 224,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 52,
+    "name": "fTorsoPitch",
+    "offset": 220,
+    "bits": 0,
+    "hint": 1
+   },
+   {
+    "i": 53,
+    "name": "lerp.u.anonymous.data[3]",
+    "offset": 96,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 54,
+    "name": "lerp.apos.trDuration",
+    "offset": 56,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 55,
+    "name": "partBits[0]",
+    "offset": 228,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 56,
+    "name": "partBits[1]",
+    "offset": 232,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 57,
+    "name": "partBits[2]",
+    "offset": 236,
+    "bits": 32,
+    "hint": 1
+   },
+   {
+    "i": 58,
+    "name": "partBits[3]",
+    "offset": 240,
+    "bits": 32,
+    "hint": 1
+   }
+  ]
+ }
+}

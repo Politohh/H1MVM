@@ -1,0 +1,47 @@
+int __usercall sub_504B30@<eax>(_DWORD *a1@<esi>, int a2)
+{
+  int v2; // edi
+  int v3; // ecx
+  int v4; // eax
+  int v5; // ebp
+  int v6; // edx
+  int v7; // eax
+  int v8; // edx
+  char v9; // cl
+  int v11; // [esp+Ch] [ebp-4h]
+
+  v2 = 0; /*0x504b34*/
+  v11 = 0; /*0x504b3a*/
+  if ( a2 <= 0 ) /*0x504b3e*/
+    return v11; /*0x504ba6*/
+  while ( 1 ) /*0x504b43*/
+  {
+    v3 = a1[8] & 7; /*0x504b43*/
+    if ( !v3 ) /*0x504b46*/
+      break; /*0x504b46*/
+LABEL_5:
+    v5 = a1[5]; /*0x504b65*/
+    v6 = (int)a1[8] >> 3; /*0x504b6d*/
+    if ( v6 < v5 ) /*0x504b72*/
+      v7 = a1[2]; /*0x504b7b*/
+    else
+      v7 = a1[3] - v5; /*0x504b77*/
+    v8 = (int)*(unsigned __int8 *)(v7 + v6) >> v3; /*0x504b82*/
+    v9 = v2++; /*0x504b84*/
+    ++a1[8]; /*0x504b91*/
+    v11 |= (v8 & 1) << v9; /*0x504b94*/
+    if ( v2 >= a2 ) /*0x504b9c*/
+      return v11; /*0x504b9c*/
+  }
+  v4 = a1[7]; /*0x504b4e*/
+  if ( v4 < a1[5] + a1[6] ) /*0x504b53*/
+  {
+    a1[8] = 8 * v4; /*0x504b5f*/
+    a1[7] = v4 + 1; /*0x504b62*/
+    goto LABEL_5; /*0x504b62*/
+  }
+  *a1 = 1; /*0x504ba9*/
+  return -1; /*0x504ba2*/
+}
+
+// ---- refs ----

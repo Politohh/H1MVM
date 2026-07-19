@@ -474,6 +474,30 @@ namespace demo_recording
 					console::error("could not create demo directories\n");
 				}
 			}, scheduler::main);
+
+			// ---- local-server clock offset (fixes local recordings) --------------------------
+			// A local (listen) server starts serverTime near 0, so demos recorded on it collide
+			// with the fresh loopback server that PLAYBACK spins up (also ~0) -> the "Lost reliable
+			// commands" / "CG_ServerCommand: Requested a command not received" desync. Demos
+			// recorded on ONLINE servers work because their serverTime is huge (hours of uptime),
+			// leaving the replayed stream unambiguously ahead of the low-time loopback. Push a
+			// local server's clock up into that same range once at match start so local recordings
+			// behave identically. Skip while a demo plays -- the playback loopback must stay low.
+			// Runs on the server thread (only ticks with a server up); SV_Loaded() guards it.
+			scheduler::loop([]()
+			{
+				constexpr int server_time_offset = 600'000'000; // ~7 days, in the "online" range
+				if (demo_playback::playing() || !game::SV_Loaded())
+				{
+					return;
+				}
+				// serverStatic_t::time (== game::mp::svs->time), confirmed @ 0x14647B280 (RVA 0x647B280)
+				auto& svs_time = *reinterpret_cast<int*>(0x647B280_b);
+				if (svs_time > 0 && svs_time < server_time_offset)
+				{
+					svs_time += server_time_offset; // one-shot: next tick it's already above
+				}
+			}, scheduler::server);
 		}
 	};
 }

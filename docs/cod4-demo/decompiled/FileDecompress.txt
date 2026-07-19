@@ -1,0 +1,278 @@
+int __usercall sub_5929F0@<eax>(unsigned __int8 **a1@<eax>)
+{
+  unsigned int *v2; // eax
+  unsigned int v3; // eax
+  int v4; // ebx
+  unsigned __int8 *v5; // eax
+  unsigned __int8 *v6; // edx
+  unsigned __int8 *v7; // eax
+  int v8; // ecx
+  unsigned __int8 *v9; // eax
+  unsigned __int8 *v10; // esi
+  int v11; // ecx
+  int v12; // eax
+  unsigned __int8 *v13; // eax
+  unsigned __int8 *v14; // eax
+  unsigned __int8 *v15; // ecx
+  unsigned __int8 *v16; // ecx
+  unsigned __int8 *v17; // eax
+  unsigned __int8 *v18; // edx
+  unsigned __int8 *v19; // edx
+  unsigned __int8 *v20; // eax
+  unsigned __int8 *v21; // ecx
+  unsigned __int8 *v22; // eax
+  unsigned __int8 *v23; // eax
+  unsigned __int8 *v24; // ecx
+  unsigned __int8 *v25; // eax
+  unsigned __int8 *v27; // eax
+  unsigned __int8 *v28; // edx
+  unsigned __int8 *v29; // ecx
+  unsigned __int8 *v30; // edx
+  unsigned __int8 *v31; // eax
+  unsigned __int8 *v32; // ecx
+  unsigned __int8 *v33; // eax
+  unsigned __int8 *v34; // eax
+  unsigned __int8 *v35; // ecx
+  unsigned __int8 *v36; // eax
+  unsigned __int8 *v37; // eax
+  unsigned __int8 *v38; // ecx
+  unsigned __int8 *v39; // eax
+  unsigned __int8 *v40; // eax
+
+  if ( !a1 ) /*0x5929fe*/
+    return -2; /*0x5929fe*/
+  v2 = (unsigned int *)a1[7]; /*0x592a04*/
+  if ( !v2 || !*a1 ) /*0x592a0f*/
+    return -2; /*0x592c5c*/
+  v3 = *v2; /*0x592a18*/
+  v4 = -5; /*0x592a1d*/
+  while ( 2 ) /*0x592a28*/
+  {
+    switch ( v3 ) /*0x592a28*/
+    {
+      case 0u: /*0x592a28*/
+        v5 = a1[1]; /*0x592a2f*/
+        if ( !v5 ) /*0x592a34*/
+          return v4; /*0x592a34*/
+        ++a1[2]; /*0x592a3a*/
+        v6 = a1[7]; /*0x592a3e*/
+        a1[1] = v5 - 1; /*0x592a44*/
+        *((_DWORD *)v6 + 1) = **a1; /*0x592a4c*/
+        v7 = a1[7]; /*0x592a4f*/
+        v8 = *((_DWORD *)v7 + 1); /*0x592a52*/
+        ++*a1; /*0x592a55*/
+        v4 = 0; /*0x592a5b*/
+        if ( (v8 & 0xF) != 8 ) /*0x592a60*/
+        {
+          *(_DWORD *)v7 = 13; /*0x592a62*/
+          a1[6] = "unknown compression method"; /*0x592a68*/
+LABEL_33:
+          *((_DWORD *)a1[7] + 1) = 5; /*0x592c39*/
+          goto LABEL_34; /*0x592c3c*/
+        }
+        if ( (unsigned int)((*((_DWORD *)v7 + 1) >> 4) + 8) > *((_DWORD *)v7 + 4) ) /*0x592a80*/
+        {
+          *(_DWORD *)v7 = 13; /*0x592a82*/
+          a1[6] = "invalid window size"; /*0x592a88*/
+          goto LABEL_33; /*0x592a8f*/
+        }
+        *(_DWORD *)v7 = 1; /*0x592a94*/
+LABEL_12:
+        v9 = a1[1]; /*0x592a9a*/
+        if ( !v9 ) /*0x592a9f*/
+          return v4; /*0x592a9f*/
+        ++a1[2]; /*0x592aa5*/
+        v10 = a1[7]; /*0x592aa9*/
+        a1[1] = v9 - 1; /*0x592aaf*/
+        v11 = *(*a1)++; /*0x592ab4*/
+        v4 = 0; /*0x592ad1*/
+        if ( (v11 + (*((_DWORD *)v10 + 1) << 8)) % 0x1Fu ) /*0x592acf*/
+        {
+          *(_DWORD *)v10 = 13; /*0x592ad7*/
+          a1[6] = "incorrect header check"; /*0x592add*/
+          goto LABEL_33; /*0x592ae4*/
+        }
+        if ( (v11 & 0x20) != 0 ) /*0x592aee*/
+        {
+          *(_DWORD *)a1[7] = 2; /*0x592c6b*/
+LABEL_39:
+          v27 = a1[1]; /*0x592c71*/
+          if ( v27 ) /*0x592c76*/
+          {
+            v28 = *a1; /*0x592c78*/
+            ++a1[2]; /*0x592c7a*/
+            v29 = a1[7]; /*0x592c7e*/
+            a1[1] = v27 - 1; /*0x592c84*/
+            *((_DWORD *)v29 + 2) = *v28 << 24; /*0x592c8d*/
+            v30 = a1[7]; /*0x592c90*/
+            v4 = 0; /*0x592c93*/
+            ++*a1; /*0x592c95*/
+            *(_DWORD *)v30 = 3; /*0x592c98*/
+LABEL_41:
+            v31 = a1[1]; /*0x592c9e*/
+            if ( v31 ) /*0x592ca3*/
+            {
+              v32 = *a1; /*0x592ca5*/
+              ++a1[2]; /*0x592ca7*/
+              a1[1] = v31 - 1; /*0x592cae*/
+              *((_DWORD *)a1[7] + 2) += *v32 << 16; /*0x592cba*/
+              v33 = a1[7]; /*0x592cbd*/
+              v4 = 0; /*0x592cc0*/
+              ++*a1; /*0x592cc2*/
+              *(_DWORD *)v33 = 4; /*0x592cc5*/
+LABEL_43:
+              v34 = a1[1]; /*0x592ccb*/
+              if ( v34 ) /*0x592cd0*/
+              {
+                v35 = *a1; /*0x592cd2*/
+                ++a1[2]; /*0x592cd4*/
+                a1[1] = v34 - 1; /*0x592cdb*/
+                *((_DWORD *)a1[7] + 2) += *v35 << 8; /*0x592ce7*/
+                v36 = a1[7]; /*0x592cea*/
+                v4 = 0; /*0x592ced*/
+                ++*a1; /*0x592cef*/
+                *(_DWORD *)v36 = 5; /*0x592cf2*/
+LABEL_45:
+                v37 = a1[1]; /*0x592cf8*/
+                if ( v37 ) /*0x592cfd*/
+                {
+                  v38 = *a1; /*0x592d03*/
+                  ++a1[2]; /*0x592d05*/
+                  a1[1] = v37 - 1; /*0x592d0c*/
+                  *((_DWORD *)a1[7] + 2) += *v38; /*0x592d15*/
+                  v39 = a1[7]; /*0x592d18*/
+                  ++*a1; /*0x592d1b*/
+                  a1[12] = (unsigned __int8 *)*((_DWORD *)v39 + 2); /*0x592d21*/
+                  *(_DWORD *)v39 = 6; /*0x592d24*/
+                  return 2; /*0x592d35*/
+                }
+              }
+            }
+          }
+          return v4; /*0x592c67*/
+        }
+        *(_DWORD *)v10 = 7; /*0x592af4*/
+        goto LABEL_34; /*0x592afa*/
+      case 1u: /*0x592a28*/
+        goto LABEL_12;
+      case 2u: /*0x592a28*/
+        goto LABEL_39;
+      case 3u: /*0x592a28*/
+        goto LABEL_41;
+      case 4u: /*0x592a28*/
+        goto LABEL_43;
+      case 5u: /*0x592a28*/
+        goto LABEL_45;
+      case 6u: /*0x592a28*/
+        *(_DWORD *)a1[7] = 13; /*0x592d39*/
+        v40 = a1[7]; /*0x592d3f*/
+        a1[6] = "need dictionary"; /*0x592d42*/
+        *((_DWORD *)v40 + 1) = 0; /*0x592d49*/
+        return -2; /*0x592d5b*/
+      case 7u: /*0x592a28*/
+        v12 = sub_591310(v4); /*0x592b08*/
+        v4 = v12; /*0x592b0d*/
+        if ( v12 == -3 ) /*0x592b15*/
+        {
+          *(_DWORD *)a1[7] = 13; /*0x592b1a*/
+          *((_DWORD *)a1[7] + 1) = 0; /*0x592b23*/
+LABEL_34:
+          v3 = *(_DWORD *)a1[7]; /*0x592c43*/
+          if ( v3 > 0xD ) /*0x592c4b*/
+            return -2; /*0x592c4b*/
+          continue; /*0x592c4b*/
+        }
+        if ( !v12 ) /*0x592b31*/
+          return 0; /*0x592c5d*/
+        if ( v12 != 1 ) /*0x592b3a*/
+          return v4; /*0x592b3a*/
+        v4 = 0; /*0x592b49*/
+        sub_5911F0(); /*0x592b4b*/
+        v13 = a1[7]; /*0x592b50*/
+        if ( *((_DWORD *)v13 + 3) ) /*0x592b53*/
+        {
+          *(_DWORD *)v13 = 12; /*0x592b58*/
+          goto LABEL_34; /*0x592b5e*/
+        }
+        *(_DWORD *)v13 = 8; /*0x592b63*/
+LABEL_24:
+        v14 = a1[1]; /*0x592b69*/
+        if ( !v14 ) /*0x592b6e*/
+          return v4; /*0x592b6e*/
+        v15 = *a1; /*0x592b74*/
+        ++a1[2]; /*0x592b76*/
+        a1[1] = v14 - 1; /*0x592b7d*/
+        *((_DWORD *)a1[7] + 2) = *v15 << 24; /*0x592b89*/
+        v16 = a1[7]; /*0x592b8c*/
+        v4 = 0; /*0x592b8f*/
+        ++*a1; /*0x592b91*/
+        *(_DWORD *)v16 = 9; /*0x592b94*/
+LABEL_26:
+        v17 = a1[1]; /*0x592b9a*/
+        if ( !v17 ) /*0x592b9f*/
+          return v4; /*0x592b9f*/
+        v18 = *a1; /*0x592ba5*/
+        ++a1[2]; /*0x592ba7*/
+        a1[1] = v17 - 1; /*0x592bae*/
+        *((_DWORD *)a1[7] + 2) += *v18 << 16; /*0x592bba*/
+        v19 = a1[7]; /*0x592bbd*/
+        v4 = 0; /*0x592bc0*/
+        ++*a1; /*0x592bc2*/
+        *(_DWORD *)v19 = 10; /*0x592bc5*/
+LABEL_28:
+        v20 = a1[1]; /*0x592bcb*/
+        if ( !v20 ) /*0x592bd0*/
+          return v4; /*0x592bd0*/
+        v21 = *a1; /*0x592bd6*/
+        ++a1[2]; /*0x592bd8*/
+        a1[1] = v20 - 1; /*0x592bdf*/
+        *((_DWORD *)a1[7] + 2) += *v21 << 8; /*0x592beb*/
+        v22 = a1[7]; /*0x592bee*/
+        v4 = 0; /*0x592bf1*/
+        ++*a1; /*0x592bf3*/
+        *(_DWORD *)v22 = 11; /*0x592bf6*/
+LABEL_30:
+        v23 = a1[1]; /*0x592bfc*/
+        if ( !v23 ) /*0x592c01*/
+          return v4; /*0x592c01*/
+        v24 = *a1; /*0x592c03*/
+        ++a1[2]; /*0x592c05*/
+        a1[1] = v23 - 1; /*0x592c0c*/
+        *((_DWORD *)a1[7] + 2) += *v24; /*0x592c15*/
+        v25 = a1[7]; /*0x592c18*/
+        ++*a1; /*0x592c1b*/
+        v4 = 0; /*0x592c21*/
+        if ( *((_DWORD *)v25 + 1) != *((_DWORD *)v25 + 2) ) /*0x592c26*/
+        {
+          *(_DWORD *)v25 = 13; /*0x592c2c*/
+          a1[6] = "incorrect data check"; /*0x592c32*/
+          goto LABEL_33; /*0x592c32*/
+        }
+        *(_DWORD *)a1[7] = 12; /*0x592d5f*/
+        return 1;
+      case 8u: /*0x592a28*/
+        goto LABEL_24;
+      case 9u: /*0x592a28*/
+        goto LABEL_26;
+      case 0xAu: /*0x592a28*/
+        goto LABEL_28;
+      case 0xBu: /*0x592a28*/
+        goto LABEL_30;
+      case 0xCu: /*0x592a28*/
+        return 1;
+      case 0xDu: /*0x592a28*/
+        return -3; /*0x592d73*/
+      default:
+        return -2;
+    }
+  }
+}
+
+// ---- refs ----
+// 0x6f5d50 aUnknownCompres "unknown compression method"
+// 0x6f5d6c aInvalidWindowS "invalid window size"
+// 0x6f5d80 aIncorrectHeade "incorrect header check"
+// 0x6f5d98 aNeedDictionary "need dictionary"
+// 0x591310 sub_591310
+// 0x5911f0 sub_5911F0
+// 0x6f5da8 aIncorrectDataC "incorrect data check"

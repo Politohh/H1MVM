@@ -1,0 +1,167 @@
+int __cdecl sub_472E00(int a1, _DWORD *a2, int a3, int a4, int a5)
+{
+  int v6; // ecx
+  int *v7; // ebp
+  _DWORD *v8; // esi
+  int v9; // ecx
+  int v10; // edi
+  bool v11; // zf
+  __int16 v12; // ax
+  __int16 v13; // ax
+  __int16 v14; // ax
+  int v15; // esi
+  int v16; // eax
+  int result; // eax
+  char v18; // [esp+18h] [ebp-18h]
+  int v19; // [esp+28h] [ebp-8h]
+  int v20; // [esp+2Ch] [ebp-4h]
+  int v21; // [esp+34h] [ebp+4h]
+
+  *(_DWORD *)(a5 + 12168) = *(_DWORD *)(a1 + 153128); /*0x472e12*/
+  v6 = 0; /*0x472e18*/
+  *(_DWORD *)(a5 + 12160) = 0; /*0x472e1b*/
+  v7 = 0; /*0x472e26*/
+  v19 = 0; /*0x472e2b*/
+  if ( a4 ) /*0x472e2f*/
+  {
+    if ( *(int *)(a4 + 12160) > 0 ) /*0x472e41*/
+    {
+      v7 = (int *)(244 * (*(_DWORD *)(a4 + 12168) & 0x7FF) + a1 + 1071824); /*0x472e66*/
+      v21 = *v7; /*0x472e6d*/
+    }
+    else
+    {
+      v21 = 99999; /*0x472e43*/
+    }
+  }
+  else
+  {
+    v21 = 99999; /*0x472e31*/
+  }
+  v8 = a2; /*0x472e71*/
+  while ( !*v8 )
+  {
+    if ( sub_504BC0(v6, v8) )
+    {
+      if ( *(_BYTE *)(dword_14BFF2C + 12) )
+        sub_4FC7A0(16, "Entity num: 1 bit (inc)\n", v18);
+      ++v8[9]; /*0x472ea6*/
+    }
+    else if ( sub_504BC0(v9, v8) )
+    {
+      if ( *(_BYTE *)(dword_14BFF2C + 12) )
+        sub_4FC7A0(16, "Entity num: %i bits (full)\n", 12);
+      v8[9] = sub_504B30(10); /*0x472f08*/
+    }
+    else
+    {
+      if ( *(_BYTE *)(dword_14BFF2C + 12) )
+        sub_4FC7A0(16, "Entity num: %i bits (delta)\n", 6);
+      v8[9] += sub_504B30(4); /*0x472edd*/
+    }
+    if ( *(_BYTE *)(dword_14BFF2C + 12) ) /*0x472f11*/
+      sub_4FC7A0(16, "Read entity num %i\n", v8[9]); /*0x472f22*/
+    v10 = v8[9]; /*0x472f2a*/
+    v20 = v10; /*0x472f33*/
+    if ( v10 == 1023 ) /*0x472f37*/
+      break; /*0x472f37*/
+    if ( v8[7] > v8[5] ) /*0x472f43*/
+      sub_4FCF10(1, (char *)&byte_6D163C, v18); /*0x472f4c*/
+    v11 = v21 == v10; /*0x472f54*/
+    if ( v21 < v10 )
+    {
+      do
+      {
+        if ( *v8 ) /*0x472f60*/
+          break; /*0x472f63*/
+        if ( *(_DWORD *)(dword_D5C3874 + 12) == 3 )
+          sub_4FC7A0(14, "%3i:  unchanged: %i\n", v8[7]);
+        qmemcpy((void *)(244 * ((*(_DWORD *)(a1 + 153128))++ & 0x7FF) + a1 + 1071824), v7, 0xF4u); /*0x472fb1*/
+        ++*(_DWORD *)(a5 + 12160); /*0x472fbe*/
+        v12 = ++v19; /*0x472fc8*/
+        if ( v19 < *(_DWORD *)(a4 + 12160) ) /*0x472fd8*/
+        {
+          v7 = (int *)(244 * ((v12 + (unsigned __int16)*(_DWORD *)(a4 + 12168)) & 0x7FF) + a1 + 1071824); /*0x472fff*/
+          v21 = *v7; /*0x473006*/
+        }
+        else
+        {
+          v21 = 99999; /*0x472fda*/
+        }
+        v10 = v20; /*0x47300e*/
+        v8 = a2; /*0x473014*/
+      }
+      while ( v21 < v20 );
+      v11 = v21 == v10; /*0x47301e*/
+    }
+    if ( v11 )
+    {
+      if ( *(_DWORD *)(dword_D5C3874 + 12) == 3 )
+        sub_4FC7A0(14, "%3i:  delta: %i\n", v8[7]);
+      if ( !sub_5066C0(a3, (int)v7, v10) ) /*0x47306a*/
+      {
+        ++*(_DWORD *)(a1 + 153128); /*0x47307f*/
+        ++*(_DWORD *)(a5 + 12160); /*0x473085*/
+      }
+      v6 = a4; /*0x47308f*/
+      v13 = ++v19; /*0x473093*/
+      if ( v19 < *(_DWORD *)(a4 + 12160) ) /*0x4730a0*/
+      {
+        v6 = 244 * ((v13 + (unsigned __int16)*(_DWORD *)(a4 + 12168)) & 0x7FF); /*0x4730bd*/
+        v7 = (int *)(v6 + a1 + 1071824); /*0x4730ca*/
+        v21 = *v7; /*0x4730d1*/
+      }
+      else
+      {
+        v21 = 99999; /*0x4730a2*/
+      }
+    }
+    else
+    {
+      if ( *(_DWORD *)(dword_D5C3874 + 12) == 3 )
+        sub_4FC7A0(14, "%3i:  baseline: %i\n", v8[7]);
+      if ( !sub_5066C0(a3, 244 * v10 + a1 + 821968, v10) ) /*0x473125*/
+      {
+        v6 = 1; /*0x473135*/
+        ++*(_DWORD *)(a1 + 153128); /*0x47313a*/
+        ++*(_DWORD *)(a5 + 12160); /*0x473140*/
+      }
+    }
+  }
+  if ( v21 != 99999 )
+  {
+    while ( !*v8 )
+    {
+      if ( *(_DWORD *)(dword_D5C3874 + 12) == 3 )
+        sub_4FC7A0(14, "%3i:  unchanged: %i\n", v8[7]);
+      qmemcpy((void *)(244 * ((*(_DWORD *)(a1 + 153128))++ & 0x7FF) + a1 + 1071824), v7, 0xF4u); /*0x4731b3*/
+      ++*(_DWORD *)(a5 + 12160); /*0x4731c0*/
+      v14 = ++v19; /*0x4731ca*/
+      if ( v19 < *(_DWORD *)(a4 + 12160) ) /*0x4731da*/
+      {
+        v7 = (int *)(244 * ((v14 + (unsigned __int16)*(_DWORD *)(a4 + 12168)) & 0x7FF) + a1 + 1071824); /*0x473202*/
+        v15 = *v7; /*0x47320d*/
+      }
+      else
+      {
+        v15 = 99999; /*0x4731dc*/
+      }
+      if ( *(_BYTE *)(dword_1494F04 + 12) )
+      {
+        v16 = v7[1]; /*0x47321a*/
+        if ( v16 >= 17 ) /*0x473220*/
+          sub_570D60("Event %s (%i)", off_72848C[v16], v16 - 17); /*0x47323c*/
+        sub_4FC7A0(14, "%3i: unchanged ent, eType %s at %f, %f, %f\n", v15);
+      }
+      if ( v15 == 99999 ) /*0x473272*/
+        break; /*0x473272*/
+      v8 = a2; /*0x473160*/
+    }
+  }
+  if ( *(_BYTE *)(dword_C36F9C + 12) )
+    return sub_4FC7A0(14, "Entities in packet: %i\n", *(_DWORD *)(a5 + 12160));
+  result = dword_1494F04; /*0x473284*/
+  if ( *(_BYTE *)(dword_1494F04 + 12) )
+    return sub_4FC7A0(14, "Entities in packet: %i\n", *(_DWORD *)(a5 + 12160));
+  return result; /*0x4732a9*/
+}

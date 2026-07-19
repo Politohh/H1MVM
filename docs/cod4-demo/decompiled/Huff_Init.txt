@@ -1,0 +1,135 @@
+_DWORD *sub_5047B0()
+{
+  int v0; // ebp
+  int v1; // edx
+  int v2; // eax
+  int v3; // ebx
+  _DWORD *v4; // ecx
+  int v5; // ebx
+  int v6; // edi
+  _DWORD *v7; // ecx
+  int v8; // ebx
+  int v9; // edi
+  _DWORD *v10; // ecx
+  int v11; // ebx
+  int v12; // edi
+  _DWORD *v13; // ecx
+  _DWORD *v14; // eax
+  int v15; // ecx
+  int *v16; // edi
+  int v17; // ebx
+  _DWORD *result; // eax
+  int v19; // ecx
+  bool v20; // zf
+  int v21; // [esp+10h] [ebp-404h]
+  _DWORD Base[256]; // [esp+14h] [ebp-400h] BYREF
+
+  v0 = 0; /*0x5047bb*/
+  v1 = 2; /*0x5047be*/
+  v2 = 0; /*0x5047c1*/
+  do /*0x5048c4*/
+  {
+    v3 = dword_6BAC10[v2]; /*0x5047d6*/
+    v4 = (_DWORD *)(20 * dword_14902F0++ + 21563140); /*0x5047df*/
+    *v4 = 0; /*0x5047ef*/
+    v4[3] = v3; /*0x5047f1*/
+    v4[1] = 0; /*0x5047f4*/
+    v4[2] = 0; /*0x5047f7*/
+    v4[4] = v1 - 2; /*0x5047fd*/
+    v5 = dword_6BAC14[v2]; /*0x504800*/
+    dword_14902FC[v2] = (int)v4; /*0x504806*/
+    v6 = dword_14902F0; /*0x50480c*/
+    Base[v2] = v4; /*0x504812*/
+    v7 = (_DWORD *)(20 * v6 + 21563140); /*0x504819*/
+    dword_14902F0 = v6 + 1; /*0x504823*/
+    v7[4] = v1 - 1; /*0x50482c*/
+    v7[3] = v5; /*0x50482f*/
+    *v7 = 0; /*0x504832*/
+    v7[1] = 0; /*0x504834*/
+    v7[2] = 0; /*0x504837*/
+    v8 = dword_6BAC18[v2]; /*0x50483a*/
+    dword_1490300[v2] = (int)v7; /*0x504840*/
+    v9 = dword_14902F0; /*0x504846*/
+    Base[v2 + 1] = v7; /*0x50484c*/
+    v10 = (_DWORD *)(20 * v9 + 21563140); /*0x504853*/
+    dword_14902F0 = v9 + 1; /*0x50485d*/
+    v10[4] = v1; /*0x504863*/
+    v10[3] = v8; /*0x504866*/
+    *v10 = 0; /*0x504869*/
+    v10[1] = 0; /*0x50486b*/
+    v10[2] = 0; /*0x50486e*/
+    v11 = dword_6BAC1C[v2]; /*0x504871*/
+    dword_1490304[v2] = (int)v10; /*0x504877*/
+    v12 = dword_14902F0; /*0x50487d*/
+    Base[v2 + 2] = v10; /*0x504883*/
+    v13 = (_DWORD *)(20 * v12 + 21563140); /*0x50488a*/
+    dword_14902F0 = v12 + 1; /*0x504894*/
+    v13[4] = v1 + 1; /*0x50489d*/
+    v13[3] = v11; /*0x5048a0*/
+    *v13 = 0; /*0x5048a3*/
+    v13[1] = 0; /*0x5048a5*/
+    v13[2] = 0; /*0x5048a8*/
+    v1 += 4; /*0x5048ab*/
+    dword_1490308[v2] = (int)v13; /*0x5048ae*/
+    Base[v2 + 3] = v13; /*0x5048b4*/
+    v2 += 4; /*0x5048bb*/
+  }
+  while ( v1 - 2 < 256 ); /*0x5048c4*/
+  qsort(Base, 0x100u, 4u, sub_504790); /*0x5048db*/
+  v14 = (_DWORD *)(20 * dword_14902F0++ + 21563140); /*0x5048e9*/
+  v14[1] = 0; /*0x5048f9*/
+  *v14 = 0; /*0x5048fc*/
+  v14[3] = 1; /*0x5048fe*/
+  v14[4] = 257; /*0x504905*/
+  v14[2] = 0; /*0x50490c*/
+  v15 = dword_14902F8; /*0x50490f*/
+  dword_1490700 = (int)v14; /*0x504915*/
+  *v14 = dword_14902F8; /*0x50491a*/
+  v14[1] = Base[0]; /*0x504920*/
+  *(_DWORD *)(v15 + 8) = v14; /*0x504923*/
+  *(_DWORD *)(v14[1] + 8) = v14; /*0x504929*/
+  v14[3] = *(_DWORD *)(v14[1] + 12) + *(_DWORD *)(*v14 + 12); /*0x50493a*/
+  Base[0] = v14; /*0x50493d*/
+  v16 = Base; /*0x504941*/
+  v17 = 0; /*0x504945*/
+  v21 = 255; /*0x504947*/
+  do /*0x5049d3*/
+  {
+    qsort(v16, 256 - v0, 4u, sub_504790); /*0x504960*/
+    result = (_DWORD *)(20 * dword_14902F0++ + 21563140); /*0x50496e*/
+    *result = 0; /*0x504982*/
+    result[1] = 0; /*0x504984*/
+    result[3] = 1; /*0x504987*/
+    result[4] = 257; /*0x50498a*/
+    result[2] = 0; /*0x504991*/
+    v19 = *v16; /*0x504994*/
+    dword_1490700 = (int)result; /*0x504996*/
+    *result = v19; /*0x50499b*/
+    result[1] = Base[v17 + 1]; /*0x5049a1*/
+    *(_DWORD *)(*result + 8) = result; /*0x5049a6*/
+    *(_DWORD *)(result[1] + 8) = result; /*0x5049ac*/
+    v17 = ++v0; /*0x5049bc*/
+    v20 = v21-- == 1; /*0x5049c6*/
+    v16 = &Base[v0]; /*0x5049ca*/
+    result[3] = *(_DWORD *)(result[1] + 12) + *(_DWORD *)(*result + 12); /*0x5049ce*/
+    *v16 = (int)result; /*0x5049d1*/
+  }
+  while ( !v20 ); /*0x5049d3*/
+  dword_14902F8 = Base[v0]; /*0x5049e0*/
+  return result; /*0x5049dd*/
+}
+
+// ---- refs ----
+// 0x6bac10 dword_6BAC10
+// 0x14902f0 dword_14902F0
+// 0x6bac14 dword_6BAC14
+// 0x14902fc dword_14902FC
+// 0x6bac18 dword_6BAC18
+// 0x1490300 dword_1490300
+// 0x6bac1c dword_6BAC1C
+// 0x1490304 dword_1490304
+// 0x1490308 dword_1490308
+// 0x670050 _qsort
+// 0x504790 sub_504790
+// 0x14902f8 dword_14902F8
+// 0x1490700 dword_1490700

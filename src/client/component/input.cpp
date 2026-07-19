@@ -6,6 +6,9 @@
 #include "game_console.hpp"
 #include "gui/gui.hpp"
 #include "game/ui_scripting/execution.hpp"
+#include "demo/demo_playback.hpp"
+#include "demo/demo_gui.hpp"
+#include "demo/theater_camera.hpp"
 
 #include <utils/hook.hpp>
 
@@ -47,6 +50,23 @@ namespace input
 				return;
 			}
 #endif
+
+			if (demo_playback::handle_key_event(key, down))
+			{
+				return;
+			}
+
+			// freecam mouse-wheel: roll / Alt+FOV (wheel arrives as K_MWHEELUP/DOWN key events)
+			if (down && theater_camera::handle_wheel(key))
+			{
+				return;
+			}
+
+			if (key == game::K_F9 && down)
+			{
+				demo_gui::toggle();
+				return;
+			}
 
 			cl_key_event_hook.invoke<void>(local_client_num, key, down);
 		}

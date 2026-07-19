@@ -1,0 +1,40 @@
+int __usercall sub_504610@<eax>(int result@<eax>, int a2@<edi>, _DWORD *a3, int *a4)
+{
+  int v4; // edx
+  _DWORD *v5; // esi
+  int v6; // eax
+
+  v4 = *a4; /*0x504615*/
+  v5 = (_DWORD *)result; /*0x50461d*/
+  dword_D5C38D0 = *a4; /*0x504621*/
+  if ( result ) /*0x504627*/
+  {
+    while ( v5[4] == 257 ) /*0x504637*/
+    {
+      v6 = *(unsigned __int8 *)((v4 >> 3) + a2) >> (v4 & 7); /*0x504648*/
+      ++v4; /*0x50464a*/
+      result = v6 & 1; /*0x50464d*/
+      if ( result ) /*0x504652*/
+        v5 = (_DWORD *)v5[1]; /*0x504654*/
+      else
+        v5 = (_DWORD *)*v5; /*0x504659*/
+      if ( !v5 ) /*0x50465d*/
+      {
+        dword_D5C38D0 = v4; /*0x50465f*/
+        goto LABEL_8; /*0x50465f*/
+      }
+    }
+    *a3 = v5[4]; /*0x504674*/
+    *a4 = v4; /*0x504678*/
+    dword_D5C38D0 = v4; /*0x50467a*/
+  }
+  else
+  {
+LABEL_8:
+    *a3 = 0; /*0x504665*/
+  }
+  return result; /*0x504665*/
+}
+
+// ---- refs ----
+// 0xd5c38d0 dword_D5C38D0

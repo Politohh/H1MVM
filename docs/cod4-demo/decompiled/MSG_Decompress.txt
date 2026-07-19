@@ -1,0 +1,19 @@
+_BYTE *__cdecl sub_504C80(_BYTE *i, int a2)
+{
+  _BYTE *v2; // ebp
+  int v3; // ebx
+  _BYTE *v4; // esi
+
+  v2 = i; /*0x504c88*/
+  v3 = 8 * a2; /*0x504c8f*/
+  v4 = i; /*0x504c96*/
+  for ( i = 0; (int)i < v3; ++v4 ) /*0x504ca0*/
+  {
+    sub_504610(&a2, &i); /*0x504cb1*/
+    *v4 = a2; /*0x504cba*/
+  }
+  return (_BYTE *)(v4 - v2); /*0x504cc8*/
+}
+
+// ---- refs ----
+// 0x504610 sub_504610

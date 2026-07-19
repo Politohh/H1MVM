@@ -1,0 +1,59 @@
+int __cdecl sub_55B3D0(char *Buffer, size_t ElementCount, int a3)
+{
+  int result; // eax
+  char *v4; // ebx
+  FILE *v5; // ebp
+  size_t v6; // edi
+  size_t v7; // eax
+  size_t v8; // esi
+  char v9; // [esp+0h] [ebp-18h]
+  int v10; // [esp+14h] [ebp-4h]
+
+  result = a3; /*0x55b3d0*/
+  v4 = Buffer; /*0x55b3da*/
+  if ( a3 ) /*0x55b3e1*/
+  {
+    if ( dword_CAF523C[71 * a3] ) /*0x55b3f1*/
+      return sub_5956E0(Buffer); /*0x55b414*/
+    v5 = (FILE *)dword_CAF5228[71 * a3]; /*0x55b415*/
+    result = ElementCount; /*0x55b41b*/
+    v6 = ElementCount; /*0x55b421*/
+    v10 = 0; /*0x55b423*/
+    if ( ElementCount ) /*0x55b42b*/
+    {
+      while ( 1 ) /*0x55b435*/
+      {
+        v7 = fread(v4, 1u, v6, v5); /*0x55b435*/
+        v8 = v7; /*0x55b43a*/
+        if ( v7 ) /*0x55b441*/
+        {
+          if ( v7 == -1 ) /*0x55b456*/
+          {
+            if ( a3 >= 49 && a3 < 62 ) /*0x55b464*/
+              return -1; /*0x55b497*/
+            sub_4FCF10(0, (char *)&byte_6F061C, v9); /*0x55b46d*/
+          }
+        }
+        else
+        {
+          if ( v10 ) /*0x55b447*/
+            return ElementCount - v6; /*0x55b496*/
+          v10 = 1; /*0x55b449*/
+        }
+        v6 -= v8; /*0x55b475*/
+        v4 += v8; /*0x55b477*/
+        if ( !v6 ) /*0x55b47b*/
+          return ElementCount; /*0x55b488*/
+      }
+    }
+  }
+  return result; /*0x55b3e3*/
+}
+
+// ---- refs ----
+// 0x5956e0 sub_5956E0
+// 0xcaf523c dword_CAF523C
+// 0xcaf5228 dword_CAF5228
+// 0x670d80 _fread
+// 0x4fcf10 sub_4FCF10
+// 0x6f061c byte_6F061C

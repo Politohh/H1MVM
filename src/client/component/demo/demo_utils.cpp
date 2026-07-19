@@ -1288,10 +1288,44 @@ namespace demo_utils
 			return file.good() && file.is_open() && !file.eof();
 		}
 
+		namespace { int g_command_baseline = 0; }
+
+		void note_command_baseline(int svr_cmd_seq)
+		{
+			g_command_baseline = svr_cmd_seq;
+			// Reset the REAL cgs command counter to the baseline now, matching clc, so a low-baseline
+			// (local) demo doesn't leave it above clc (which would make the walker request commands
+			// clc hasn't seen -> EXE_ERR_NOT_RECEIVED).
+			if (auto* real_cgs = game::CG_GetServerCommandsState())
+			{
+				*reinterpret_cast<int*>(reinterpret_cast<std::uintptr_t>(real_cgs) + 0x18) = svr_cmd_seq;
+			}
+		}
+
 		void process_server_commands()
 		{
 			static_assert(std::size(game::mp::clientConnection_t{}.serverCommands) > 100);
 			assert(game::mp::clc->lastExecutedServerCommand <= game::mp::clc->serverCommandSequence);
+
+			// A demo recorded MID-MATCH bakes in the accumulated reliable-command count (e.g. 612) as
+			// its gamestate baseline; recorded right after connecting it's 0 (why only mid-match demos
+			// broke). The native per-snapshot CG_ExecuteNewServerCommands walks the REAL cgs->
+			// serverCommandSequence (cgs+0x18) up to each snapshot's target, but CG init leaves that
+			// real counter at 0, and the h1-mod cgs is only a stub so the gamestate-apply couldn't
+			// seed it. Keep the real counter (a) at least at the demo's baseline and (b) no more than
+			// the 256-entry ring behind the latest received command (clc->serverCommandSequence) --
+			// otherwise the walker requests a command already overwritten -> Com_Error "a reliable
+			// command was cycled out". Pre-baseline commands live in the gamestate, and anything >256
+			// behind is unrecoverable regardless, so snapping up only skips commands already gone.
+			if (auto* real_cgs = game::CG_GetServerCommandsState())
+			{
+				const int clc_seq = game::mp::clc->serverCommandSequence;
+				const int lo = (std::max)(g_command_baseline, clc_seq - 200);
+				auto& real_seq = *reinterpret_cast<int*>(
+					reinterpret_cast<std::uintptr_t>(real_cgs) + 0x18);
+				if (real_seq < lo) real_seq = lo;                // too far behind -> "cycled out"
+				else if (real_seq > clc_seq) real_seq = clc_seq; // ahead of received -> "not received"
+			}
 
 			// NOTE(h1): the original iw6 100-command threshold assumed a LIVE match's command
 			// rate; our replayed matches accumulate serverCommandSequence far more slowly (verified
@@ -1338,12 +1372,19 @@ namespace demo_utils
 			};
 		}
 
+		// [clocklog] Chunks consumed by the loop below, cumulative. demo_playback samples the delta
+		// per frame and logs it as rd=. THE decisive measurement for the stall/burst bug: bursts were
+		// measured with cl->serverTime completely stationary, i.e. with this loop's gate CLOSED --
+		// so if snap.serverTime still leaps while rd==0, something outside this feed is writing it.
+		int g_demo_chunks_read = 0;
+
 		bool parse_demo(std::ifstream& file, std::vector<std::uint8_t>& buffer,
 			std::size_t& post_map_header_file_offset, std::array<predicted_data_t, 256>& pred_data,
 			std::size_t& pred_data_index, std::optional<gamestate_t>& gs, bool skip_map_preload)
 		{
 			while (continue_demo_reading())
 			{
+				++g_demo_chunks_read;
 				const auto [full_id, id, flag1, flag2, one_byte] = read_demo_data_id(file);
 
 				if (id == demo_data_id::eof)
@@ -1411,9 +1452,23 @@ namespace demo_utils
 
 		void fast_forward_demo(std::uint32_t msec)
 		{
-			if (*game::mp::connstate == game::CA_ACTIVE)
+			// NOTE(h1): CL_SetCGameTime (0x33C950) recomputes the playback clock every frame as
+			// cl->serverTime = max(cl->serverTime, cl->serverTimeDelta + com_frameTime), where
+			// com_frameTime (dword_2ED2080) is the global real-time clock that advances each
+			// frame. So a direct `cl->serverTime += msec` does NOT fast-forward: the natural
+			// term (serverTimeDelta + com_frameTime) is still msec behind the bumped value, so
+			// the max() clamp FREEZES serverTime at the bumped value for msec of real time --
+			// this was the "stuck after forward/rewind" bug (the pause pin was the only thing
+			// nudging serverTime forward, which is exactly why space-mashing eventually unstuck
+			// it, stepping one snapshot per toggle). The correct lever is serverTimeDelta (the
+			// h1 analog of iw6's cls.realtime, which the iw6 original bumped): raising it by msec
+			// makes serverTime = com_frameTime + (delta + msec) jump forward by msec AND keep
+			// advancing at real-time rate. continue_demo_reading's gate (snap.serverTime <=
+			// serverTime) then has parse_demo burst-read chunks until the freshly-read snapshots
+			// catch up to the new clock -- a real fast-forward with no freeze.
+			if (*game::mp::connstate == game::CA_ACTIVE && game::mp::cl.get())
 			{
-				game::mp::cls->realtime += msec;
+				game::mp::cl->serverTimeDelta += static_cast<std::int32_t>(msec);
 			}
 		}
 

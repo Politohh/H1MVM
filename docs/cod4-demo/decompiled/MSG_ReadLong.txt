@@ -1,0 +1,49 @@
+int __thiscall sub_504FB0(_DWORD *this)
+{
+  int v1; // eax
+  int v2; // esi
+  int v3; // edi
+  int v4; // edx
+  int v5; // edx
+  int v6; // edx
+  int v7; // edx
+  char v8; // al
+  int v10; // [esp+8h] [ebp-4h]
+
+  v1 = this[7]; /*0x504fb1*/
+  v2 = this[5]; /*0x504fb8*/
+  v3 = v1 + 4; /*0x504fbc*/
+  if ( v1 + 4 > v2 + this[6] ) /*0x504fc3*/
+  {
+    *this = 1; /*0x50504b*/
+    return -1; /*0x505051*/
+  }
+  else
+  {
+    if ( v1 < v2 ) /*0x504fcb*/
+      v4 = this[2]; /*0x504fd4*/
+    else
+      v4 = this[3] - v2; /*0x504fd0*/
+    LOBYTE(v10) = *(_BYTE *)(v4 + v1); /*0x504fdb*/
+    if ( v1 + 1 < v2 ) /*0x504fe4*/
+      v5 = this[2]; /*0x504fed*/
+    else
+      v5 = this[3] - v2; /*0x504fe9*/
+    BYTE1(v10) = *(_BYTE *)(v5 + v1 + 1); /*0x504ff5*/
+    if ( v1 + 2 < v2 ) /*0x504ffe*/
+      v6 = this[2]; /*0x505007*/
+    else
+      v6 = this[3] - v2; /*0x505003*/
+    BYTE2(v10) = *(_BYTE *)(v6 + v1 + 2); /*0x50500f*/
+    if ( v1 + 3 < v2 ) /*0x505018*/
+      v7 = this[2]; /*0x505033*/
+    else
+      v7 = this[3] - v2; /*0x50501d*/
+    v8 = *(_BYTE *)(v7 + v1 + 3); /*0x50501f*/
+    this[7] = v3; /*0x505024*/
+    HIBYTE(v10) = v8; /*0x505028*/
+    return v10; /*0x50502c*/
+  }
+}
+
+// ---- refs ----
