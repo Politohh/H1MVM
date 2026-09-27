@@ -933,15 +933,11 @@ namespace demo_gui
 			ImGui::BeginDisabled(demo_files.empty());
 			if (ImGui::Button("Play"))
 			{
-				// Route through the SAME console command that works (`demoplay <path> fullpath`).
-				// demo_playback::startplay() only opens the file stream via demo.start(); it skips
-				// demo.bootstrap_map_load() AND the virtual-lobby guard, so at the menu
-				// CL_SetCGameTime never ticks to run process_map_header and the map never loads
-				// (= "GUI Play does nothing", while console demoplay works). The demoplay command's
-				// <false> path does the guard + bootstrap; reuse it verbatim (same quoting pattern
-				// as the command-line auto-play at the bottom of demo_playback.cpp).
+				// Queue the normal demoplay command for the next game command pump. Running it
+				// synchronously here enters party::start_map from inside the ImGui render frame,
+				// where the map transition can block the frame that must complete it.
 				const auto& path = demo_files[selected_index].path;
-				command::execute(std::format(R"(demoplay "{}" fullpath)", path.string()), true);
+				command::execute(std::format(R"(demoplay "{}" fullpath)", path.string()));
 			}
 			ImGui::EndDisabled();
 
