@@ -1380,8 +1380,9 @@ namespace demo_utils
 
 		bool parse_demo(std::ifstream& file, std::vector<std::uint8_t>& buffer,
 			std::size_t& post_map_header_file_offset, std::array<predicted_data_t, 256>& pred_data,
-			std::size_t& pred_data_index, std::optional<gamestate_t>& gs, bool skip_map_preload)
+			std::size_t& pred_data_index, std::optional<gamestate_t>& gs, bool skip_map_preload, bool& clean_end)
 		{
+			clean_end = false;
 			while (continue_demo_reading())
 			{
 				++g_demo_chunks_read;
@@ -1389,6 +1390,7 @@ namespace demo_utils
 
 				if (id == demo_data_id::eof)
 				{
+					clean_end = file.good();
 					return false;
 				}
 				if (flag1 || flag2)

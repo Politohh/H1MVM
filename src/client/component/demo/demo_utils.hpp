@@ -153,8 +153,8 @@ namespace demo_utils
 
 		//void write_predicted_player_data(buffer_t& output, const game::ClientArchiveData& cad,
 			//const game::vec3_t& viewangles, std::uint8_t cad_index, predicted_data_id id);
-		//void write_predicted_player_data(std::ofstream& output, const game::ClientArchiveData& cad,
-			//const game::vec3_t& viewangles, std::uint8_t cad_index, predicted_data_id id);
+		void write_predicted_player_data(std::ofstream& output, const game::ClientArchiveData& cad,
+			const game::vec3_t& viewangles, std::uint8_t cad_index, predicted_data_id id);
 
 		//void write_predicted_vehicle_data(buffer_t& output, const game::ClientArchiveData& cad,
 			//const game::vec3_t& viewangles, std::uint8_t cad_index, predicted_data_id id);
@@ -202,7 +202,7 @@ namespace demo_utils
 		bool is_gamestate_valid(game::gameState_t& gs, bool sanitize);
 		bool parse_demo(std::ifstream& file, std::vector<std::uint8_t>& buffer,
 			std::size_t& post_map_header_file_offset, std::array<predicted_data_t, 256>& pred_data,
-			std::size_t& pred_data_index, std::optional<gamestate_t>& gs, bool skip_map_preload);
+			std::size_t& pred_data_index, std::optional<gamestate_t>& gs, bool skip_map_preload, bool& clean_end);
 
 		// [clocklog] cumulative count of chunks consumed by parse_demo's gated loop. See its definition.
 		extern int g_demo_chunks_read;

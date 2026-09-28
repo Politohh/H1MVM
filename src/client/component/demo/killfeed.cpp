@@ -2,6 +2,7 @@
 #include "loader/component_loader.hpp"
 
 #include "demo_game.hpp"
+#include "cod4_camera.hpp"
 
 #include "game/dvars.hpp"
 #include "component/scheduler.hpp"
@@ -344,6 +345,11 @@ namespace killfeed
 
 		void cg_draw2d_stub(int local_client_num)
 		{
+			// The local match is only a renderer for the imported camera. Its
+			// countdown and HUD are unrelated to the recorded COD4 session.
+			// Gate the existing draw hook from the first map frame, including
+			// frames before the camera track becomes ready. F9 draws separately.
+			if (cod4_camera::active() && !game::VirtualLobby_Loaded()) return;
 			cg_draw2d_hook.invoke<void>(local_client_num); // stock HUD first
 			draw();                                        // our killfeed on top
 		}

@@ -2,6 +2,7 @@
 #include "loader/component_loader.hpp"
 
 #include "theater_camera.hpp"
+#include "cod4_camera.hpp"
 #include "demo_game.hpp"     // game::refdef, game::CG_CalcViewValues, game::AxisToAngles, demo_compat::register_enum
 #include "demo_playback.hpp" // demo_playback::playing()/is_replay_armed()/current_time()
 
@@ -39,6 +40,7 @@ namespace theater_camera
 
 		utils::hook::detour cg_calc_view_values_hook;
 		utils::hook::detour in_mouse_move_hook;
+		utils::hook::detour r_setup_lod_params_hook;
 
 		// ---- freecam state -------------------------------------------------------
 		bool freecam_seeded = false;               // seed pose from live view on first freecam frame
@@ -159,27 +161,26 @@ namespace theater_camera
 			return true;
 		}
 
-		void apply_pose_to_refdef(const camera_pose_t& pose)
+		void apply_pose_to_view(const camera_pose_t& pose, game::mp::RefdefView& view)
 		{
-			auto* rd = get_refdef();
-			if (!rd)
-			{
-				return;
-			}
-
 			for (int i = 0; i < 3; ++i)
 			{
-				rd->view.org[i] = pose.pos[i];
+				view.org[i] = pose.pos[i];
 			}
-			angles_to_axis(pose.angles, rd->view.axis);
+			angles_to_axis(pose.angles, view.axis);
 
 			// preserve aspect (tanHalfFovX / tanHalfFovY) while setting horizontal fov
-			const float aspect = (rd->view.tanHalfFovY != 0.0f)
-				? (rd->view.tanHalfFovX / rd->view.tanHalfFovY)
+			const float aspect = (view.tanHalfFovY != 0.0f)
+				? (view.tanHalfFovX / view.tanHalfFovY)
 				: (16.0f / 9.0f);
 			const float thf = std::tan(std::clamp(pose.fov, 1.0f, 179.0f) * 0.5f * DEG2RAD);
-			rd->view.tanHalfFovX = thf;
-			rd->view.tanHalfFovY = thf / aspect;
+			view.tanHalfFovX = thf;
+			view.tanHalfFovY = thf / aspect;
+		}
+
+		void apply_pose_to_refdef(const camera_pose_t& pose)
+		{
+			if (auto* rd = get_refdef(); rd) apply_pose_to_view(pose, rd->view);
 		}
 
 		// =========================================================================
@@ -378,6 +379,38 @@ namespace theater_camera
 			return std::nullopt;
 		}
 
+		void r_setup_lod_params_stub(const game::mp::RefdefView* view, void* params, float scale)
+		{
+			// CG_DrawActive builds dynamic-model LOD parameters before it calls
+			// CG_CalcViewValues. Replacing only the later render view leaves these
+			// distances anchored to the recorded player (notably for grenades).
+			// Both scene-model and static-model builders use this native helper.
+			if (view && demo_camera && demo_playback::playing() && demo_playback::is_replay_armed())
+			{
+				const auto mode = static_cast<camera_mode>(demo_camera->current.integer);
+				std::optional<camera_pose_t> pose;
+				if (mode == THEATER_CAMERA_FREECAM && freecam_seeded && g_last_mode == mode)
+				{
+					camera_pose_t flying{};
+					for (int i = 0; i < 3; ++i) { flying.pos[i] = freecam_pos[i]; flying.angles[i] = freecam_angles[i]; }
+					flying.fov = freecam_fov;
+					pose = flying;
+				}
+				else if (mode == THEATER_CAMERA_DOLLY && !keyframes.empty())
+				{
+					if (const auto t = playback_clock(); t) pose = sample_dolly(*t);
+				}
+				if (pose)
+				{
+					auto camera_view = *view;
+					apply_pose_to_view(*pose, camera_view);
+					r_setup_lod_params_hook.invoke<void>(&camera_view, params, scale);
+					return;
+				}
+			}
+			r_setup_lod_params_hook.invoke<void>(view, params, scale);
+		}
+
 		// Snapshot the current render camera pose as a marker at the current demo time
 		// (kept sorted; a capture within 50ms of an existing marker replaces it).
 		bool capture_marker_internal()
@@ -524,9 +557,54 @@ namespace theater_camera
 		// =========================================================================
 		//  the hook: override the render camera after CG_CalcViewValues computes it
 		// =========================================================================
-		std::uint64_t calc_view_values_stub(int local_client_num, void* a2)
-		{
+        std::uint64_t calc_view_values_stub(int local_client_num, void* a2)
+        {
+            if (demo_playback::converted() && !game::VirtualLobby_Loaded())
+            {
+                // Repair v1 converted files created with a zeroed linked-view
+                // entity. Native 0xEA4B0 reads ps+0x2C and composes that entity's
+                // rotation unless it is ENTITYNUM_NONE. These files have no
+                // entity attachments; use the same sentinel as the converter.
+                auto* ps = reinterpret_cast<std::uint8_t*>(game::CG_GetLocalClientGlobals());
+                if (ps) *reinterpret_cast<std::uint16_t*>(ps + 0x2C) = 2047;
+            }
+			// H1 multiplies cg_fov/cg_fovScale by a gameplay omnvar. COD4 has no
+			// corresponding override, and the synthetic snapshot's zero value clamps
+			// the view to cg_fovMin. Supply a neutral multiplier only for this native
+			// view calculation; preserve the user's dvars and the underlying snapshot.
+			float* replay_fov_multiplier = nullptr;
+			float saved_fov_multiplier{};
+			if ((cod4_camera::active() || demo_playback::converted()) && !game::VirtualLobby_Loaded())
+			{
+				// Name and accessors are the same ones used at native CG_CalcFov
+				// 0x1045C3..0x1045F4 (PC). OmnvarData is {time, value}, 8 bytes.
+				const auto index = utils::hook::invoke<int>(0x5A44A0_b, reinterpret_cast<const char*>(0x8E1190_b));
+				if (index >= 0)
+				{
+					auto* data = utils::hook::invoke<std::uint8_t*>(0x5A4250_b, local_client_num, index);
+					replay_fov_multiplier = reinterpret_cast<float*>(data + 4);
+					saved_fov_multiplier = *replay_fov_multiplier;
+					*replay_fov_multiplier = 1.0f;
+				}
+			}
 			const auto result = cg_calc_view_values_hook.invoke<std::uint64_t>(local_client_num, a2);
+			if (replay_fov_multiplier) *replay_fov_multiplier = saved_fov_multiplier;
+
+			camera_pose_t cod4_pose{};
+			if (cod4_camera::view(cod4_pose))
+			{
+				set_thirdperson(false);
+				set_hud_hidden(true);
+				g_last_mode = THEATER_CAMERA_DOLLY; // restore saved dvars when the track stops
+				if (auto* rd = get_refdef(); rd && rd->view.tanHalfFovY > 0)
+				{
+					// Keep the client's native FOV, including its configured scale and ADS.
+					for (int i = 0; i < 3; ++i) rd->view.org[i] = cod4_pose.pos[i];
+					angles_to_axis(cod4_pose.angles, rd->view.axis);
+					cod4_camera::record_applied(rd->view.org, 2.0f * std::atan(rd->view.tanHalfFovX) * RAD2DEG);
+				}
+				return result;
+			}
 
 			if (!demo_playback::playing() || !demo_playback::is_replay_armed() || !demo_camera)
 			{
@@ -867,6 +945,9 @@ namespace theater_camera
 			}
 
 			cg_calc_view_values_hook.create(game::CG_CalcViewValues, calc_view_values_stub);
+			// Verified native R_SetupLodParams(view, out, scale), called by both
+			// R_UpdateLodParams (0x1C3030) and scene-view setup (0x1C286B).
+			r_setup_lod_params_hook.create(0x1C7380_b, r_setup_lod_params_stub);
 
 			// tap the game's real per-frame mouse delta for smooth freecam look (no jitter)
 			in_mouse_move_hook.create(game::IN_MouseMove, in_mouse_move_stub);

@@ -3,6 +3,8 @@
 
 #include "demo_playback.hpp"
 #include "demo_utils.hpp"
+#include "cod4_camera.hpp"
+#include "cod4_model_metadata.hpp"
 
 #include "component/command.hpp"
 #include "component/console.hpp"
@@ -16,6 +18,25 @@ using namespace demo_utils;
 
 namespace // demo class
 {
+    std::ofstream converted_trace;
+    std::uint64_t converted_draws{};
+    std::uint64_t converted_packets_blocked{};
+    std::chrono::steady_clock::time_point converted_trace_time{};
+
+    void trace_converted(const char* stage)
+    {
+        if (!converted_trace.is_open()) return;
+        const auto* cl = game::mp::cl.get();
+        converted_trace << stage << " state=" << static_cast<int>(*game::mp::connstate)
+            << " server=" << game::SV_Loaded() << " lobby=" << game::VirtualLobby_Loaded()
+            << " cgame=" << game::CL_IsCgameInitialized()
+            << " onlineFlags=" << game::Live_SyncOnlineDataFlags(0)
+            << " time=" << (cl ? cl->serverTime : -1)
+            << " snap=" << (cl ? cl->snap.serverTime : -1)
+            << " draws=" << converted_draws << " blockedPackets=" << converted_packets_blocked
+            << std::endl;
+    }
+
 	class demo_playback_t
 	{
 	public:
@@ -34,13 +55,25 @@ namespace // demo class
 		[[nodiscard]] std::optional<std::string> peek_mapname();
 		[[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> peek_duration();
 		void bootstrap_map_load();
+        bool is_converted() const { return converted_; }
+        bool is_bootstrapping() const { return bootstrapping_; }
+        bool converted_models_ready() const
+        {
+            for (const auto& name : converted_models_)
+                if (!utils::hook::invoke<bool>(0x75470_b, name.c_str())) return false;
+            return true;
+        }
 		[[nodiscard]] std::optional<std::reference_wrapper<std::filesystem::path>> restart();
 		template <typename Func, typename... Args> auto use_predicted_data(Func func, Args&&... args);
 		template <typename Func, typename... Args> auto handle_fast_forward(Func func, Args&&... args);
 
 		[[nodiscard]] bool is_paused() const { return paused_; }
 		void set_paused(bool value) { paused_ = value; }
-		void toggle_paused() { paused_ = !paused_; }
+		void toggle_paused()
+        {
+            if (ended_) { (void)rewind_demo(std::nullopt); paused_ = false; }
+            else paused_ = !paused_;
+        }
 
 		// A user scrub/seek (demoforward/demorewind) must still complete while paused, so mark
 		// one in progress; handle_demo_reading then keeps parsing until it settles at the new
@@ -58,12 +91,16 @@ namespace // demo class
 	private:
 		void repeat();
 
-		bool repeat_{};
+		bool converted_{}, bootstrapping_{};
+        std::set<std::string> converted_models_;
+        bool repeat_{};
 		bool skip_timeout_{};
 		bool retain_timescale_{};
 		bool skip_map_preload_{}; // demoinstantplay: reuse current live map, don't start_map
 		bool replay_armed_{};     // becomes true once the client reaches CA_ACTIVE (handshake done)
 		bool gamestate_applied_{}; // becomes true once the recorded gamestate has been applied once
+		bool ended_{};
+        bool rewind_pending_{};
 		bool paused_{};           // freezes cl->serverTime + stops feeding new chunks (see handle_demo_reading)
 		bool seeking_{};          // a scrub/seek is settling (keep parsing even while paused)
 		int seek_ttl_{};          // min frames to let fast_forward_demo apply before a seek can settle
@@ -144,7 +181,8 @@ namespace // demo class
 		}
 
 		// trigger demo end-of-file which will repeat the demo
-		repeat_ = true;
+		ended_ = false;
+		rewind_pending_ = true;
 		file_.seekg(0, std::ios::end);
 
 		if (msec)
@@ -342,8 +380,72 @@ namespace // demo class
 		}
 
 		// we drive the map load ourselves -> parse_demo must NOT call start_map again
-		skip_map_preload_ = true;
-		party::start_map(*mapname);
+        skip_map_preload_ = true;
+        // Converted files contain a complete native gamestate packet. Bootstrap
+        // that client connection directly; no loopback server or match is needed.
+        std::ifstream input(path_, std::ios::binary);
+        std::vector<std::uint8_t> initial;
+        std::vector<std::string> model_names;
+        std::map<unsigned, std::string> model_bindings;
+        for (int guard = 0; guard < 8 && input && initial.empty(); ++guard)
+        {
+            std::uint8_t id{}; std::uint32_t size{};
+            input.read(reinterpret_cast<char*>(&id), 1);
+            input.read(reinterpret_cast<char*>(&size), (id & 128) ? 1 : 4);
+            if (!input || size > MAX_SIZE) break;
+            std::vector<std::uint8_t> data(size);
+            input.read(reinterpret_cast<char*>(data.data()), size);
+            if (!input) break;
+            if ((id & 31) == 5)
+            {
+                std::vector<std::string> fields;
+                for (std::size_t offset = 0; offset < data.size();)
+                {
+                    const auto end = std::find(data.begin() + offset, data.end(), 0);
+                    if (end == data.end()) break;
+                    fields.emplace_back(data.begin() + offset, end);
+                    offset = static_cast<std::size_t>(end - data.begin()) + 1;
+                }
+                converted_ = fields.size() >= 9 && (fields[1] == "H1 COD4 conversion v1" || fields[1] == "H1 COD4 conversion v2");
+                if (converted_)
+                {
+                    const auto models = cod4::parse_model_metadata({fields.begin() + 9, fields.end()});
+                    model_names.assign(models.names.begin(), models.names.end());
+                    model_bindings = models.bindings;
+                }
+            }
+            if ((id & 31) == 2 && converted_ && data.size() > 8)
+            {
+                if ((data[7] & 128) == 0) throw std::runtime_error("Converted gamestate must use zlib");
+                initial = utils::compression::zlib::decompress(std::span(data).subspan(8), MAX_SIZE);
+                post_map_header_file_offset_ = static_cast<std::size_t>(input.tellg());
+            }
+        }
+        if (!converted_)
+        {
+            party::start_map(*mapname);
+            return;
+        }
+        if (initial.empty() || initial.size() > MAX_SIZE || (initial[0] & 7) != 0)
+            throw std::runtime_error("Converted demo has no valid native gamestate");
+        bootstrapping_ = true;
+        const auto clear_bootstrap = gsl::finally([this] { bootstrapping_ = false; });
+        converted_trace.close();
+        converted_trace.open("demos/converted-playback-last.log", std::ios::trunc);
+        converted_draws = converted_packets_blocked = 0;
+        converted_trace_time = {};
+        trace_converted("bootstrap begin");
+        cod4_camera::set_model_bindings(model_bindings);
+        cod4_camera::bootstrap_demo(*mapname, initial);
+        trace_converted("bootstrap complete");
+        for (const auto& name : model_names)
+        {
+            if (name.empty() || name.size() > 128) throw std::runtime_error("Invalid converted demo model name");
+            if (converted_models_.insert(name).second) utils::hook::invoke<void>(0x75720_b, name.c_str());
+        }
+        file_.clear();
+        file_.seekg(post_map_header_file_offset_, std::ios::beg);
+        console::info("Converted .dm_h1 opened through native demo player: server=%d\n", game::SV_Loaded());
 	}
 
 	std::optional<std::reference_wrapper<std::filesystem::path>> demo_playback_t::restart()
@@ -358,13 +460,24 @@ namespace // demo class
 
 	void demo_playback_t::parse_demo_wrapper()
 	{
-		if (!parse_demo(file_, buffer_, post_map_header_file_offset_, pred_data_, pred_data_index_, gs_, skip_map_preload_))
+        if (ended_) return;
+        bool clean_end{};
+		if (!parse_demo(file_, buffer_, post_map_header_file_offset_, pred_data_, pred_data_index_, gs_, skip_map_preload_, clean_end))
 		{
-			if (is_demo_repeating() && *game::mp::connstate != game::CA_DISCONNECTED)
+			if ((is_demo_repeating() || rewind_pending_) && *game::mp::connstate != game::CA_DISCONNECTED)
 			{ // don't repeat demo if it was stopped manually
 				repeat();
 			}
-			else
+			else if (clean_end && replay_armed_ && *game::mp::connstate == game::CA_ACTIVE && game::mp::cl.get())
+            {
+                ended_ = paused_ = true;
+                seeking_ = false;
+                auto* cl = game::mp::cl.get();
+                cl->serverTimeDelta -= cl->serverTime - cl->snap.serverTime;
+                cl->serverTime = cl->snap.serverTime;
+                console::info("Demo finished. Holding the last frame; rewind or resume to replay.\n");
+            }
+            else
 			{
 				stop();
 			}
@@ -375,6 +488,8 @@ namespace // demo class
 
 	void demo_playback_t::stop()
 	{
+		ended_ = false;
+        rewind_pending_ = false;
 		skip_timeout_ = {};
 		retain_timescale_ = {};
 		skip_map_preload_ = {};
@@ -391,7 +506,11 @@ namespace // demo class
 		gs_.reset();
 		buffer_.clear();
 		file_.clear();
-		file_.close();
+        file_.close();
+        for (const auto& name : converted_models_) utils::hook::invoke<void>(0x76850_b, name.c_str());
+        converted_models_.clear();
+        if (converted_) cod4_camera::clear_model_bindings();
+        converted_ = false;
 
 		// ensure that sv_cheats is always disabled after demo playback
 		if (auto* sv_cheats = game::Dvar_FindVar("sv_cheats"); sv_cheats)
@@ -402,13 +521,32 @@ namespace // demo class
 
 	void demo_playback_t::repeat()
 	{
-		assert(post_map_header_file_offset_ < 256);
+        rewind_pending_ = false;
+		assert(post_map_header_file_offset_ > 0);
 
 		if (auto& connstate = *game::mp::connstate; connstate == game::CA_ACTIVE)
 		{
 			// prevent old snapshots from being processed; would mess up the server command sequences
 			connstate = game::CA_PRIMED;
 		}
+
+        // CG_ProcessSnapshots (0x32F750) and CG_ReadNextSnapshot (0x32F950)
+        // own a second set of sequence counters, separate from the client clock.
+        // Discard both snapshot pointers so native first-snapshot initialization
+        // rebuilds interpolation/animation state instead of comparing to the future.
+        if (auto* cg = reinterpret_cast<std::uint8_t*>(game::CG_GetLocalClientGlobals()))
+        {
+            *reinterpret_cast<int*>(cg + 0x48E4) = 0; // latestSnapshotNum
+            *reinterpret_cast<int*>(cg + 0x48E8) = 0; // latestSnapshotTime
+            *reinterpret_cast<void**>(cg + 0x48F0) = nullptr; // snap
+            *reinterpret_cast<void**>(cg + 0x48F8) = nullptr; // nextSnap
+        }
+        if (auto* cgs = reinterpret_cast<std::uint8_t*>(game::CG_GetServerCommandsState()))
+        {
+            *reinterpret_cast<int*>(cgs + 0x18) = 0; // serverCommandSequence
+            *reinterpret_cast<int*>(cgs + 0x1C) = 0; // processedSnapshotNum
+        }
+        pred_data_.fill({});
 
 		// reset game data
 		game::mp::clc->serverCommandSequence = {};
@@ -430,8 +568,19 @@ namespace // demo class
 		if (auto* cl = game::mp::cl.get(); cl)
 		{
 			cl->serverTime = 0;
+			cl->oldFrameServerTime = 0;
 			cl->snap.serverTime = 0;
 			cl->snap.valid = 0;
+            // CL_GetSnapshot (0x33B940) trusts the ring entry's valid flag;
+            // it does not compare the requested sequence to the entry's sequence.
+            // Old ring slots otherwise supply future snapshots during replay startup.
+            auto* raw = reinterpret_cast<std::uint8_t*>(cl);
+            const auto count = *reinterpret_cast<int*>(raw + 0x8F84);
+            auto* snapshots = *reinterpret_cast<std::uint8_t**>(raw + 0x8FA0);
+            if (snapshots && count > 0 && count <= 4096)
+                for (int i = 0; i < count; ++i)
+                    *reinterpret_cast<int*>(snapshots + static_cast<std::size_t>(i) * 0x4A78 + 0x4A24) = 0;
+
 		}
 
 		if (auto* demo_timescale = game::Dvar_FindVar("demotimescale"); demo_timescale)
@@ -632,6 +781,26 @@ namespace // hooks
 
 	void handle_demo_reading(const std::int32_t client_num)
 	{
+        if (demo.is_bootstrapping()) return;
+        if (demo.is_converted())
+        {
+            const auto now = std::chrono::steady_clock::now();
+            if (now - converted_trace_time >= std::chrono::seconds(1))
+            {
+                trace_converted("frame");
+                converted_trace_time = now;
+            }
+        }
+        if (demo.is_converted() && !demo.converted_models_ready()) return;
+		if (cod4_camera::active())
+		{
+			if (!cod4_camera::prepare_client_frame())
+			{
+				CL_SetCGameTime_hook.invoke<void>(client_num);
+				cod4_camera::finish_client_frame();
+			}
+			return;
+		}
 		// TODO(h1): iw6 also gated the playing branch on Live_SyncOnlineDataFlags(0)==0,
 		// but on MWR that bitmask stays non-zero (menu + local match), so the playing
 		// branch never ran. Gating only on is_demo_playing() so playback can actually run.
@@ -744,6 +913,14 @@ namespace // hooks
 
 	void write_packet(const std::int32_t client_num)
 	{
+		if (cod4_camera::active()) return;
+        // Converted playback has no peer. Suppress packets during its entire
+        // lifetime, including the synchronous map load before replay is armed.
+        if (demo.is_converted())
+        {
+            ++converted_packets_blocked;
+            return;
+        }
 		// Only suppress outgoing packets once the replay is armed (client is ACTIVE). During the
 		// demoplay bootstrap handshake the client MUST be able to send its connect/challenge
 		// packets, or connstate never advances past ~4 and the demo feed corrupts the sequence.
@@ -766,7 +943,7 @@ namespace // hooks
 		// health/flags/stance come from the fed snapshot ps. Without this, ps.weapon stays 0 and the
 		// viewmodel setup (sub_128360 -> held weapon @ps+0x394) draws NOTHING ("no viewmodel set").
 		// override ONLY the view-driving fields (origin/velocity/delta_angles/bobCycle) below.
-		CL_GetPredictedPlayerInformationForServerTime_hook.invoke<bool>(&cl, ps_time, &ps);
+		const bool native_found = CL_GetPredictedPlayerInformationForServerTime_hook.invoke<bool>(&cl, ps_time, &ps);
 
 		bool found = false;
 		demo.use_predicted_data([&ps, ps_time, &found](const std::array<predicted_data_t, 256>& pred_data, std::size_t pred_data_index)
@@ -795,11 +972,9 @@ namespace // hooks
 			}
 		});
 
-		static_cast<void>(found); // false only if no predicted_data chunk is near ps_time (old demos)
-
-
-		// must return true otherwise branch is taken that undoes the work of this function
-		return true;
+		// Without a matching archive, preserve the native failure result so the
+		// engine can use its snapshot fallback instead of accepting stale prediction.
+		return found || native_found;
 	}
 
 
@@ -815,6 +990,13 @@ namespace // hooks
 		// avoids frame-interpolation issues, entirely inside the engine's own logic. Replaces the
 		// old (unverified-offset, never-enabled) approach of writing cg->demoType by hand.
 		std::int32_t frame_time = server_time;
+        if (demo.is_converted()) ++converted_draws;
+
+		if (cod4_camera::active())
+		{
+			demo_type = game::mp::DEMO_TYPE_CLIENT;
+			if (auto* cl = game::mp::cl.get()) frame_time = cl->serverTime;
+		}
 
 		if (demo.is_demo_playing() && demo.is_replay_armed())
 		{
@@ -885,58 +1067,37 @@ namespace // hooks
 		return false;
 	}
 
-	// The team / class(loadout) / spectator selection menus are driven by omnvars the LUI
-	// watches. On a demo rewind the CA_ACTIVE->CA_PRIMED->CA_ACTIVE "respawn" re-raises them
-	// (the game treats it as a fresh spawn), which is why the change-class menu keeps popping.
-	// They aren't opened via LUI_OpenMenu (confirmed by logging that hook), so we can't
-	// name-match them there -- kill them at the omnvar source instead. Resolve indices by name
-	// once (they sit right after ui_options_menu but don't hardcode) and cache them.
-	int g_omnvar_loadout = -2, g_omnvar_team = -2, g_omnvar_spectator = -2; // -2 unresolved, -1 missing
-
-	int resolve_omnvar_index(const char* name)
+	void control_ui_element(const std::int32_t client_num, const void* old_snap, void* new_snap)
 	{
-		for (int i = 0; i <= 194; ++i) // 194 (ui_alien_show_eog_score) is a known-valid upper bound
-		{
-			const char* n = *reinterpret_cast<const char* const*>(game::Omnvar_GetDef(i));
-			if (n && std::string_view(n) == name)
-			{
-				return i;
-			}
-		}
-		return -1;
-	}
-
-	void control_ui_element(const std::int32_t client_num, const game::mp::snapshot_t& old_snap, game::mp::snapshot_t& new_snap)
-	{
-		// it appeared easier to prevent these menus from being shown instead of closing or hiding them
-
-		if (demo.is_demo_playing())
-		{
-			// skip the options / pause menu
-			assert(std::string_view(*reinterpret_cast<const char**>(game::Omnvar_GetDef(103))) == "ui_options_menu");
-			new_snap.omnvars[103] = {};
-
-			// skip the team / class(loadout) / spectator selection menus -- the ones that pop on
-			// rewind because the reconnect looks like a fresh spawn.
-			if (g_omnvar_loadout == -2)
-			{
-				g_omnvar_loadout = resolve_omnvar_index("ui_loadout_selected");
-				g_omnvar_team = resolve_omnvar_index("ui_team_selected");
-				g_omnvar_spectator = resolve_omnvar_index("ui_spectator_selected");
-			}
-			if (g_omnvar_loadout >= 0) new_snap.omnvars[g_omnvar_loadout] = {};
-			if (g_omnvar_team >= 0) new_snap.omnvars[g_omnvar_team] = {};
-			if (g_omnvar_spectator >= 0) new_snap.omnvars[g_omnvar_spectator] = {};
-
-			if (demo.is_demo_repeating())
-			{
-				// skip extinction mode end-of-game score / stats menu
-				assert(std::string_view(*reinterpret_cast<const char**>(game::Omnvar_GetDef(194))) == "ui_alien_show_eog_score");
-				new_snap.omnvars[194] = {};
-			}
-		}
-
-		CG_UpdateOmnvars_hook.invoke<void>(client_num, &old_snap, &new_snap);
+        if (demo.is_demo_playing())
+        {
+            // MWR CG_UpdateOmnvars: global records at snapshot+0x4A24,
+            // player records at PS+0x4540. Each record is {timeModified, value}.
+            // The old iw6-sized snapshot and fixed indices wrote unrelated PS data.
+            const auto globals = utils::hook::invoke<unsigned>(0x5A47B0_b);
+            const auto per_player = utils::hook::invoke<unsigned>(0x5A4790_b);
+            for (unsigned i = 0; i < globals + per_player; ++i)
+            {
+                const auto* def = static_cast<const std::uint8_t*>(game::Omnvar_GetDef(i));
+                const auto* name = *reinterpret_cast<const char* const*>(def);
+                if (!name) continue;
+                const std::string_view key(name);
+                const bool selected = key == "ui_loadout_selected" || key == "ui_team_selected";
+                const bool hidden = key == "ui_options_menu" || key == "ui_spectator_selected"
+                    || key == "ui_alien_show_eog_score";
+                if (!selected && !hidden) continue;
+                const auto offset = (def[8] & 8) ? 0x4540 + (i - globals) * 8 : 0x4A24 + i * 8;
+                auto* record = reinterpret_cast<std::uint32_t*>(static_cast<std::uint8_t*>(new_snap) + offset);
+                // A selected class/team prevents LUI from asking for a selection.
+                const auto value = selected ? 1u : 0u;
+                const auto* current = utils::hook::invoke<const std::uint32_t*>(0x5A4250_b, client_num, i);
+                if (current[1] != value)
+                    record[0] = std::max(current[0] + 1, *reinterpret_cast<const std::uint32_t*>(
+                        static_cast<const std::uint8_t*>(new_snap) + 0x4C));
+                record[1] = value;
+            }
+        }
+        CG_UpdateOmnvars_hook.invoke<void>(client_num, old_snap, new_snap);
 	}
 
 	std::int32_t update_gamestate_config_strings(game::msg_t& msg)
@@ -1301,6 +1462,8 @@ namespace // command execution
 
 namespace demo_playback
 {
+    bool converted() { return demo.is_demo_playing() && demo.is_converted(); }
+
 	bool playing()
 	{
 		return demo.is_demo_playing();

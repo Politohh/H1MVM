@@ -6,6 +6,7 @@
 #include "demo_utils.hpp"
 #include "theater_camera.hpp"
 #include "demo_avidemo.hpp"
+#include "cod4_camera.hpp"
 
 #include "component/command.hpp"
 #include "component/console.hpp"
@@ -597,7 +598,7 @@ namespace demo_gui
 		void draw_playback_controls()
 		{
 			const bool paused = demo_playback::paused();
-			if (ImGui::Button(paused ? "Play" : "Pause", ImVec2(64.0f, 0.0f)))
+			if (ImGui::Button(paused ? "Play##toggle_pause" : "Pause##toggle_pause", ImVec2(64.0f, 0.0f)))
 			{
 				demo_playback::toggle_pause();
 			}
@@ -884,6 +885,19 @@ namespace demo_gui
 			ImGui::TextDisabled("Output: demos/avi/<demo>_NNN. Assemble at your target fps for slow-mo.");
 		}
 
+		void render_cod4_controls()
+        {
+            if (!ImGui::CollapsingHeader("Convert COD4 demo")) return;
+            static char path[1024]{};
+            ImGui::SetNextItemWidth(-1.0f);
+            ImGui::InputTextWithHint("##cod4path", "Full path to a COD4 .dm_1 demo", path, sizeof(path));
+            if (ImGui::Button("Convert to .dm_h1") && path[0] && !std::strpbrk(path, "\"\r\n"))
+                command::execute(std::format("cod4convert \"{}\"", path));
+            const auto status = cod4_camera::get_status();
+            if (!status.message.empty()) ImGui::TextWrapped("%s", status.message.c_str());
+            ImGui::TextDisabled("After conversion, refresh the demo list and use the normal Play button.");
+        }
+
 		void render_demo_controls()
 		{
 			if (demo_files.empty())
@@ -950,6 +964,8 @@ namespace demo_gui
 			ImGui::EndDisabled();
 
 			ImGui::Separator();
+
+			render_cod4_controls();
 
 			if (!demo_playback::playing())
 			{

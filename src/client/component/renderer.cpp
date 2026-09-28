@@ -18,6 +18,8 @@ namespace renderer
 		utils::hook::detour r_update_front_end_dvar_options_hook;
 
 		utils::hook::detour db_load_xassets_hook;
+		utils::hook::detour xmodel_get_lod_hook;
+		game::dvar_t* r_force_lod = nullptr;
 
 		game::dvar_t* r_red_dot_brightness_scale;
 		game::dvar_t* r_use_custom_red_dot_brightness;
@@ -88,8 +90,35 @@ namespace renderer
 			}
 		}
 
+		void find_force_lod_dvar()
+		{
+			if (!game::environment::is_mp() || r_force_lod) return;
+			r_force_lod = game::Dvar_FindVar("r_forceLod");
+			if (r_force_lod)
+			{
+				// This controls rendering detail only. Keep the native enum/default
+				// while allowing it in client-only demos with no server cheat state.
+				r_force_lod->flags &= ~game::DVAR_FLAG_CHEAT;
+			}
+		}
+
+		int xmodel_get_lod_stub(const game::XModel* model, float distance, float cull_distance)
+		{
+			// MWR registers r_forceLod, but its XModelSetLodDist (0x5DC5D0)
+			// is an empty function. Apply the native requested enum at selection.
+			// 0..5 select detail levels; 6 (none) retains normal distance/culling.
+			if (r_force_lod && model && model->numLods > 0)
+			{
+				const int requested = r_force_lod->current.integer;
+				if (requested >= 0 && requested < 6)
+					return std::min(requested, static_cast<int>(model->numLods) - 1);
+			}
+			return xmodel_get_lod_hook.invoke<int>(model, distance, cull_distance);
+		}
+
 		void gfxdrawmethod()
 		{
+			find_force_lod_dvar();
 			game::gfxDrawMethod->drawScene = game::GFX_DRAW_SCENE_STANDARD;
 			game::gfxDrawMethod->baseTechType = dvars::r_fullbright->current.enabled ? get_fullbright_technique() : game::TECHNIQUE_LIT;
 			game::gfxDrawMethod->emissiveTechType = dvars::r_fullbright->current.enabled ? get_fullbright_technique() : game::TECHNIQUE_EMISSIVE;
@@ -103,6 +132,7 @@ namespace renderer
 
 		bool r_update_front_end_dvar_options_stub()
 		{
+			find_force_lod_dvar();
 			if (dvars::r_fullbright->modified)
 			{
 				game::Dvar_ClearModified(dvars::r_fullbright);
@@ -455,6 +485,7 @@ namespace renderer
 
 			if (game::environment::is_mp())
 			{
+				xmodel_get_lod_hook.create(0x5DC430_b, xmodel_get_lod_stub);
 				// Adjust red dot brightness
 				utils::hook::jump(0x1C4125_b, get_tonemap_highlight_range_stub(), true);
 				db_load_xassets_hook.create(0x397500_b, db_load_xassets_stub);

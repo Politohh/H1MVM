@@ -10,6 +10,7 @@
 #include "scheduler.hpp"
 #include "server_list.hpp"
 #include "demo/demo_playback.hpp" // demo playback state, to suppress spectator menus on rewind
+#include "demo/cod4_camera.hpp"
 
 #include "game/game.hpp"
 #include "game/dvars.hpp"
@@ -305,7 +306,7 @@ namespace server_list
 			// the game auto-opens (notably on rewind, when the restart re-runs the spawn flow,
 			// and when a cinematic seeks). Reuses this existing LUI_OpenMenu hook so we never
 			// add a second detour on the same function (a double-hook hung the game earlier).
-			if (menuName && demo_playback::playing() && demo_playback::is_replay_armed())
+			if (menuName && ((demo_playback::playing() && demo_playback::is_replay_armed()) || cod4_camera::active()))
 			{
 				const auto lower = utils::string::to_lower(menuName);
 				if (lower.find("class") != std::string::npos || lower.find("team") != std::string::npos

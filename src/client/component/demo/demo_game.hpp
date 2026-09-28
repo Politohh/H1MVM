@@ -335,7 +335,8 @@ namespace game
 		{
 			clSnapshot_t snap;        // +0x0000  (ends at 19076)  cl->snap.valid/serverTime/deltaNum/ps
 			int serverTime;           // +19076 (0x4A84)  cl->serverTime (v3[4769]) VERIFIED
-			char _pad_A88[19096 - 19080];
+			char _pad_A88[19092 - 19080];
+            int oldFrameServerTime;   // +0x4A94: monotonic snapshot check in CL_SetCGameTime
 			// serverTimeDelta (v3[4774]): CL_SetCGameTime computes cl->serverTime =
 			// max(cl->serverTime, serverTimeDelta + com_frameTime) every frame, and
 			// CL_FirstSnapshot (sub_33B6B0) sets serverTimeDelta = snap.serverTime -
@@ -360,6 +361,7 @@ namespace game
 		};
 		static_assert(offsetof(clientActive_t, serverTime) == 19076, "cl serverTime");
 		static_assert(offsetof(clientActive_t, serverTimeDelta) == 19096, "cl serverTimeDelta");
+        static_assert(offsetof(clientActive_t, oldFrameServerTime) == 19092, "cl oldFrameServerTime");
 		static_assert(offsetof(clientActive_t, newSnapshots) == 19100, "cl newSnapshots");
 		static_assert(offsetof(clientActive_t, clientArchive) == 27520, "cl clientArchive");
 		static_assert(offsetof(clientActive_t, clientArchiveIndex) == 36736, "cl clientArchiveIndex");
