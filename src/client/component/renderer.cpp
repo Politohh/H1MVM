@@ -3,6 +3,7 @@
 
 #include "dvars.hpp"
 #include "scheduler.hpp"
+#include "renderer_visibility.hpp"
 
 #include "game/game.hpp"
 #include "game/dvars.hpp"
@@ -20,6 +21,7 @@ namespace renderer
 		utils::hook::detour db_load_xassets_hook;
 		utils::hook::detour xmodel_get_lod_hook;
 		game::dvar_t* r_force_lod = nullptr;
+		game::dvar_t* r_keep_models = nullptr;
 
 		game::dvar_t* r_red_dot_brightness_scale;
 		game::dvar_t* r_use_custom_red_dot_brightness;
@@ -113,7 +115,62 @@ namespace renderer
 				if (requested >= 0 && requested < 6)
 					return std::min(requested, static_cast<int>(model->numLods) - 1);
 			}
-			return xmodel_get_lod_hook.invoke<int>(model, distance, cull_distance);
+			const auto lod = xmodel_get_lod_hook.invoke<int>(model, distance, cull_distance);
+			// Keep native automatic detail selection. Only replace its final
+			// distance rejection with the model's last available detail level.
+			if (r_keep_models && r_keep_models->current.enabled && lod < 0 && model && model->numLods > 0)
+				return static_cast<int>(model->numLods) - 1;
+			return lod;
+		}
+
+		void include_static_models(game::GfxWorldDpvsStatic* dpvs, unsigned* visible)
+		{
+			if (!dpvs || !visible) return;
+			visibility::include_models(std::span(visible, dpvs->smodelVisDataCount), dpvs->smodelCount);
+		}
+
+		void static_model_visibility_stub(utils::hook::assembler& a)
+		{
+			const auto original = a.newLabel();
+			a.push(rcx);
+			a.mov(rcx, reinterpret_cast<std::uintptr_t>(&r_keep_models));
+			a.mov(rcx, qword_ptr(rcx));
+			a.cmp(byte_ptr(rcx, offsetof(game::dvar_t, current)), 0);
+			a.pop(rcx);
+			a.je(original);
+			// The native draw routine caches its first visibility word just
+			// after this site. Fill the selected view's bits before that read.
+			a.pushad64();
+			a.sub(rsp, 0x60);
+			for (unsigned i = 0; i < 6; ++i) a.movdqu(xmmword_ptr(rsp, i * 16), asmjit::x86::xmm(i));
+			a.mov(rcx, rax);
+			a.mov(rdx, rsi);
+			a.call_aligned(include_static_models);
+			for (unsigned i = 0; i < 6; ++i) a.movdqu(asmjit::x86::xmm(i), xmmword_ptr(rsp, i * 16));
+			a.add(rsp, 0x60);
+			a.popad64();
+			a.bind(original);
+			a.mov(eax, dword_ptr(rax, 0x3C));
+			a.mov(dword_ptr(rsp, 0x78), eax);
+			a.jmp(0x64A5EA_b);
+		}
+
+		void static_model_distance_stub(utils::hook::assembler& a)
+		{
+			const auto original = a.newLabel();
+			a.push(rcx);
+			a.mov(rcx, reinterpret_cast<std::uintptr_t>(&r_keep_models));
+			a.mov(rcx, qword_ptr(rcx));
+			a.cmp(byte_ptr(rcx, offsetof(game::dvar_t, current)), 0);
+			a.pop(rcx);
+			a.je(original);
+			// Instance cullDist is tested before XModelGetLod. Bypass the
+			// rejection without modifying the map asset or its saved distance.
+			a.jmp(0x64A9B0_b);
+			a.bind(original);
+			a.movzx(eax, word_ptr(rdi, 0x40));
+			a.test(ax, ax);
+			a.jmp(0x64A96B_b);
 		}
 
 		void gfxdrawmethod()
@@ -485,7 +542,13 @@ namespace renderer
 
 			if (game::environment::is_mp())
 			{
+				r_keep_models = dvars::register_bool("r_keepModels", false, game::DVAR_FLAG_SAVED,
+					"Keep resident models beyond static visibility and model distance limits");
 				xmodel_get_lod_hook.create(0x5DC430_b, xmodel_get_lod_stub);
+				utils::hook::jump(0x64A5E3_b, utils::hook::assemble(static_model_visibility_stub));
+				utils::hook::nop(0x64A5E8_b, 2);
+				utils::hook::jump(0x64A964_b, utils::hook::assemble(static_model_distance_stub));
+				utils::hook::nop(0x64A969_b, 2);
 				// Adjust red dot brightness
 				utils::hook::jump(0x1C4125_b, get_tonemap_highlight_range_stub(), true);
 				db_load_xassets_hook.create(0x397500_b, db_load_xassets_stub);

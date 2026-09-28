@@ -6,8 +6,8 @@ namespace cod4
 {
     // Standard COD4 MP ammoName/clipName equivalence groups, inspected in iw_11.iwd.
     // Keys are representative weapon names, not runtime ordinals or copied assets.
-    // Runtime ammo indices follow first registration of each group; clip indices
-    // use the first weapon ordinal in each clip group.
+    // Runtime ammo and clip indices follow first registration of each distinct
+    // name. Empty names share the engine's initial index zero.
     struct ammo_group { std::string_view weapon, ammo, clip; };
     inline constexpr std::array<ammo_group, 127> ammo_groups{{
         {"ac130_105mm_mp", "ac130_105mm_mp", "ac130_105mm_mp"},
@@ -31,15 +31,15 @@ namespace cod4
         {"barrett_mp", "barrett_acog_mp", "barrett_mp"},
         {"beretta_mp", "beretta_mp", "beretta_mp"},
         {"beretta_silencer_mp", "beretta_mp", "beretta_silencer_mp"},
-        {"binoculars_mp", "binoculars_mp", "binoculars_mp"},
+        {"binoculars_mp", "", ""},
         {"brick_blaster_mp", "brick_blaster_mp", "brick_blaster_mp"},
         {"brick_bomb_mp", "brick_bomb_mp", "brick_bomb_mp"},
         {"briefcase_bomb_defuse_mp", "briefcase_bomb_defuse_mp", "briefcase_bomb_defuse_mp"},
         {"briefcase_bomb_mp", "briefcase_bomb_mp", "briefcase_bomb_mp"},
         {"c4_mp", "artillery_mp", "artillery_mp"},
         {"claymore_mp", "claymore_mp", "claymore_mp"},
-        {"cobra_20mm_mp", "binoculars_mp", "binoculars_mp"},
-        {"cobra_ffar_mp", "binoculars_mp", "binoculars_mp"},
+        {"cobra_20mm_mp", "", ""},
+        {"cobra_ffar_mp", "", ""},
         {"colt45_mp", "colt45_mp", "colt45_mp"},
         {"colt45_silencer_mp", "colt45_mp", "colt45_silencer_mp"},
         {"concussion_grenade_mp", "concussion_grenade_mp", "concussion_grenade_mp"},
@@ -70,8 +70,8 @@ namespace cod4
         {"gl_m4_mp", "gl_g36c_mp", "gl_m4_mp"},
         {"gl_mp", "gl_g36c_mp", "gl_mp"},
         {"helicopter_mp", "airstrike_mp", "airstrike_mp"},
-        {"hind_ffar_mp", "binoculars_mp", "binoculars_mp"},
-        {"humvee_50cal_mp", "binoculars_mp", "binoculars_mp"},
+        {"hind_ffar_mp", "", ""},
+        {"humvee_50cal_mp", "", ""},
         {"location_selector_mp", "location_selector_mp", "location_selector_mp"},
         {"m1014_grip_mp", "m1014_grip_mp", "m1014_grip_mp"},
         {"m1014_mp", "m1014_grip_mp", "m1014_mp"},
@@ -117,9 +117,9 @@ namespace cod4
         {"rpd_reflex_mp", "rpd_acog_mp", "rpd_reflex_mp"},
         {"rpg_mp", "rpg_mp", "rpg_mp"},
         {"saw_acog_mp", "saw_acog_mp", "saw_acog_mp"},
-        {"saw_bipod_crouch_mp", "binoculars_mp", "binoculars_mp"},
-        {"saw_bipod_prone_mp", "binoculars_mp", "binoculars_mp"},
-        {"saw_bipod_stand_mp", "binoculars_mp", "binoculars_mp"},
+        {"saw_bipod_crouch_mp", "", ""},
+        {"saw_bipod_prone_mp", "", ""},
+        {"saw_bipod_stand_mp", "", ""},
         {"saw_grip_mp", "saw_acog_mp", "saw_grip_mp"},
         {"saw_mp", "saw_acog_mp", "saw_mp"},
         {"saw_reflex_mp", "saw_acog_mp", "saw_reflex_mp"},

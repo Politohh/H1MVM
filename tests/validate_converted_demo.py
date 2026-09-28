@@ -7,6 +7,15 @@ import sys
 import zlib
 
 payload = pathlib.Path(sys.argv[1]).read_bytes()
+source = pathlib.Path(sys.argv[2]).read_bytes() if len(sys.argv) > 2 else None
+if source is not None:
+    assert len(source) >= 48 and len(source) % 48 == 0, "Invalid source archives"
+    expected_snapshots = len(source) // 48
+    expected_footer = (struct.unpack_from('<i', source)[0],
+                       struct.unpack_from('<i', source, len(source) - 48)[0])
+else:
+    # Retain the original Crash fixture checks when no source is supplied.
+    expected_snapshots, expected_footer = 2241, (33585, 56385)
 offset = 0
 counts = collections.Counter()
 sequences, times, archives = [], [], []
@@ -42,20 +51,22 @@ while offset < len(payload):
         assert len(chunk) == 50 and chunk[0] == 0, "Invalid camera archive"
         assert chunk[1] == len(archives) % 256, "Invalid archive index"
         archives.append(chunk[2:])
-assert sequences == list(range(1, 2243)), "Missing gamestate/snapshots"
+assert sequences == list(range(1, expected_snapshots + 2)), "Missing gamestate/snapshots"
 assert counts[31] == 1 and counts[4] == 1, "Missing EOF/configstrings"
-assert footer == (33585, 56385)
+assert footer == expected_footer, "Recorded time range changed"
 assert (times[0], times[-1]) == footer
 assert all(b > a for a, b in zip(times, times[1:])), "Non-monotonic snapshot clock"
 assert [struct.unpack_from('<i', a)[0] for a in archives] == times, "Missing/misaligned camera samples"
-if len(sys.argv) > 2:
-    source = pathlib.Path(sys.argv[2]).read_bytes()
+if source is not None:
     assert len(source) == len(archives) * 48, "Source archive count differs"
     for index, archive in enumerate(archives):
         recorded = source[index * 48:(index + 1) * 48]
-        # Position, velocity, bob and camera angles remain exact. Only the
-        # different movementDir convention is translated for H1 body facing.
-        assert archive[:32] == recorded[:32] and archive[36:] == recorded[36:], "Recorded camera changed"
+        # Position, velocity and angles remain exact. Translate the native
+        # bob-cycle range and movementDir convention, preserving their phase.
+        assert archive[:28] == recorded[:28] and archive[36:] == recorded[36:], "Recorded camera changed"
+        source_bob = struct.unpack_from('<i', recorded, 28)[0]
+        native_bob = struct.unpack_from('<i', archive, 28)[0]
+        assert 0 <= source_bob <= 255 and native_bob == source_bob * 257, "Wrong converted bob phase"
         relative = struct.unpack_from('<i', recorded, 32)[0]
         yaw = struct.unpack_from('<f', recorded, 40)[0]
         packed = struct.unpack_from('<i', archive, 32)[0]

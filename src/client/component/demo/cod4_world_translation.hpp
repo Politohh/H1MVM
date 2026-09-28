@@ -68,7 +68,7 @@ namespace cod4
         return sample;
     }
 
-    inline h1_entity translate_missile(const entity_state& source, unsigned weapon, int time)
+    inline h1_entity translate_missile(const entity_state& source, unsigned weapon, int time, bool alternate = false)
     {
         if (source.get(0) >= 1022 || source.get(4) != 4 || !(weapon & 255u) || weapon >= (1u << 27))
             throw std::runtime_error("Invalid missile translation");
@@ -76,6 +76,8 @@ namespace cod4
         write_native(result, 0, translate_entity_number(source.get(0)));
         write_native(result, 2, translate_entity_number(source.get(116)));
         write_native(result, 4, translate_entity_number(source.get(124)));
+        // H1's CG weapon lookup reads entityState.inAltWeaponMode at +6.
+        write_native(result, 6, static_cast<std::uint8_t>(alternate));
         write_native(result, 10, std::uint8_t{4});
         write_native(result, 12, std::int8_t{-1});
         write_native(result, 76, weapon);

@@ -35,15 +35,18 @@ namespace cod4
     struct ammo_slots { unsigned reserve, clip; };
     inline std::vector<ammo_slots> resolve_ammo_slots(const std::vector<std::string>& names)
     {
-        std::map<std::string_view, unsigned> reserves, clips;
+        // BG_ClearWeaponDef reserves index zero for the empty ammo/clip name.
+        // BG_Setup*Indexes assigns consecutive IDs to distinct names. A turret
+        // with empty names or an alias therefore consumes no new ammo slot.
+        std::map<std::string_view, unsigned> reserves{{"", 0}}, clips{{"", 0}};
         std::vector<ammo_slots> result(names.size());
         for (unsigned i = 1; i < names.size(); ++i)
         {
             const auto found = std::find_if(ammo_groups.begin(), ammo_groups.end(),
                 [&](const auto& group) { return group.weapon == names[i]; });
             if (found == ammo_groups.end()) throw std::runtime_error("Unknown COD4 ammo metadata: " + names[i]);
-            const auto reserve = reserves.try_emplace(found->ammo, static_cast<unsigned>(reserves.size()) + 1).first->second;
-            const auto clip = clips.try_emplace(found->clip, i).first->second;
+            const auto reserve = reserves.try_emplace(found->ammo, static_cast<unsigned>(reserves.size())).first->second;
+            const auto clip = clips.try_emplace(found->clip, static_cast<unsigned>(clips.size())).first->second;
             if (reserve >= 64 || clip >= 128) throw std::runtime_error("COD4 ammo registry exceeds protocol bounds");
             result[i] = {reserve, clip};
         }

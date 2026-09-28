@@ -5,8 +5,10 @@
 #include "cod4_playerstate_reader.hpp"
 #include "cod4_action_translation.hpp"
 #include "cod4_body_translation.hpp"
+#include "cod4_view_translation.hpp"
 #include "cod4_world_translation.hpp"
 #include "cod4_model_metadata.hpp"
+#include "cod4_model_translation.hpp"
 #include "demo_playback.hpp"
 #include "demo_game.hpp"
 #include "demo_utils.hpp"
@@ -29,6 +31,8 @@ namespace cod4_camera
         std::vector<cod4::player_frame> players;
         cod4::world_track world;
         std::map<unsigned, std::uint16_t> source_models;
+        std::map<unsigned, std::string> omitted_props;
+        std::map<unsigned, std::set<unsigned>> omitted_prop_entities;
         std::map<unsigned, cod4::part_mapping> source_parts;
         std::map<unsigned, std::string> model_bindings;
         std::map<unsigned, cod4::h1_entity> map_models;
@@ -37,6 +41,7 @@ namespace cod4_camera
         utils::hook::detour get_configstring_hook;
         std::map<unsigned, unsigned> weapons;
         std::map<unsigned, game::WeaponDef*> weapon_defs;
+        std::set<unsigned> alternate_weapons;
         std::vector<cod4::body_animation> body_actions;
         std::vector<std::pair<unsigned, unsigned>> body_indices;
         std::vector<cod4::ammo_slots> source_ammo;
@@ -52,9 +57,12 @@ namespace cod4_camera
         unsigned last_player_command{}, last_action{UINT_MAX};
         bool bootstrapping{};
         bool converting{};
+        bool disconnect_pending{};
         std::filesystem::path conversion_output;
         std::vector<std::uint8_t> initial_gamestate;
         std::map<int, std::string> initial_configs;
+        std::map<unsigned, cod4::shock_profile> shock_profiles;
+        bool shocks_resolved{};
         void save_initial_gamestate(const std::string& map);
         std::ofstream lifecycle;
 
@@ -74,13 +82,19 @@ namespace cod4_camera
             }
         }
 
-        std::uint16_t bind_model(const std::string& name)
+        bool model_available(const std::string& name)
         {
+            if (!cod4::valid_model_name(name)) throw std::runtime_error("Invalid remastered model name: " + name);
             std::array<std::uint16_t, 8> zones{};
             const bool resident = game::DB_XAssetExists(game::ASSET_TYPE_XMODEL, name.c_str())
                 && !game::DB_IsXAssetDefault(game::ASSET_TYPE_XMODEL, name.c_str());
             const auto transient_count = utils::hook::invoke<int>(0x75210_b, name.c_str(), 7, zones.data());
-            if (!cod4::valid_model_name(name) || (!resident && transient_count <= 0))
+            return resident || transient_count > 0;
+        }
+
+        std::uint16_t bind_model(const std::string& name)
+        {
+            if (!model_available(name))
                 throw std::runtime_error("Remastered world model unavailable: " + name);
             request_model(name);
             for (unsigned i = 1; i < 1024; ++i)
@@ -95,19 +109,25 @@ namespace cod4_camera
             throw std::runtime_error("No unused H1 model slot for " + name);
         }
 
-        std::uint16_t source_model(unsigned index)
+        std::uint16_t source_model(unsigned index, bool prop = false)
         {
             if (!index) return 0;
-            if (const auto found = source_models.find(index); found != source_models.end()) return found->second;
+            if (const auto found = source_models.find(index); found != source_models.end())
+            {
+                if (!prop && !found->second) throw std::runtime_error("Required character model unavailable: " + omitted_props.at(index));
+                return found->second;
+            }
             const auto name = track.configstrings.at(830 + index);
-            // Class-based COD4 body/head definitions become the corresponding
-            // remastered class assets. Identical map model names retain identity.
-            const std::map<std::string, std::string> translation{
-                {"body_mp_usmc_sniper", "body_usmc_desert_sniper_mp_camo"},
-                {"head_mp_usmc_tactical_baseball_cap", "head_usmc_desert_sniper_mp_patch"}
-            };
-            const auto found = translation.find(name);
-            const auto target = found == translation.end() ? name : found->second;
+            const auto target = cod4::select_model(name,
+                prop ? cod4::model_usage::prop : cod4::model_usage::character, model_available);
+            if (target.empty())
+            {
+                source_models[index] = 0;
+                omitted_props[index] = name;
+                lifecycle << "omitted prop " << index << ' ' << name << ": no remastered counterpart available" << std::endl;
+                console::info("COD4 conversion warning: omitted prop %s (no remastered counterpart available)\n", name.c_str());
+                return 0;
+            }
             const auto model = bind_model(target);
             source_models[index] = model;
             lifecycle << "world model " << index << ' ' << name << " -> " << model << ' ' << target << std::endl;
@@ -117,11 +137,12 @@ namespace cod4_camera
         void resolve_world_assets()
         {
             if (world_resolved) return;
-            source_models.clear(); map_models.clear();
+            source_models.clear(); omitted_props.clear(); omitted_prop_entities.clear(); map_models.clear();
             for (const auto& frame : world.frames)
             {
                 for (const auto& [number, entity] : frame.entities)
-                    if (entity.get(4) == 6 && entity.get(136)) source_model(entity.get(136));
+                    if (entity.get(4) == 6 && entity.get(136) && !source_model(entity.get(136), true))
+                        omitted_prop_entities[entity.get(136)].insert(number);
                 for (const auto& [number, client] : frame.clients)
                 {
                     source_model(client.get(8));
@@ -196,6 +217,7 @@ namespace cod4_camera
                 {
                     const auto index = entity.get(136);
                     if (entity.get(4) != 6 || !index || source_parts.contains(index)) continue;
+                    if (!source_models.at(index)) continue; // Omitted props have no native skeleton.
                     const auto& name = track.configstrings.at(830 + index);
                     const auto bones = cod4::source_bones(name);
                     if (bones.empty())
@@ -238,25 +260,25 @@ namespace cod4_camera
             std::istringstream source_names(track.configstrings.at(2258));
             for (std::string name; source_names >> name;) names.push_back(name);
             source_ammo = cod4::resolve_ammo_slots(names);
-            weapons.clear(); weapon_defs.clear(); hands_model = 0;
+            weapons.clear(); weapons[0] = 0; weapon_defs.clear(); alternate_weapons.clear(); hands_model = 0;
             body_actions.clear(); body_indices.clear();
-            const std::map<std::string, std::string> translations{
-                {"deserteagle_mp", "h1_deserteagle_mp"}, {"m40a3_mp", "h1_m40a3_mp"},
-                {"frag_grenade_mp", "h1_fraggrenade_mp"}, {"flash_grenade_mp", "h1_flashgrenade_mp"},
-                {"smoke_grenade_mp", "h1_smokegrenade_mp"}, {"concussion_grenade_mp", "h1_concussiongrenade_mp"}
-            };
             std::set<unsigned> recorded_weapons;
+            std::set<unsigned> held_weapons;
             std::set<unsigned> projectile_weapons;
             for (const auto& frame : players)
             {
+                if (const auto source = frame.integer("weapon")) held_weapons.insert(source);
                 for (const auto key : {"weapon", "offHandIndex"})
                     if (const auto source = frame.integer(key)) recorded_weapons.insert(source);
+                for (unsigned source = 1; source < names.size(); ++source)
+                    if (source < 128 && (frame.integer(std::format("weapons[{}]", source / 32)) & (1u << (source % 32))))
+                        recorded_weapons.insert(source);
             }
             for (const auto& movement : track.frames)
             {
                 const auto& player = player_at(movement.time);
                 const auto source = player.integer("weapon");
-                if (!source || source >= names.size()) throw std::runtime_error("Invalid COD4 body weapon");
+                if (source >= names.size()) throw std::runtime_error("Invalid COD4 body weapon");
                 body_actions.push_back(cod4::select_body_animation(player, movement, names[source]));
             }
             for (const auto& frame : world.frames)
@@ -266,32 +288,40 @@ namespace cod4_camera
                         recorded_weapons.insert(entity.get(196));
                         projectile_weapons.insert(entity.get(196));
                     }
-            if (recorded_weapons.size() > 15) throw std::runtime_error("Too many replay weapons for H1 ammo slots");
             for (const auto source : recorded_weapons)
             {
                 if (source >= names.size()) throw std::runtime_error("COD4 weapon index outside its name table");
-                const auto target = translations.find(names[source]);
-                if (target == translations.end()) throw std::runtime_error("Weapon mapping not implemented: " + names[source]);
-                auto weapon = utils::hook::invoke<unsigned>(0x2E2290_b, target->second.c_str(), nullptr);
+                const auto& mapping = cod4::map_weapon(names[source]);
+                const std::string target(mapping.base), attachment_kit(mapping.attachment);
+                if (mapping.alternate) alternate_weapons.insert(source);
+                auto weapon = utils::hook::invoke<unsigned>(0x2E2290_b, target.c_str(), nullptr);
                 char resolved[1024]{};
                 game::BG_GetWeaponNameComplete(weapon, false, resolved, sizeof(resolved));
-                if (!(weapon & 255) || target->second != resolved)
-                    throw std::runtime_error("H1 weapon unavailable: " + target->second);
+                if (!(weapon & 255) || target != resolved)
+                    throw std::runtime_error("H1 weapon unavailable: " + target);
                 // Base weapon names are H1 net-constant strings. Sending them
                 // as ordinary configstrings is rejected by CL_ParseGamestate.
                 const auto* kit = game::DB_FindXAssetHeader(game::ASSET_TYPE_STRINGTABLE,
                     "mp/furniturekits/base.csv", false).stringTable;
                 bool has_furniture = false;
+                bool kit_view_model = false, kit_world_model = false;
                 if (kit) for (int row = 0; row < kit->rowCount; ++row)
                 {
                     const auto column = [&](int col) { return game::StringTable_GetColumnValueForRow(
                         const_cast<game::StringTable*>(kit), row, col); };
-                    if (target->second != column(0) || std::string_view(column(2)) != "1") continue;
-                    has_furniture = true;
+                    if (target != column(0)) continue;
+                    const bool base_part = std::string_view(column(2)) == "1";
+                    if (!base_part && mapping.attachment != column(1)) continue;
+                    has_furniture |= base_part;
                     // The kit selects dry/wet view and world-model parts.
                     for (int col : {3, 4, 6, 7})
                     {
                         const std::string model = column(col);
+                        if (!model.empty())
+                        {
+                            if (col == 3 || col == 6) kit_view_model = true;
+                            else kit_world_model = true;
+                        }
                         if (!model.empty() && requested_models.insert(model).second)
                         {
                             utils::hook::invoke<void>(0x75720_b, model.c_str());
@@ -299,27 +329,27 @@ namespace cod4_camera
                         }
                     }
                 }
-                if (has_furniture)
+                if (has_furniture || mapping.attachment != "none")
                 {
-                    const auto variant = utils::hook::invoke<unsigned>(0x2E2D50_b,
-                        weapon, "none", "base", 0, 0, nullptr);
-                    if (!variant || variant >= 1024) throw std::runtime_error("Cannot register H1 base furniture kit");
-                    const auto attachment = utils::hook::invoke<int>(0x654E0_b, "none");
+                    const auto attachment = utils::hook::invoke<int>(0x654E0_b, attachment_kit.c_str());
                     const auto furniture = utils::hook::invoke<int>(0x658E0_b, "base");
-                    if (attachment < 0 || furniture < 0) throw std::runtime_error("H1 kit IDs unavailable");
+                    if (attachment < 0 || furniture < 0) throw std::runtime_error("H1 kit IDs unavailable: " + attachment_kit);
+                    const auto variant = utils::hook::invoke<unsigned>(0x2E2D50_b,
+                        weapon, attachment_kit.c_str(), "base", 0, 0, nullptr);
+                    if (!variant || variant >= 1024) throw std::runtime_error("Cannot register H1 weapon kit: " + target);
                     initial_configs[4557 + variant] = std::format("#{} {} {} 0 0", weapon & 255, attachment, furniture);
                     weapon |= variant << 17;
                     game::BG_GetWeaponNameComplete(weapon, false, resolved, sizeof(resolved));
                     lifecycle << "native kit " << variant << ' ' << resolved << std::endl;
                 }
                 weapons[source] = weapon;
-                weapon_defs[source] = game::DB_FindXAssetHeader(game::ASSET_TYPE_WEAPON, target->second.c_str(), false).weapon;
+                weapon_defs[source] = game::DB_FindXAssetHeader(game::ASSET_TYPE_WEAPON, target.c_str(), false).weapon;
                 lifecycle << "weapon " << source << ' ' << names[source] << " -> " << weapon << ' ' << resolved << std::endl;
                 lifecycle << "source ammo " << source << " reserve=" << source_ammo.at(source).reserve
                     << " clip=" << source_ammo.at(source).clip << std::endl;
                 const auto* def = weapon_defs[source];
-                if (!def || !def->gunModel || !def->gunModel[0])
-                    throw std::runtime_error("H1 weapon has no view model: " + target->second);
+                if (!def || (held_weapons.contains(source) && (!def->gunModel || !def->gunModel[0])))
+                    throw std::runtime_error("H1 weapon has no view model: " + target);
                 // Weapon metadata can be resident while its model's transient zone
                 // is not. CG_UpdateWeaponViewmodels then builds hands only. Acquire
                 // the native model request rather than bypassing its readiness gate.
@@ -335,16 +365,41 @@ namespace cod4_camera
                 };
                 // Native scopes/reticles are separate view models in the weapon
                 // definition. Keep their transient zones resident with the rifle.
-                for (unsigned i = 0; i < 2; ++i) request_model(def->gunModel[i]);
-                if (def->worldModel)
+                // Furniture supplies the effective native models. Some base
+                // definitions retain obsolete model names (AK47's NPC model)
+                // that have no transient zone and are never used by this kit.
+                if (!kit_view_model && def->gunModel)
+                    for (unsigned i = 0; i < 2; ++i) request_model(def->gunModel[i]);
+                if (!kit_world_model && def->worldModel)
                     for (unsigned i = 0; i < 2; ++i) request_model(def->worldModel[i]);
                 if (def->reticleViewModels)
                     for (unsigned i = 0; i < 64; ++i) request_model(def->reticleViewModels[i]);
+                std::array<game::WeaponAttachment*, 4> attachments{};
+                const auto count = utils::hook::invoke<int>(0x2E0C20_b, weapon, attachments.data());
+                if (count < 0 || count > 4) throw std::runtime_error("Invalid native attachment count");
+                for (int a = 0; a < count; ++a)
+                {
+                    const auto* part = attachments[a];
+                    if (!part) throw std::runtime_error("Missing native weapon attachment");
+                    lifecycle << "native attachment " << part->name << std::endl;
+                    if (part->viewModels) for (unsigned i = 0; i < 2; ++i) request_model(part->viewModels[i]);
+                    if (part->worldModels) for (unsigned i = 0; i < 2; ++i) request_model(part->worldModels[i]);
+                    if (part->reticleViewModels) for (unsigned i = 0; i < 64; ++i) request_model(part->reticleViewModels[i]);
+                    // WA model overrides store asset names (for example the
+                    // GP25/M203 projectile). The base rifle definition has no
+                    // projectileModel; retain the attachment's own native asset.
+                    for (unsigned i = 0; i < part->numFields; ++i)
+                        if (part->fields[i].type == game::WAFIELD_TYPE_MODEL)
+                        {
+                            const auto* model_name = part->fields[i].parm.string;
+                            if (model_name && *model_name) cod4_camera::request_model(std::string(model_name));
+                        }
+                }
                 if (projectile_weapons.contains(source))
                 {
-                    if (!def->projectileModel || !def->projectileModel->name || !*def->projectileModel->name)
-                        throw std::runtime_error("H1 weapon has no projectile model: " + target->second);
-                    lifecycle << "native projectile " << target->second << ' ' << def->projectileModel->name << std::endl;
+                    if (!mapping.alternate && (!def->projectileModel || !def->projectileModel->name || !*def->projectileModel->name))
+                        throw std::runtime_error("H1 weapon has no projectile model: " + target);
+                    if (def->projectileModel) lifecycle << "native projectile " << target << ' ' << def->projectileModel->name << std::endl;
                     request_model(def->projectileModel);
                 }
             }
@@ -496,11 +551,13 @@ namespace cod4_camera
             put(0, static_cast<std::uint8_t>(world.client_num));
             put(0x4C, time); // commandTime, verified against the live PC netfield table
             put(0x5C, std::uint32_t{0x4000}); // recorded view: no local input prediction
-            put(0x74, frame.bob_cycle);
+            put(0x74, cod4::translate_bob_cycle(frame.bob_cycle));
             put(0x78, frame.origin);
             put(0x84, frame.velocity);
             put(0x12C, frame.angles);
             const auto& player = player_at(time);
+            const auto shock = player.integer("shellshockIndex");
+            cod4::write_view_motion(player, time, shock ? shock_profiles.at(shock).index : std::uint8_t{}, put);
             const auto next_body = std::upper_bound(track.frames.begin(), track.frames.end(), time,
                 [](int t, const cod4::camera_frame& f) { return t < f.time; });
             const auto body_index = next_body == track.frames.begin() ? 0 : next_body - track.frames.begin() - 1;
@@ -526,8 +583,7 @@ namespace cod4_camera
             put(0x23C, player.integer("weaponShotCount"));
             const auto offhand = player.integer("offHandIndex");
             put(0x388, offhand ? weapons.at(offhand) : 0u);
-            // USING_OFFHAND is 0x2 in both engines. Other flags need their own mapping.
-            put(0x398, player.integer("weapFlags") & 2u);
+            put(0x398, cod4::native_weapon_flags(player.integer("weapFlags"), alternate_weapons.contains(source_weapon)));
             for (const auto& [offset, name] : std::array<std::pair<unsigned, const char*>, 5>{{
                 {440, "sprintState.sprintButtonUpRequired"}, {444, "sprintState.sprintDelay"},
                 {448, "sprintState.lastSprintStart"}, {452, "sprintState.lastSprintEnd"},
@@ -535,29 +591,54 @@ namespace cod4_camera
 
             // Populate native keyed ammo records. H1 keys are resolved by its own
             // BG ammo/clip functions; COD4's ordinals must never be copied into H1.
-            unsigned slot = 0;
+            // The limit applies to one snapshot's inventory, not every weapon
+            // picked up during the whole recording. Primary/GL share an equipped
+            // handle but have separate keyed ammo records.
+            std::vector<unsigned> inventory;
+            const auto add_inventory = [&](unsigned source)
+            {
+                if (source && std::find(inventory.begin(), inventory.end(), source) == inventory.end()) inventory.push_back(source);
+            };
+            add_inventory(source_weapon); add_inventory(offhand);
             for (const auto& [source, target] : weapons)
             {
+                if (source < 128 && (player.integer(std::format("weapons[{}]", source / 32)) & (1u << (source % 32))))
+                    add_inventory(source);
+            }
+            std::set<unsigned> equipped;
+            std::map<std::uint64_t, int> reserves, clips;
+            for (const auto source : inventory)
+            {
+                const auto target = weapons.at(source);
+                const bool alternate = alternate_weapons.contains(source);
                 const auto slots = source_ammo.at(source);
-                const auto reserve_key = utils::hook::invoke<std::uint64_t>(0x2DE400_b, target, false);
-                const auto clip_key = utils::hook::invoke<std::uint64_t>(0x2DE580_b, target, false);
-                put(956 + slot * 12, reserve_key);
-                put(964 + slot * 12, static_cast<int>(player.ammo.at(slots.reserve)));
-                put(1136 + slot * 24, clip_key);
-                put(1144 + slot * 24, static_cast<int>(player.clips.at(slots.clip)));
+                const auto reserve_key = utils::hook::invoke<std::uint64_t>(0x2DE400_b, target, alternate);
+                const auto clip_key = utils::hook::invoke<std::uint64_t>(0x2DE580_b, target, alternate);
+                reserves.emplace(reserve_key, player.ammo.at(slots.reserve));
+                clips.emplace(clip_key, player.clips.at(slots.clip));
                 // Equipped data is needed by native weapon animation lookup.
+                if (!equipped.insert(target).second) continue;
+                if (equipped.size() > 15) throw std::runtime_error("Recorded inventory exceeds H1's equipped slots");
+                const auto slot = equipped.size() - 1;
                 put(604 + slot * 4, target);
                 put(664 + slot * 16, std::uint8_t{1});
-                ++slot;
+                put(666 + slot * 16, static_cast<std::uint8_t>(alternate));
             }
-            if (last_action != player.integer("weapAnim"))
+            if (reserves.size() > 15 || clips.size() > 15) throw std::runtime_error("Recorded inventory exceeds H1's ammo slots");
+            unsigned slot = 0;
+            for (const auto& [key, amount] : reserves)
+            { put(956 + slot * 12, key); put(964 + slot * 12, amount); ++slot; }
+            slot = 0;
+            for (const auto& [key, amount] : clips)
+            { put(1136 + slot * 24, key); put(1144 + slot * 24, amount); ++slot; }
+            if (source_weapon && last_action != player.integer("weapAnim"))
             {
                 last_action = player.integer("weapAnim");
                 lifecycle << "action time=" << time << " source_weapon=" << source_weapon
                     << " source_anim=" << last_action << " h1_anim=" << cod4::translate_animation(last_action)
                     << " state=" << cod4::translate_weapon_state(player.integer("weaponstate"))
                     << " clip=" << player.clips.at(source_ammo.at(source_weapon).clip)
-                    << " native_clip=" << utils::hook::invoke<int>(0xE9640_b, ps.data(), weapons.at(source_weapon), false, 0)
+                    << " native_clip=" << utils::hook::invoke<int>(0xE9640_b, ps.data(), weapons.at(source_weapon), alternate_weapons.contains(source_weapon), 0)
                     << std::endl;
             }
             alignas(16) std::array<std::uint8_t, 128> context{};
@@ -589,11 +670,13 @@ namespace cod4_camera
             {
                 if (entity.get(4) == 4)
                 {
-                    write_entity(cod4::translate_missile(entity, weapons.at(entity.get(196)), time));
+                    write_entity(cod4::translate_missile(entity, weapons.at(entity.get(196)), time,
+                        alternate_weapons.contains(entity.get(196))));
                     continue;
                 }
                 if (entity.get(4) != 6 || !entity.get(136)) continue;
                 const auto index = entity.get(136);
+                if (!source_models.at(index)) continue; // Never serialize a default or invented replacement.
                 const auto parts = source_parts.find(index);
                 const auto native = cod4::translate_script_model(entity, source_models.at(index),
                     parts == source_parts.end() ? nullptr : &parts->second);
@@ -647,6 +730,37 @@ namespace cod4_camera
             if (lifecycle.is_open()) lifecycle << "stop: " << message << std::endl;
         }
 
+        void disconnect_then_stop_locked(const std::string& message)
+        {
+            if (!state.active)
+            {
+                stop_locked(message);
+                converting = false;
+                return;
+            }
+            if (disconnect_pending) return;
+            disconnect_pending = true;
+            state.loading = false;
+            state.paused = true;
+            state.message = message;
+            lifecycle << "disconnect requested: " << message << std::endl;
+            // CL_SetCGameTime must stay gated until the client is disconnected.
+            // CL_Disconnect can perform an engine longjmp. A scheduler callback
+            // runs in a noexcept frame destructor, so queue the engine command
+            // and release bindings only after its normal teardown has finished.
+            command::execute("disconnect", false);
+            scheduler::schedule([message]
+            {
+                if (*game::mp::connstate != game::CA_DISCONNECTED && !game::VirtualLobby_Loaded())
+                    return scheduler::cond_continue;
+                std::lock_guard lock(mutex);
+                stop_locked(message);
+                converting = disconnect_pending = false;
+                lifecycle << "cleanup: disconnected before releasing model bindings" << std::endl;
+                return scheduler::cond_end;
+            }, scheduler::main);
+        }
+
         void export_demo()
         {
             std::filesystem::create_directories(conversion_output.parent_path());
@@ -683,7 +797,7 @@ namespace cod4_camera
                 archive.serverTime = frame.time;
                 std::memcpy(archive.origin, frame.origin.data(), sizeof(archive.origin));
                 std::memcpy(archive.velocity, frame.velocity.data(), sizeof(archive.velocity));
-                archive.bobCycle = frame.bob_cycle;
+                archive.bobCycle = cod4::translate_bob_cycle(frame.bob_cycle);
                 archive.movementDir = cod4::translate_body_heading(frame);
                 game::vec3_t angles{};
                 std::memcpy(angles, frame.angles.data(), sizeof(angles));
@@ -696,17 +810,38 @@ namespace cod4_camera
             demo_utils::write_general_footer(output, track.frames.front().time, track.frames.back().time);
             demo_utils::write_end_of_file(output);
             output.close();
+            auto report_path = conversion_output;
+            report_path += ".conversion.txt";
+            std::ofstream report(report_path, std::ios::trunc);
+            report.exceptions(std::ios::badbit | std::ios::failbit);
+            report << "COD4 to H1 conversion\nSource: " << state.name << "\nMap: " << track.map
+                << "\nOutput: " << conversion_output.filename().string()
+                << "\nOmitted prop model identities: " << omitted_props.size() << "\n";
+            for (const auto& [index, name] : omitted_props)
+            {
+                report << "\n" << name << " (source model " << index << ")\n"
+                    << "Reason: no remastered counterpart available in the loaded map/native transient catalog.\nEntities:";
+                for (const auto number : omitted_prop_entities.at(index)) report << ' ' << number;
+                report << '\n';
+            }
+            report.close();
             std::filesystem::rename(temporary, conversion_output);
             lifecycle << "converted=" << std::filesystem::absolute(conversion_output).string()
                 << " snapshots=" << track.frames.size() << std::endl;
             converting = false;
             std::lock_guard lock(mutex);
-            stop_locked("Saved " + conversion_output.string() + ". Refresh the demo list and press Play.");
-            command::execute("disconnect");
+            auto message = "Saved " + conversion_output.string() + ". Refresh the demo list and press Play.";
+            if (!omitted_props.empty()) message += std::format(" Omitted {} prop model(s); see {}.",
+                omitted_props.size(), report_path.filename().string());
+            disconnect_then_stop_locked(message);
         }
 
         void play(const std::filesystem::path& path, bool convert = false)
         {
+            {
+                std::lock_guard lock(mutex);
+                if (disconnect_pending) return;
+            }
             try
             {
                 converting = convert;
@@ -748,12 +883,15 @@ namespace cod4_camera
                     world_resolved = false;
                     source_parts.clear();
                     parts_resolved = false;
+                    shock_profiles.clear();
+                    shocks_resolved = false;
                     state = {};
                     state.active = state.loading = true;
                     state.name = path.filename().string();
                     state.map = map;
                     state.duration = (track.frames.back().time - track.frames.front().time) / 1000.0f;
-                    state.message = "Loading map for COD4 camera playback...";
+                    state.message = convert ? "Loading remastered map assets for conversion..."
+                        : "Loading remastered map for COD4 replay...";
                     playhead = 0;
                     load_started = last_tick = clock::now();
                     trace_bucket = -1;
@@ -777,9 +915,8 @@ namespace cod4_camera
             catch (const std::exception& e)
             {
                 std::lock_guard lock(mutex);
-                stop_locked(e.what());
+                disconnect_then_stop_locked(e.what());
                 console::error("COD4 camera: %s\n", e.what());
-                command::execute("disconnect");
             }
         }
 
@@ -829,7 +966,7 @@ namespace cod4_camera
     bool prepare_client_frame()
     {
         if (!active()) return false;
-        if (bootstrapping) return true;
+        if (bootstrapping || disconnect_pending) return true;
         try
         {
             static int reported_state = -1;
@@ -840,6 +977,52 @@ namespace cod4_camera
             }
             if (*game::mp::connstate < game::CA_PRIMED) return true;
             resolve_world_assets();
+            if (!shocks_resolved)
+            {
+                std::map<unsigned, std::string> native_shock_profiles;
+                for (unsigned index = 1; index < 16; ++index)
+                {
+                    const auto* name = get_configstring_hook.invoke<const char*>(3416 + index);
+                    if (name && *name)
+                    {
+                        native_shock_profiles.emplace(index, name);
+                        lifecycle << "native shock slot " << index << ' ' << name << std::endl;
+                    }
+                }
+                const auto existing_profiles = native_shock_profiles;
+                const bool const_strings = utils::hook::invoke<bool>(0x2B19B0_b, 3417);
+                native_shock_profiles = cod4::complete_shock_registry(players, track.configstrings,
+                    std::move(native_shock_profiles), const_strings, [](const std::string& name)
+                    {
+                        const auto asset = "shock/" + name + ".shock";
+                        return game::DB_XAssetExists(game::ASSET_TYPE_RAWFILE, asset.c_str())
+                            && !game::DB_IsXAssetDefault(game::ASSET_TYPE_RAWFILE, asset.c_str());
+                    });
+                shock_profiles = cod4::resolve_shock_profiles(players, track.configstrings, native_shock_profiles);
+                for (const auto& [source, profile] : shock_profiles)
+                {
+                    const auto asset = "shock/" + profile.name + ".shock";
+                    if (!game::DB_XAssetExists(game::ASSET_TYPE_RAWFILE, asset.c_str())
+                        || game::DB_IsXAssetDefault(game::ASSET_TYPE_RAWFILE, asset.c_str()))
+                        throw std::runtime_error("Remastered shellshock profile unavailable: " + profile.name);
+                    if (!existing_profiles.contains(profile.index))
+                    {
+                        initial_configs[3416 + profile.index] = profile.name;
+                        utils::hook::invoke<void>(0x342F90_b, 3416 + profile.index, profile.name.c_str());
+                    }
+                    // The client-only bootstrap has no server to precache a
+                    // dynamically registered profile. Use H1's own parser and
+                    // native profile store, as CG_RegisterGraphics does.
+                    if (!utils::hook::invoke<bool>(0x2C3910_b, profile.name.c_str()))
+                        throw std::runtime_error("Cannot parse remastered shellshock profile: " + profile.name);
+                    utils::hook::invoke<void>(0x2C5740_b,
+                        utils::hook::invoke<void*>(0x2C3550_b, static_cast<int>(profile.index)));
+                    lifecycle << "shock mapping " << source << ' ' << profile.name << " -> "
+                        << static_cast<unsigned>(profile.index) << std::endl;
+                }
+                if (!shock_profiles.empty()) save_initial_gamestate(track.map);
+                shocks_resolved = true;
+            }
             for (const auto& name : requested_models)
                 if (!utils::hook::invoke<bool>(0x75470_b, name.c_str())) return true;
             resolve_world_parts();
@@ -866,9 +1049,8 @@ namespace cod4_camera
         catch (const std::exception& e)
         {
             std::lock_guard lock(mutex);
-            stop_locked(e.what());
+            disconnect_then_stop_locked(e.what());
             console::error("COD4 replay: %s\n", e.what());
-            command::execute("disconnect");
             return true;
         }
         return false;
@@ -876,7 +1058,7 @@ namespace cod4_camera
 
     void finish_client_frame()
     {
-        if (!active() || bootstrapping || *game::mp::connstate != game::CA_ACTIVE) return;
+        if (!active() || bootstrapping || disconnect_pending || *game::mp::connstate != game::CA_ACTIVE) return;
         const int time = track.frames.front().time + static_cast<int>(playhead * 1000.0);
         auto* cl = game::mp::cl.get();
         cl->serverTimeDelta -= cl->serverTime - time;
@@ -886,7 +1068,7 @@ namespace cod4_camera
     bool view(theater_camera::camera_pose_t& pose)
     {
         std::lock_guard lock(mutex);
-        if (!state.active) return false;
+        if (!state.active || disconnect_pending) return false;
         const auto now = clock::now();
         if (demo_playback::playing()) { stop_locked("Stopped for H1 demo playback"); return false; }
         auto* map = game::Dvar_FindVar("mapname");
@@ -984,7 +1166,7 @@ namespace cod4_camera
                 if (args.size() != 2) { console::info("Usage: cod4cam \"path/to/demo.dm_1\"\n"); return; }
                 play(args[1]);
             });
-            command::add("cod4cam_stop", [] { std::lock_guard lock(mutex); stop_locked("COD4 camera stopped"); });
+            command::add("cod4cam_stop", [] { std::lock_guard lock(mutex); disconnect_then_stop_locked("COD4 camera stopped"); });
             command::add("cod4cam_pause", [] { std::lock_guard lock(mutex); state.paused = !state.paused; last_tick = clock::now(); });
             command::add("cod4cam_seek", [](const command::params& args)
             {
@@ -1011,7 +1193,7 @@ namespace cod4_camera
             scheduler::loop([]
             {
                 std::lock_guard lock(mutex);
-                if (state.loading && clock::now() - load_started > 90s) stop_locked("Map load timed out");
+                if (state.loading && clock::now() - load_started > 90s) disconnect_then_stop_locked("Map load timed out");
             }, scheduler::main, 1s);
             command::add("cod4convert", [](const command::params& args)
             {
@@ -1024,6 +1206,42 @@ namespace cod4_camera
                     return;
                 }
                 play(args[1], true);
+            });
+            command::add("cod4_mapping_audit", []
+            {
+                if (!game::Sys_IsDatabaseReady2() || game::VirtualLobby_Loaded())
+                { console::info("Load a demo before auditing the native weapon catalog.\n"); return; }
+                std::ofstream report("cod4-mapping-audit.log", std::ios::trunc);
+                unsigned passed = 0;
+                for (const auto& mapping : cod4::weapon_mappings)
+                {
+                    try
+                    {
+                        const std::string base(mapping.base), kit(mapping.attachment);
+                        auto weapon = utils::hook::invoke<unsigned>(0x2E2290_b, base.c_str(), nullptr);
+                        char name[1024]{};
+                        game::BG_GetWeaponNameComplete(weapon, false, name, sizeof(name));
+                        if (!(weapon & 255u) || base != name) throw std::runtime_error("native base missing");
+                        if (kit != "none")
+                        {
+                            if (utils::hook::invoke<int>(0x654E0_b, kit.c_str()) < 0) throw std::runtime_error("native kit missing");
+                            const auto variant = utils::hook::invoke<unsigned>(0x2E2D50_b, weapon, kit.c_str(), "base", 0, 0, nullptr);
+                            if (!variant || variant >= 1024) throw std::runtime_error("native variant missing");
+                            weapon |= variant << 17;
+                            std::array<game::WeaponAttachment*, 4> parts{};
+                            const auto count = utils::hook::invoke<int>(0x2E0C20_b, weapon, parts.data());
+                            if (count <= 0 || count > 4) throw std::runtime_error("native attachment resolution failed");
+                        }
+                        if (mapping.alternate && !utils::hook::invoke<game::WeaponAttachment*>(0x2E0DA0_b, weapon, 1))
+                            throw std::runtime_error("native alternate attachment missing");
+                        game::BG_GetWeaponNameComplete(weapon, mapping.alternate, name, sizeof(name));
+                        report << "PASS " << mapping.source << " -> " << name << '\n';
+                        ++passed;
+                    }
+                    catch (const std::exception& e) { report << "FAIL " << mapping.source << ": " << e.what() << '\n'; }
+                }
+                report << "Native mappings passed " << passed << '/' << cod4::weapon_mappings.size() << '\n';
+                console::info("Native COD4 weapon mappings passed %u/%zu; see cod4-mapping-audit.log\n", passed, cod4::weapon_mappings.size());
             });
 
         }

@@ -5,6 +5,7 @@
 #include <span>
 #include <stdexcept>
 #include <string_view>
+#include "cod4_vehicle_bones.hpp"
 
 namespace cod4
 {
@@ -39,9 +40,8 @@ namespace cod4
 
     inline std::span<const std::string_view> source_bones(std::string_view model)
     {
-        for (const auto name : {"vehicle_80s_sedan1_red_destructible_mp",
-            "vehicle_80s_sedan1_brn_destructible_mp", "vehicle_80s_sedan1_green_destructible_mp"})
-            if (model == name) return sedan_bones;
+        for (const auto& profile : vehicle_bone_profiles)
+            if (model == profile.model) return profile.bones;
         return {};
     }
 
