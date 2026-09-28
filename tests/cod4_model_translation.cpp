@@ -17,6 +17,9 @@ int main(int argc, char** argv)
             native.insert(name);
         }
         if (native.empty()) throw std::runtime_error("Native catalog is empty");
+        // Character transients are absent from the resident Crash map export.
+        for (const auto& character : cod4::native_characters)
+            for (const auto name : {character.body, character.head, character.hands}) native.emplace(name);
         const auto available = [&](const std::string& name) { return native.contains(name); };
         if (cod4::select_model("mil_tntbomb_mp", cod4::model_usage::prop, [](auto&) { return false; }) != "")
             throw std::runtime_error("Missing prop was not omitted");
@@ -36,26 +39,32 @@ int main(int argc, char** argv)
             const std::vector<std::uint8_t> bytes((std::istreambuf_iterator<char>(input)), {});
             const auto camera = cod4::decode(bytes);
             const auto world = cod4::decode_world(bytes);
-            std::set<unsigned> props, characters;
+            std::set<unsigned> props;
+            std::set<std::string> characters;
             for (const auto& frame : world.frames)
             {
                 for (const auto& [number, entity] : frame.entities)
                     if (entity.get(4) == 6 && entity.get(136)) props.insert(entity.get(136));
                 for (const auto& [number, client] : frame.clients)
                 {
-                    characters.insert(client.get(8));
+                    if (!client.get(8)) continue;
+                    const auto& body = camera.configstrings.at(830 + client.get(8));
+                    std::array<std::string_view, 6> attachments{};
                     for (unsigned i = 0; i < 6; ++i)
                     {
                         const auto index = client.get(12 + i * 4);
-                        if (index && !camera.configstrings.at(830 + index).starts_with("weapon_")) characters.insert(index);
+                        if (index) attachments[i] = camera.configstrings.at(830 + index);
                     }
+                    const auto mapped = cod4::map_character_models(body, attachments, camera.map);
+                    characters.insert(mapped.body);
+                    for (const auto& name : mapped.attachments) if (!name.empty()) characters.insert(name);
                 }
             }
             unsigned omitted = 0;
             for (const auto index : props)
                 omitted += cod4::select_model(camera.configstrings.at(830 + index), cod4::model_usage::prop, available).empty();
-            for (const auto index : characters)
-                if (index) cod4::select_model(camera.configstrings.at(830 + index), cod4::model_usage::character, available);
+            for (const auto& name : characters)
+                if (!available(name)) throw std::runtime_error("Native character model missing: " + name);
             std::cout << "PASS: " << camera.map << " props=" << props.size() << " omitted=" << omitted
                 << " required character models=" << characters.size() << " matched native catalog snapshot\n";
         }

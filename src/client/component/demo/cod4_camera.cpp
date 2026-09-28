@@ -35,6 +35,15 @@ namespace cod4_camera
         std::map<unsigned, std::set<unsigned>> omitted_prop_entities;
         std::map<unsigned, cod4::part_mapping> source_parts;
         std::map<unsigned, std::string> model_bindings;
+        std::map<std::string, std::uint16_t> bound_models;
+        using character_key = std::array<unsigned, 7>;
+        struct native_character_models
+        {
+            std::uint16_t body{};
+            std::array<std::uint16_t, 6> attachments{};
+        };
+        std::map<character_key, native_character_models> character_models;
+        std::map<std::pair<unsigned, unsigned>, std::uint16_t> hands_models;
         std::map<unsigned, cod4::h1_entity> map_models;
         bool world_resolved{};
         bool parts_resolved{};
@@ -46,7 +55,6 @@ namespace cod4_camera
         std::vector<std::pair<unsigned, unsigned>> body_indices;
         std::vector<cod4::ammo_slots> source_ammo;
         std::set<std::string> requested_models;
-        std::uint16_t hands_model{};
         status state;
         using clock = std::chrono::steady_clock;
         clock::time_point last_tick, load_started;
@@ -94,17 +102,19 @@ namespace cod4_camera
 
         std::uint16_t bind_model(const std::string& name)
         {
+            if (const auto found = bound_models.find(name); found != bound_models.end()) return found->second;
             if (!model_available(name))
                 throw std::runtime_error("Remastered world model unavailable: " + name);
             request_model(name);
             for (unsigned i = 1; i < 1024; ++i)
-                if (name == get_configstring(1240 + i)) return static_cast<std::uint16_t>(i);
+                if (name == get_configstring(1240 + i))
+                    return bound_models[name] = static_cast<std::uint16_t>(i);
             for (unsigned i = 768; i < 1024; ++i)
             {
                 if (model_bindings.contains(i) || *get_configstring_hook.invoke<const char*>(1240 + i)) continue;
                 model_bindings[i] = name;
                 lifecycle << "bind model " << i << ' ' << name << std::endl;
-                return static_cast<std::uint16_t>(i);
+                return bound_models[name] = static_cast<std::uint16_t>(i);
             }
             throw std::runtime_error("No unused H1 model slot for " + name);
         }
@@ -119,7 +129,7 @@ namespace cod4_camera
             }
             const auto name = track.configstrings.at(830 + index);
             const auto target = cod4::select_model(name,
-                prop ? cod4::model_usage::prop : cod4::model_usage::character, model_available);
+                prop ? cod4::model_usage::prop : cod4::model_usage::character, model_available, track.map);
             if (target.empty())
             {
                 source_models[index] = 0;
@@ -134,10 +144,48 @@ namespace cod4_camera
             return model;
         }
 
+        character_key client_model_key(const cod4::client_state& client)
+        {
+            character_key key{};
+            for (unsigned i = 0; i < key.size(); ++i) key[i] = client.get(8 + i * 4);
+            return key;
+        }
+
+        const native_character_models& resolve_client_models(const cod4::client_state& client)
+        {
+            const auto key = client_model_key(client);
+            if (const auto found = character_models.find(key); found != character_models.end()) return found->second;
+            native_character_models native;
+            if (key[0])
+            {
+                const auto& body = track.configstrings.at(830 + key[0]);
+                std::array<std::string_view, 6> attachments{};
+                for (unsigned i = 0; i < attachments.size(); ++i)
+                    if (key[i + 1]) attachments[i] = track.configstrings.at(830 + key[i + 1]);
+                const auto mapped = cod4::map_character_models(body, attachments, track.map);
+                native.body = bind_model(mapped.body);
+                for (unsigned i = 0; i < native.attachments.size(); ++i)
+                    if (!mapped.attachments[i].empty()) native.attachments[i] = bind_model(mapped.attachments[i]);
+                lifecycle << "character " << body << " -> " << mapped.body << std::endl;
+            }
+            return character_models.emplace(key, native).first->second;
+        }
+
+        unsigned local_body_at(int time)
+        {
+            const auto& clients = world.sample(time).clients;
+            const auto found = clients.find(world.client_num);
+            return found == clients.end() ? 0 : found->second.get(8);
+        }
+
+        std::pair<unsigned, unsigned> hands_key_at(int time);
+        void resolve_hands_assets();
+
         void resolve_world_assets()
         {
             if (world_resolved) return;
-            source_models.clear(); omitted_props.clear(); omitted_prop_entities.clear(); map_models.clear();
+            source_models.clear(); character_models.clear(); hands_models.clear();
+            omitted_props.clear(); omitted_prop_entities.clear(); map_models.clear();
             for (const auto& frame : world.frames)
             {
                 for (const auto& [number, entity] : frame.entities)
@@ -145,14 +193,10 @@ namespace cod4_camera
                         omitted_prop_entities[entity.get(136)].insert(number);
                 for (const auto& [number, client] : frame.clients)
                 {
-                    source_model(client.get(8));
-                    for (unsigned i = 0; i < 6; ++i)
-                    {
-                        const auto index = client.get(12 + i * 4);
-                        if (index && !track.configstrings.at(830 + index).starts_with("weapon_")) source_model(index);
-                    }
+                    resolve_client_models(client);
                 }
             }
+            resolve_hands_assets();
             // MWR moved several pieces of baked COD4 geometry into authored
             // script models (including Crash's wreck). Read this map's own data.
             const auto path = "maps/mp/" + track.map + ".d3dbsp";
@@ -252,6 +296,28 @@ namespace cod4_camera
             return next == players.begin() ? players.front() : *(next - 1);
         }
 
+        std::pair<unsigned, unsigned> hands_key_at(int time)
+        {
+            return {player_at(time).integer("viewmodelIndex"), local_body_at(time)};
+        }
+
+        void resolve_hands_assets()
+        {
+            for (const auto& frame : track.frames)
+            {
+                const auto key = hands_key_at(frame.time);
+                if (hands_models.contains(key)) continue;
+                const auto [index, body_index] = key;
+                if (!index) { hands_models[key] = 0; continue; }
+                const auto& source = track.configstrings.at(830 + index);
+                const auto body = body_index ? track.configstrings.at(830 + body_index) : std::string{};
+                const auto target = std::string(cod4::hands_target(source, track.map, body));
+                hands_models[key] = bind_model(target);
+                lifecycle << "hands " << hands_models.at(key) << ' ' << source << " -> " << target
+                    << " body=" << body << std::endl;
+            }
+        }
+
         void resolve_player_assets()
         {
             // Resolve the recorded ordinal through COD4's own weapon-file list.
@@ -260,7 +326,7 @@ namespace cod4_camera
             std::istringstream source_names(track.configstrings.at(2258));
             for (std::string name; source_names >> name;) names.push_back(name);
             source_ammo = cod4::resolve_ammo_slots(names);
-            weapons.clear(); weapons[0] = 0; weapon_defs.clear(); alternate_weapons.clear(); hands_model = 0;
+            weapons.clear(); weapons[0] = 0; weapon_defs.clear(); alternate_weapons.clear(); hands_models.clear();
             body_actions.clear(); body_indices.clear();
             std::set<unsigned> recorded_weapons;
             std::set<unsigned> held_weapons;
@@ -406,23 +472,6 @@ namespace cod4_camera
             for (const auto& [index, value] : initial_configs)
                 if (index >= 3945) utils::hook::invoke<void>(0x342F90_b, index, value.c_str());
             save_initial_gamestate(track.map);
-            const auto source_hands = track.configstrings.at(830 + players.front().integer("viewmodelIndex"));
-            // COD4's generic viewhands have no faction identity. Use the base
-            // remastered USMC desert hands; named source variants need explicit mappings.
-            const auto target_hands = source_hands == "viewmodel_base_viewhands" ? "viewhands_h1_usmc_desert" : source_hands;
-            for (unsigned i = 1; i < 1024; ++i)
-            {
-                const auto* name = utils::hook::invoke<const char*>(0x33B820_b, 1240 + i);
-                if (name && target_hands == name) hands_model = static_cast<std::uint16_t>(i);
-                if (name && std::strstr(name, "viewhand")) lifecycle << "hands candidate " << i << ' ' << name << std::endl;
-            }
-            if (!hands_model) throw std::runtime_error("H1 hands mapping unavailable: " + source_hands);
-            lifecycle << "hands " << hands_model << ' ' << source_hands << " -> " << target_hands << std::endl;
-            if (requested_models.insert(target_hands).second)
-            {
-                utils::hook::invoke<void>(0x75720_b, target_hands.c_str());
-                lifecycle << "request model " << target_hands << std::endl;
-            }
         }
 
         bool resolve_body_assets()
@@ -570,7 +619,7 @@ namespace cod4_camera
             put(0xB8, player.integer("torsoTimer"));
             put(0xBC, torso);
             put(0xC8, cod4::translate_body_heading(frame));
-            put(0x3C, hands_model);
+            put(0x3C, hands_models.at(hands_key_at(time)));
             put(0x138, player.integer("viewHeightTarget"));
             put(0x13C, player.real("viewHeightCurrent"));
             put(0x394, weapons.at(source_weapon));
@@ -688,10 +737,9 @@ namespace cod4_camera
             packet.reset_index(); packet.byte(0);
             for (const auto& [number, client] : recorded.clients)
             {
-                std::array<std::uint16_t, 6> attachments{};
-                for (unsigned i = 0; i < 6; ++i)
-                    if (source_models.contains(client.get(12 + i * 4))) attachments[i] = source_models.at(client.get(12 + i * 4));
-                const auto native = cod4::translate_client(client, source_models.at(client.get(8)), attachments);
+                const auto& models = character_models.at(client_model_key(client));
+                if (!models.body) continue; // Spectators have no recorded character model.
+                const auto native = cod4::translate_client(client, models.body, models.attachments);
                 utils::hook::invoke<void>(0x4F3910_b, context.data(), &packet.msg, time, nullptr, native.data(), true);
             }
             packet.bit0(); packet.reset_index(); packet.bit0();
@@ -725,6 +773,7 @@ namespace cod4_camera
                 utils::hook::invoke<void>(0x76850_b, name.c_str());
             requested_models.clear();
             model_bindings.clear();
+            bound_models.clear(); character_models.clear(); hands_models.clear();
             state.message = message;
             if (trace.is_open()) trace.close();
             if (lifecycle.is_open()) lifecycle << "stop: " << message << std::endl;
@@ -817,6 +866,20 @@ namespace cod4_camera
             report << "COD4 to H1 conversion\nSource: " << state.name << "\nMap: " << track.map
                 << "\nOutput: " << conversion_output.filename().string()
                 << "\nOmitted prop model identities: " << omitted_props.size() << "\n";
+            report << "\nCharacter model combinations: " << character_models.size()
+                << "\nHands/body combinations: " << hands_models.size() << "\n";
+            for (const auto& [key, models] : character_models)
+            {
+                if (!models.body) continue;
+                report << "Character: " << track.configstrings.at(830 + key[0])
+                    << " -> " << get_configstring(1240 + models.body) << "\nAttachments:";
+                for (const auto index : models.attachments)
+                    if (index) report << ' ' << get_configstring(1240 + index);
+                report << '\n';
+            }
+            for (const auto& [key, index] : hands_models)
+                if (index) report << "Hands: " << track.configstrings.at(830 + key.first)
+                    << " -> " << get_configstring(1240 + index) << '\n';
             for (const auto& [index, name] : omitted_props)
             {
                 report << "\n" << name << " (source model " << index << ")\n"

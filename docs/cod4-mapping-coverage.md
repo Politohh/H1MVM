@@ -33,6 +33,64 @@ clips are imported. Empty held-weapon state uses a native hold pose.
 The 15-slot native inventory limit applies per snapshot, rather than limiting
 the number of different weapons seen over an entire recording.
 
+## Stock multiplayer characters and viewhands
+
+The character catalogue covers all 34 stock `character_mp_*.gsc` scripts in the
+pinned COD4 Mod Tools reference: 30 distinct source bodies, including four
+unused legacy USMC compatibility identities. It selects 30 native MWR class
+sets (body, head and hands) from `mp/costumemodeltable.csv`.
+
+| Native faction/environment | Class roles |
+| --- | --- |
+| USMC desert | Assault, SMG, LMG, shotgun, sniper |
+| Arab desert | Assault, SMG, LMG, shotgun, sniper |
+| SAS urban/CT | Assault, SMG, LMG, shotgun, sniper |
+| SAS woodland | Assault, SMG, LMG, shotgun, ghillie sniper |
+| Spetsnaz urban | Assault, SMG, LMG, shotgun, sniper |
+| Spetsnaz woodland | Assault, SMG, LMG, shotgun, ghillie sniper |
+
+All six stock COD4 multiplayer viewhand identities are mapped. In particular,
+`viewhands_marine_sniper` selects SAS or Spetsnaz remastered ghillie hands using
+the recorded body. Shared source head names also use body/class context. Urban
+and woodland Russian classes reuse source bodies, so the original map script's
+environment selects MWR's variant. The 25 known environment rows disambiguate
+these identities; they do not restrict custom map names.
+
+Each native target was verified resident or registered as a transient in the
+installed H1 client. Hands now use the same native binding and transient-loading
+path as body models; they no longer need to be present in the menu's model
+configstrings. Conversion maps each recorded hands/body combination, preserving
+class and faction changes instead of fixing the first snapshot's hands for the
+whole demo. Where COD4 has an integrated head, conversion includes MWR's
+separate class head. Original weapon attachments are replaced by the existing
+native MWR weapon/furniture assembly path.
+
+Reference fixtures are in `tests/fixtures`, with provenance in its README.
+Checks passed 850 class/map combinations and all required character/hands
+identities in nine readable local demos (95,270 camera samples), including four
+hands/body combinations in `D1ablo_cic7_infinite.dm_1`. Eight other files fail
+before mapping: six contain an unsupported block type, one lacks a player delta
+baseline, and one lacks the recorded map name. Those reader failures are not
+counted as mapping successes.
+
+The ordinary F9 Bloc conversion succeeded on the installed build, confirmed by
+the user. Its report resolves `body_mp_opforce_sniper` and
+`head_mp_opforce_ghillie` to the native Spetsnaz woodland sniper, and
+`viewhands_marine_sniper` to `viewhands_h1_spetsnaz_ghillie_mp_camo`.
+No prop identities were omitted. Container/camera validation passed 6,074
+snapshots, 2,497,698 bytes and a 25.3-second recorded span. Playback visual
+acceptance remains separate; physical Escape stopped the automated UI check.
+
+Installed EXE SHA-256:
+`3FFF3CCA78CC4D7E8E6CA9D30A9FE1BAA3E70E62C6404F4EDD488ADCDB4CA0F2`.
+Source base is `3a9eb4e2713748c0fd5c6bcbdf23e7dfc4fa1d50` plus this character
+mapping change. Release x64 MSBuild, stock character/model/visibility/view-motion
+checks and the native shock-call ABI check passed. Rollback, source hashes and
+seven preserved recording hashes are in
+`build/install-backups/20260928-231658-before-character-mappings/manifest.json`.
+Bloc output SHA-256:
+`A4295F56F8E4E01356C9ACA7F67349BEBF8846209FC8239AF0160BF3F7FA1AE0`.
+
 ## Ammo registration
 
 The original ammo/clip registries allocate consecutive IDs for distinct names.
@@ -102,10 +160,10 @@ every variant has been visually exercised. Crash and Backlot supply the current
 runtime fixtures; special equipment action trees and the other weapon variants
 still need representative recordings for visual acceptance.
 
-The converter's broader limitations remain: remote player/NPC entities and all
-faction/class body identities are not fully mapped. The currently verified local
-body identity was USMC sniper; the subsequent City update also maps the OpFor
-desert SMG body/head. Developer-only weapons and custom mod weapons with
+The stock faction/class model catalogue is now mapped as described above.
+Remote player/NPC entity translation remains incomplete; mapping their client
+model metadata does not establish complete remote animation/event playback.
+Developer-only weapons and custom mod weapons with
 no verified MWR equivalent produce an explicit error rather than substituting a
 different asset. Weapon mapping coverage is not a claim that every COD4 demo
 feature is implemented.
