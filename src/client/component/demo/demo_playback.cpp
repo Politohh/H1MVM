@@ -56,6 +56,10 @@ namespace // demo class
 		[[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> peek_duration();
 		void bootstrap_map_load();
         bool is_converted() const { return converted_; }
+        const std::map<unsigned, int>& grenade_times() const { return grenade_times_; }
+        void reset_grenade_fx();
+        bool rebuilding_grenade_fx() const { return rebuilding_grenade_fx_; }
+        void finish_grenade_fx_rebuild() { if (!seeking_) rebuilding_grenade_fx_ = false; }
         bool is_bootstrapping() const { return bootstrapping_; }
         bool converted_models_ready() const
         {
@@ -78,7 +82,7 @@ namespace // demo class
 		// A user scrub/seek (demoforward/demorewind) must still complete while paused, so mark
 		// one in progress; handle_demo_reading then keeps parsing until it settles at the new
 		// spot and re-freezes. seek_ttl_ gives the fast-forward machinery a few frames to apply.
-		void begin_seek() { seeking_ = true; seek_ttl_ = 4; }
+		void begin_seek() { reset_grenade_fx(); seeking_ = true; seek_ttl_ = 4; }
 		[[nodiscard]] bool is_seeking() const { return seeking_; }
 		void advance_seek();
 		[[nodiscard]] std::optional<std::int32_t> get_current_time() const;
@@ -93,6 +97,8 @@ namespace // demo class
 
 		bool converted_{}, bootstrapping_{};
         std::set<std::string> converted_models_;
+        std::map<unsigned, int> grenade_times_;
+        bool rebuilding_grenade_fx_{};
         bool repeat_{};
 		bool skip_timeout_{};
 		bool retain_timescale_{};
@@ -412,6 +418,7 @@ namespace // demo class
                     const auto models = cod4::parse_model_metadata({fields.begin() + 9, fields.end()});
                     model_names.assign(models.names.begin(), models.names.end());
                     model_bindings = models.bindings;
+                    grenade_times_ = models.grenade_times;
                 }
             }
             if ((id & 31) == 2 && converted_ && data.size() > 8)
@@ -509,6 +516,8 @@ namespace // demo class
         file_.close();
         for (const auto& name : converted_models_) utils::hook::invoke<void>(0x76850_b, name.c_str());
         converted_models_.clear();
+        grenade_times_.clear();
+        rebuilding_grenade_fx_ = false;
         if (converted_) cod4_camera::clear_model_bindings();
         converted_ = false;
 
@@ -519,8 +528,24 @@ namespace // demo class
 		}
 	}
 
+    void demo_playback_t::reset_grenade_fx()
+    {
+        if (!converted_ || grenade_times_.empty()) return;
+        rebuilding_grenade_fx_ = true;
+        if (*game::mp::connstate != game::CA_ACTIVE) return;
+        // Native FX_KillAllEffects takes the full int local-client argument,
+        // acquires the system write lock and clears entity FX references.
+        utils::hook::invoke<void>(0x3DBA80_b, 0);
+        for (const auto& [number, time] : grenade_times_)
+        {
+            auto* entity = utils::hook::invoke<std::uint8_t*>(0x6BFF0_b, 0, static_cast<int>(number));
+            if (entity) *reinterpret_cast<int*>(entity + 0x248) = 0;
+        }
+    }
+
 	void demo_playback_t::repeat()
 	{
+        reset_grenade_fx();
         rewind_pending_ = false;
 		assert(post_map_header_file_offset_ > 0);
 
@@ -609,6 +634,53 @@ namespace // hooks
 	utils::hook::detour CL_GetPredictedPlayerInformationForServerTime_hook;
 	utils::hook::detour CL_GetPredictedVehicleForServerTime_hook;
 	utils::hook::detour CG_CalcViewValues_hook;
+    utils::hook::detour CG_EntityEvent_hook;
+    utils::hook::detour CG_PlaySound_hook;
+    thread_local bool suppress_grenade_sound{};
+
+    int grenade_play_sound(const int local_client_num, const int entity_num, const float* origin, const void* alias)
+    {
+        // The native wrapper at 0x31D040 returns the int sound ID from
+        // 0x31D430 (-1 for no sound). Only silence a converted burst being
+        // reconstructed by a seek; ordinary gameplay and demo audio pass through.
+        if (suppress_grenade_sound) return -1;
+        return CG_PlaySound_hook.invoke<int>(local_client_num, entity_num, origin, alias);
+    }
+
+    void grenade_entity_event(const int local_client_num, std::uint8_t* entity, const unsigned event, const unsigned flags)
+    {
+        const auto& times = demo.grenade_times();
+        unsigned short number{};
+        if (entity) std::memcpy(&number, entity + 0x13C, sizeof(number));
+        const auto found = times.find(number);
+        if (!demo.is_converted() || found == times.end() || !entity
+            || entity[0x146] != 20 + event || (event != 98 && event != 103 && event != 104))
+        {
+            CG_EntityEvent_hook.invoke<void>(local_client_num, entity, event, flags);
+            return;
+        }
+        // CG_EntityEvent supplies cg.time to native FX_PlayEffect. Use the
+        // original detonation clock, so skipped snapshots and seeks create
+        // the MWR burst with its correct age instead of a new explosion now.
+        auto* cg = reinterpret_cast<std::uint8_t*>(game::CG_GetLocalClientGlobals());
+        if (!cg) return;
+        auto& time = *reinterpret_cast<int*>(cg + 0x92BE8);
+        const auto saved = time;
+        const auto saved_sound = suppress_grenade_sound;
+        suppress_grenade_sound = demo.rebuilding_grenade_fx();
+        time = found->second;
+        const auto restore = gsl::finally([&time, saved, saved_sound]
+        {
+            time = saved;
+            suppress_grenade_sound = saved_sound;
+        });
+        CG_EntityEvent_hook.invoke<void>(local_client_num, entity, event, flags);
+        if (converted_trace.is_open())
+            converted_trace << "native grenade event entity=" << number << " event=" << event
+                << " recorded=" << found->second << " playback=" << saved
+                << " age=" << static_cast<std::int64_t>(saved) - found->second
+                << " reconstruct=" << suppress_grenade_sound << std::endl;
+    }
 
 	// Render time captured by draw_active_frame_stub, consumed by cg_calc_view_values_stub (which
 	// gets no time argument of its own). draw_active_frame runs immediately before CG_CalcViewValues.
@@ -1020,8 +1092,10 @@ namespace // hooks
 			g_demo_view_time = frame_time;
 		}
 
-		return CG_DrawActiveFrame_hook.invoke<std::int32_t>(
+		const auto result = CG_DrawActiveFrame_hook.invoke<std::int32_t>(
 			local_client_num, frame_time, demo_type, cubemap_shot, cubemap_size, render_screen, a7);
+        demo.finish_grenade_fx_rebuild();
+        return result;
 	}
 
 	bool get_predicted_vehicle_data(const game::mp::clientActive_t& cl, std::int32_t ps_time, game::PlayerVehicleState& ps_vehicle)
@@ -1558,6 +1632,8 @@ namespace demo_playback
 			// force the engine's own demoType==CLIENT path during playback -- this is what
 			// actually suppresses local input (movement/fire/ADS), not a hand-written cg field.
 			CG_DrawActiveFrame_hook.create(game::CG_DrawActiveFrame, draw_active_frame_stub);
+            CG_EntityEvent_hook.create(0xF9400_b, grenade_entity_event);
+            CG_PlaySound_hook.create(0x31D040_b, grenade_play_sound);
 
 			// ===== STAGE 2a: real playback-support hooks. All verified pass-through when
 			// no demo is playing, so they install on valid addresses and stay inert until

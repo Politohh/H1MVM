@@ -7,6 +7,7 @@
 #include "cod4_body_translation.hpp"
 #include "cod4_view_translation.hpp"
 #include "cod4_world_translation.hpp"
+#include "cod4_grenade_events.hpp"
 #include "cod4_model_metadata.hpp"
 #include "cod4_model_translation.hpp"
 #include "demo_playback.hpp"
@@ -30,6 +31,10 @@ namespace cod4_camera
         cod4::camera_track track;
         std::vector<cod4::player_frame> players;
         cod4::world_track world;
+        cod4::grenade_events grenade_track;
+        std::vector<cod4::h1_entity> grenade_entities;
+        std::map<unsigned, int> grenade_times;
+        bool grenade_effects_resolved{};
         std::map<unsigned, std::uint16_t> source_models;
         std::map<unsigned, std::string> omitted_props;
         std::map<unsigned, std::set<unsigned>> omitted_prop_entities;
@@ -354,6 +359,13 @@ namespace cod4_camera
                         recorded_weapons.insert(entity.get(196));
                         projectile_weapons.insert(entity.get(196));
                     }
+            for (const auto& event : grenade_track.events)
+            {
+                if (event.weapon >= names.size() || !cod4::grenade_weapon_matches(event.source_event, names[event.weapon]))
+                    throw std::runtime_error("Recorded grenade explosion has no verified native weapon mapping: event "
+                        + std::to_string(event.source_event) + ", weapon " + std::to_string(event.weapon));
+                recorded_weapons.insert(event.weapon);
+            }
             for (const auto source : recorded_weapons)
             {
                 if (source >= names.size()) throw std::runtime_error("COD4 weapon index outside its name table");
@@ -472,6 +484,43 @@ namespace cod4_camera
             for (const auto& [index, value] : initial_configs)
                 if (index >= 3945) utils::hook::invoke<void>(0x342F90_b, index, value.c_str());
             save_initial_gamestate(track.map);
+        }
+
+        void resolve_grenade_effects()
+        {
+            if (grenade_effects_resolved) return;
+            const auto resident = [](const game::FxEffectDef* effect)
+            {
+                return effect && effect->name && *effect->name
+                    && game::DB_XAssetExists(game::ASSET_TYPE_FX, effect->name)
+                    && !game::DB_IsXAssetDefault(game::ASSET_TYPE_FX, effect->name);
+            };
+            for (const auto& event : grenade_track.events)
+            {
+                const auto weapon = weapons.at(event.weapon);
+                const auto* def = weapon_defs.at(event.weapon);
+                const auto* weapon_effect = utils::hook::invoke<const game::FxEffectDef*>(0x2E9890_b, weapon, 0);
+                const game::FxEffectDef* impact_effect{};
+                const auto surface = cod4::grenade_surface(event.surface);
+                if (event.source_event == 45)
+                {
+                    if (def->impactType != game::IMPACT_TYPE_GRENADE_EXPLODE)
+                        throw std::runtime_error("Native frag has an unsupported impact type: " + std::string(def->szInternalName));
+                    // CG_GetImpactEffect (0x101D00), impact type 9 -> row 13
+                    // (0x101F83); table getter 0x316450 is shared with the native
+                    // event handler. It is ready after cgame initialization,
+                    // rather than during early weapon registration.
+                    const auto* table = utils::hook::invoke<const game::FxImpactTable*>(0x316450_b);
+                    if (table && table->table) impact_effect = table->table[13].nonflesh[surface];
+                }
+                if (!cod4::grenade_effect_available(event.source_event, resident(weapon_effect), resident(impact_effect)))
+                    throw std::runtime_error("Native MWR grenade explosion FX unavailable: " + std::string(def->szInternalName)
+                        + ", event " + std::to_string(event.source_event) + ", surface " + std::to_string(surface));
+                const auto* effect = event.source_event == 45 ? impact_effect : weapon_effect;
+                lifecycle << "native grenade FX " << def->szInternalName << " event=" << event.source_event
+                    << " surface=" << static_cast<unsigned>(surface) << " -> " << effect->name << std::endl;
+            }
+            grenade_effects_resolved = true;
         }
 
         bool resolve_body_assets()
@@ -733,6 +782,9 @@ namespace cod4_camera
             }
             for (const auto& [number, native] : map_models)
                 write_entity(native);
+            if (converted_file)
+                for (std::size_t i = 0, count = cod4::grenade_events_at(grenade_track.events, time); i < count; ++i)
+                    write_entity(grenade_entities.at(i));
             utils::hook::invoke<void>(0x4F6C10_b, &packet.msg, 2047, 11);
             packet.reset_index(); packet.byte(0);
             for (const auto& [number, client] : recorded.clients)
@@ -812,6 +864,18 @@ namespace cod4_camera
 
         void export_demo()
         {
+            grenade_entities.clear(); grenade_times.clear();
+            unsigned fx_entity_number = map_models.empty() ? 1024u : map_models.rbegin()->first + 1;
+            for (const auto& event : grenade_track.events)
+            {
+                grenade_entities.push_back(cod4::translate_grenade_event(event, fx_entity_number, weapons.at(event.weapon)));
+                grenade_times.emplace(fx_entity_number++, event.time);
+                lifecycle << "grenade event time=" << event.time << " source_entity=" << event.entity
+                    << " source_event=" << event.source_event << " native_event=" << cod4::native_grenade_event(event.source_event)
+                    << " native_entity=" << fx_entity_number - 1 << " source_weapon=" << event.weapon
+                    << " normal=" << event.parameter << " surface=" << event.surface
+                    << " origin=" << event.origin[0] << ',' << event.origin[1] << ',' << event.origin[2] << std::endl;
+            }
             std::filesystem::create_directories(conversion_output.parent_path());
             auto temporary = conversion_output;
             temporary += ".tmp";
@@ -824,6 +888,8 @@ namespace cod4_camera
             for (const auto& model : requested_models) { header += model; header.push_back('\0'); }
             for (const auto& [index, model] : model_bindings)
             { header += std::format("@model:{}:{}", index, model); header.push_back('\0'); }
+            for (const auto& [entity, time] : grenade_times)
+            { header += std::format("@grenade:{}:{}", entity, time); header.push_back('\0'); }
             demo_utils::write_id_and_size(output, header.size(), demo_utils::demo_data_id::gen_header);
             output.write(header.data(), header.size());
             const auto map_header = track.map + std::string("\0war\0", 5);
@@ -868,6 +934,15 @@ namespace cod4_camera
                 << "\nOmitted prop model identities: " << omitted_props.size() << "\n";
             report << "\nCharacter model combinations: " << character_models.size()
                 << "\nHands/body combinations: " << hands_models.size() << "\n";
+            report << "\nNative MWR grenade detonations: " << grenade_track.events.size() << '\n';
+            for (const auto& event : grenade_track.events)
+                report << "Grenade: source time " << event.time << " ms, source entity " << event.entity
+                    << ", event " << event.source_event << " -> native " << cod4::native_grenade_event(event.source_event)
+                    << ", weapon " << weapon_defs.at(event.weapon)->szInternalName
+                    << ", origin " << event.origin[0] << ' ' << event.origin[1] << ' ' << event.origin[2]
+                    << ", direction " << event.parameter << ", surface " << event.surface << '\n';
+            for (const auto& [event, count] : grenade_track.other_explosions)
+                report << "Unsupported explosion event " << event << ": " << count << " recorded occurrence(s)\n";
             for (const auto& [key, models] : character_models)
             {
                 if (!models.body) continue;
@@ -928,6 +1003,7 @@ namespace cod4_camera
                 const std::vector<std::uint8_t> source_bytes((std::istreambuf_iterator<char>(source_file)), {});
                 auto decoded_players = cod4::decode_players(source_bytes);
                 auto decoded_world = cod4::decode_world(source_bytes);
+                auto decoded_grenades = cod4::collect_grenade_events(decoded_world);
                 if (!game::SV_MapExists(decoded.map.c_str())) throw std::runtime_error("This map is not installed in H1: " + decoded.map);
                 if (!demo_playback::playing() && game::CL_IsCgameInitialized() && !game::VirtualLobby_Loaded() && !active())
                     throw std::runtime_error("Disconnect from the match before starting COD4 camera playback");
@@ -943,6 +1019,9 @@ namespace cod4_camera
                     track = std::move(decoded);
                     players = std::move(decoded_players);
                     world = std::move(decoded_world);
+                    grenade_track = std::move(decoded_grenades);
+                    grenade_entities.clear(); grenade_times.clear();
+                    grenade_effects_resolved = false;
                     world_resolved = false;
                     source_parts.clear();
                     parts_resolved = false;
@@ -1040,6 +1119,7 @@ namespace cod4_camera
             }
             if (*game::mp::connstate < game::CA_PRIMED) return true;
             resolve_world_assets();
+            resolve_grenade_effects();
             if (!shocks_resolved)
             {
                 std::map<unsigned, std::string> native_shock_profiles;

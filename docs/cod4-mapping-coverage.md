@@ -115,6 +115,96 @@ MWR model's skeleton. This preserves intact and damaged windows when the native
 bone order or bone count differs. Backlot exercises silver and yellow sedans
 and a brown wagon, extending the earlier Crash sedan coverage.
 
+## Native grenade explosion FX (2026-09-28)
+
+The converter now writes MWR's native frag (`EV_GRENADE_EXPLODE`, 98), flash
+(`EV_FLASHBANG_EXPLODE`, 103) and recorded concussion (`EV_CUSTOM_EXPLODE`, 104)
+event entities. Frag uses the mapped MWR weapon's impact type and native surface
+impact FX; flash and concussion use the weapon's own explosion definition.
+Sounds also come from MWR. No COD4 FX assets are imported. Missing native FX
+produces an explicit conversion error; other observed explosion event kinds are
+listed in the conversion report.
+
+Source event rings and temporary event entities are inventoried separately from
+missile removal. Direction bytes are verified against both engines' identical
+162-vector tables. Surface IDs are translated by the stock surface identities:
+MWR inserts metal grate and moves cushion, so source IDs are not copied.
+
+Each explosion has a stable native temporary-event identity, emitted from its
+first recorded server snapshot onward. The native previous-event gate prevents
+camera archives or paused draws from firing it again. Timing records are embedded
+in the same `.dm_h1` header, alongside existing model bindings. Converted playback
+supplies the original event time to MWR's handler; seek clears native FX and resets
+these event identities so bursts can be recreated at their recorded age. Direct
+explosion sounds are suppressed while reconstructing a seek or rewind. Ordinary
+H1 recordings and earlier converted recordings use the existing path. The number
+of explosion identities is bounded by the native entity slots left after authored
+models; overflow fails explicitly.
+
+Offline decoding and focused checks passed these actual fixtures:
+
+| Source demo | Recorded detonations (seconds from first camera archive) |
+| --- | --- |
+| `cod4_to_H1.dm_1` / Crash | Concussion 15.165 and 17.765; frag 18.265 |
+| Backlot | Concussion 13.472; frag 21.272 |
+| City | Concussion 14.019, 37.069 and 40.119; flash 30.769; frag 31.719 |
+
+Focused checks cover all 10 events, source sequence wrap, number reuse, temporary
+entity deduplication, native event payload/surface mapping, stable snapshot event
+presence through pause/seek, metadata parsing and invalid-input rejection. Existing
+character, model, visibility, view-motion and Crash projectile/body checks pass.
+Run the focused check with `tests\run-cod4-grenade-events.cmd`; optional arguments
+replace its three local fixture paths. The accepted converted file also passes
+`tests/validate_converted_demo.py`: 2,241 native snapshots and the expected 22.8s
+clock range.
+
+The initial Release x64 build passed offline checks and was installed:
+
+`F539F81A8B018C68193E5059AE406FF8311DAA69D6D1A15114FEF4DF65285C48`
+
+Rollback, source hashes and offline check output are in
+`build/install-backups/20260928-235957-before-grenade-fx`. All 16 existing files
+in `demos/client/auto`, including recordings and conversion reports, were backed
+up and remained byte-identical. This initial build was superseded after the
+frag validation failure below.
+
+The user's ordinary F9 Crash conversion rejected `h1_fraggrenade_mp` during FX
+validation. Read-only inspection of the running MWR weapon definitions confirmed
+that frag and short frag deliberately have a null `projExplosionEffect`, impact
+type 9 and explosion type 0. Flash and concussion instead own
+`vfx/explosion/flashbang_h1` and `vfx/explosion/concussion_grenade_h1`.
+The corrected check runs after native client initialization and follows
+`CG_GetImpactEffect`: impact type 9 selects impact-table row 13, indexed by the
+translated recorded surface. It requires that native frag surface effect,
+while retaining the weapon-effect requirement for flash/concussion. Focused
+regression checks now cover a valid frag with a null optional weapon effect.
+
+The correction passed Release x64 MSBuild and focused checks and is installed:
+
+`F8EF68ECB76F7C2A0664E25B60D5459A04B5FAC7DADCF6AD45397BC1111A3929`
+
+Rollback and source hashes are in
+`build/install-backups/20260929-002226-before-grenade-fx`; all 16 existing
+recording/report files remained byte-identical.
+
+**The user accepted the corrected playback on 2026-09-29: "ok it works good".**
+The ordinary F9 Crash conversion saved `cod4_to_H1.0004.dm_h1`: 2,241 snapshots,
+2,601,796 bytes, SHA-256
+`D7F1FC42A7DB44FEF319B5B49DE0BF2F50554B2ABF082995E00FF56BAED5AB82`.
+Conversion resolved native frag `vfx/explosion/frag_grenade_concrete` for MWR
+surface 17 and `vfx/explosion/concussion_grenade_h1` for the two concussion
+events. Playback dispatched entities 1052/1053/1054 as events 104/104/98 at
+their recorded times 48750/51350/51850 ms. The installed executable still matches
+the corrected build hash above. Runtime logs and the accepted recording are
+retained locally under `build/analysis/grenade-fx-accepted`.
+
+This confirms the tested Crash conversion/playback, while City flash rendering,
+effect aging during seeks and freecam acceptance have not been independently
+documented. Reconvert through F9, Refresh and Play; old `.dm_h1` files retain their
+old snapshots. City supplies the flash event near 30.769 seconds. Conversion and
+playback diagnostics are in `demos/cod4-replay-last.log` and
+`demos/converted-playback-last.log`. Car explosion events are the next work item.
+
 ## Native view motion update
 
 The 2026-09-28 motion update supplies MWR's native view and weapon movement

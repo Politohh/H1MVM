@@ -21,13 +21,29 @@ namespace cod4
     {
         std::set<std::string> names;
         std::map<unsigned, std::string> bindings;
+        std::map<unsigned, int> grenade_times;
     };
     inline model_metadata parse_model_metadata(const std::vector<std::string>& entries)
     {
-        if (entries.size() > 512) throw std::runtime_error("Too many converted model records");
+        if (entries.size() > 2048) throw std::runtime_error("Too many converted metadata records");
         model_metadata result;
         for (const auto& entry : entries)
         {
+            if (entry.starts_with("@grenade:"))
+            {
+                const std::string_view text(entry);
+                const auto separator = text.find(':', 9);
+                if (separator == text.npos) throw std::runtime_error("Incomplete grenade timing record");
+                unsigned number{};
+                int time{};
+                const auto entity = std::from_chars(text.data() + 9, text.data() + separator, number);
+                const auto clock = std::from_chars(text.data() + separator + 1, text.data() + text.size(), time);
+                if (entity.ec != std::errc{} || entity.ptr != text.data() + separator || number < 1024 || number >= 2046
+                    || clock.ec != std::errc{} || clock.ptr != text.data() + text.size() || time < 0
+                    || !result.grenade_times.emplace(number, time).second)
+                    throw std::runtime_error("Invalid grenade timing record");
+                continue;
+            }
             if (!entry.starts_with("@model:"))
             {
                 if (!valid_model_name(entry)) throw std::runtime_error("Invalid converted model name");
@@ -45,6 +61,7 @@ namespace cod4
             if (!result.bindings.emplace(index, name).second) throw std::runtime_error("Duplicate model binding");
             result.names.emplace(name);
         }
+        if (result.names.size() > 512) throw std::runtime_error("Too many converted model names");
         return result;
     }
 }

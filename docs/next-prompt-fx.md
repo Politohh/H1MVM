@@ -1,5 +1,11 @@
 # Next prompt: native MWR weapon and grenade FX
 
+Status on 2026-09-29: native frag, flash and recorded concussion events are now
+implemented. The corrected Crash F9 conversion/playback was accepted by the
+user. Continue next with [car explosion events](next-prompt-car-explosions.md).
+The broader firing, impact, smoke and launcher priorities below remain future
+work; this original handoff is retained for context.
+
 Continue the COD4-to-H1 demo converter in `F:\Dev\h1-cod4-demo`, private repository
 `https://github.com/Politohh/h1-cod4-demo`, on the current `main` branch. The verified
 character mapping implementation is commit `62c5eefa315fc2cd80ea6eeee2ba75d54e029129`.
