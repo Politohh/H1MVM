@@ -1,13 +1,16 @@
 #pragma once
 
 #include "cod4_world_translation.hpp"
+#include <charconv>
+#include <set>
 
 namespace cod4
 {
     using h1_hud_element = std::array<std::uint8_t, 192>;
 
     // A CoD4 HE_TYPE_VALUE carrying MP_PLUS is the recorded score popup.
-    // H1 renders the element through its own HUD renderer and localized string.
+    // The converted client demo triggers H1's LUI popup from its omnvar;
+    // this preserves the archival HUD value for other playback paths.
     // The other CoD4 HUD elements need separate asset/layout mapping and are
     // deliberately not copied as raw structs: H1's element is 192, not 160 bytes.
     inline h1_hud_element translate_score_popup(const wire_state<160>& source,
@@ -49,5 +52,85 @@ namespace cod4
         if (source.get(0) != 2 || !source.get(52)) return false;
         const auto found = configstrings.find(309 + source.get(52));
         return found != configstrings.end() && found->second == "MP_PLUS";
+    }
+
+    struct score_popup_event
+    {
+        int time{};
+        wire_state<160> element;
+    };
+
+    // In some Promod recordings the archival HUD popup is authored well after
+    // the score changes. Match a consistent run of +N popups to the recorded
+    // team-score commands; otherwise retain the HUD's original timing.
+    inline std::vector<score_popup_event> collect_score_popups(const world_track& world,
+        const std::map<int, std::string>& configstrings)
+    {
+        struct score_change { int time; char team; int delta; };
+        std::vector<score_change> changes;
+        std::array<int, 2> prior{};
+        std::array<bool, 2> seen{};
+        for (const auto& command : world.commands)
+        {
+            const auto& text = command.text;
+            if (text.size() < 3 || (text[0] != 'G' && text[0] != 'H') || text[1] != ' ') continue;
+            int score{};
+            const auto [end, error] = std::from_chars(text.data() + 2, text.data() + text.size(), score);
+            if (error != std::errc{} || end != text.data() + text.size()) continue;
+            const unsigned team = text[0] == 'H';
+            if (seen[team] && score > prior[team]) changes.push_back({command.time, text[0], score - prior[team]});
+            prior[team] = score;
+            seen[team] = true;
+        }
+
+        std::vector<score_popup_event> events;
+        unsigned last_start{};
+        for (const auto& frame : world.hud_frames)
+            for (const auto& element : frame.groups[1])
+            {
+                if (!is_score_popup(element, configstrings)) continue;
+                const auto start = element.get(44);
+                if (start == last_start || start > static_cast<unsigned>(frame.time + 100)
+                    || start + 100 < static_cast<unsigned>(frame.time)) continue;
+                last_start = start;
+                events.push_back({static_cast<int>(start), element});
+            }
+
+        struct candidate { std::size_t event; std::size_t change; int delay; };
+        std::vector<candidate> candidates;
+        std::map<std::pair<char, int>, unsigned> support;
+        for (std::size_t i = 0; i < events.size(); ++i)
+        {
+            const auto value = std::bit_cast<float>(events[i].element.get(120));
+            if (!std::isfinite(value) || value < 1 || value > 10000 || std::trunc(value) != value) continue;
+            for (std::size_t j = 0; j < changes.size(); ++j)
+            {
+                const int delay = events[i].time - changes[j].time;
+                if (changes[j].delta != static_cast<int>(value) || delay < 250 || delay > 2000) continue;
+                candidates.push_back({i, j, delay});
+                ++support[{changes[j].team, (delay + 25) / 50}];
+            }
+        }
+        if (!support.empty())
+        {
+            const auto best = std::max_element(support.begin(), support.end(),
+                [](const auto& a, const auto& b) { return a.second < b.second; });
+            if (best->second >= 2)
+            {
+                std::set<std::size_t> used;
+                for (const auto& candidate : candidates)
+                {
+                    const auto& change = changes[candidate.change];
+                    if (change.team != best->first.first
+                        || std::abs(candidate.delay - best->first.second * 50) > 50
+                        || !used.insert(candidate.change).second) continue;
+                    auto& event = events[candidate.event];
+                    event.time = change.time;
+                    event.element.set(44, static_cast<unsigned>(event.time));
+                }
+            }
+        }
+        std::ranges::sort(events, {}, &score_popup_event::time);
+        return events;
     }
 }

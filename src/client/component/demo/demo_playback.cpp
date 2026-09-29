@@ -1263,6 +1263,9 @@ namespace // hooks
 
 	void control_ui_element(const std::int32_t client_num, const void* old_snap, void* new_snap)
 	{
+        const std::uint8_t* popup_def = nullptr;
+        const std::uint32_t* popup_record = nullptr;
+        const auto snap_time = *reinterpret_cast<const std::uint32_t*>(static_cast<const std::uint8_t*>(new_snap) + 0x4C);
         if (demo.is_demo_playing())
         {
             // MWR CG_UpdateOmnvars: global records at snapshot+0x4A24,
@@ -1276,6 +1279,12 @@ namespace // hooks
                 const auto* name = *reinterpret_cast<const char* const*>(def);
                 if (!name) continue;
                 const std::string_view key(name);
+                if (demo.is_converted() && key == "ui_points_popup" && (def[8] & 8))
+                {
+                    popup_def = def;
+                    popup_record = reinterpret_cast<const std::uint32_t*>(
+                        static_cast<const std::uint8_t*>(new_snap) + 0x4540 + (i - globals) * 8);
+                }
                 const bool selected = key == "ui_loadout_selected" || key == "ui_team_selected";
                 const bool hidden = key == "ui_options_menu" || key == "ui_spectator_selected"
                     || key == "ui_alien_show_eog_score";
@@ -1292,6 +1301,21 @@ namespace // hooks
             }
         }
         CG_UpdateOmnvars_hook.invoke<void>(client_num, old_snap, new_snap);
+        // Client demos update the playerState omnvar before this hook. The
+        // native old/new snapshot path can therefore miss the UI edge, even
+        // though Game.GetOmnvar already reads the recorded value. Dispatch the
+        // same native omnvar notification once per recorded score change.
+        static std::uint32_t last_time{}, last_popup_marker{};
+        if (snap_time < last_time) last_popup_marker = 0;
+        last_time = snap_time;
+        if (demo.is_converted() && popup_def && popup_record && popup_record[0]
+            && popup_record[1] > 0 && popup_record[0] != last_popup_marker
+            && *game::hks::lua_state)
+        {
+            last_popup_marker = popup_record[0];
+            utils::hook::invoke<void>(0x26E430_b, client_num, popup_def, popup_record,
+                *game::hks::lua_state);
+        }
 	}
 
 	std::int32_t update_gamestate_config_strings(game::msg_t& msg)

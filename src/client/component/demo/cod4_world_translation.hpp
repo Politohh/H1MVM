@@ -167,6 +167,9 @@ namespace cod4
         write_native(result, 16, body);
         for (unsigned i = 0; i < attachments.size(); ++i)
             write_native(result, 18 + i * 2, attachments[i]);
+        // CG_UpdateClientInfo copies 32 bytes from native clientState +42
+        // into bgs.clientinfo.name. The CoD4 name is 16 bytes at +60.
+        std::memcpy(result.data() + 42, source.words.data() + 15, 16);
         write_native(result, 96, source.get(4));
         return result;
     }

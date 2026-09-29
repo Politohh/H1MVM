@@ -10,6 +10,7 @@
 #include "cod4_hud_translation.hpp"
 #include "cod4_grenade_events.hpp"
 #include "cod4_bullet_events.hpp"
+#include "cod4_obituary_events.hpp"
 #include "cod4_gun_events.hpp"
 #include "cod4_actor_translation.hpp"
 #include "cod4_car_fx.hpp"
@@ -41,6 +42,8 @@ namespace cod4_camera
         std::vector<cod4::bullet_event> bullet_track;
         std::vector<cod4::h1_entity> bullet_entities;
         std::map<unsigned, int> bullet_times;
+        std::vector<cod4::obituary_event> obituary_track;
+        std::vector<cod4::h1_entity> obituary_entities;
         cod4::gun_event_track gun_track;
         cod4::actor_event_track actor_events;
         std::vector<std::string> source_weapon_names;
@@ -73,7 +76,10 @@ namespace cod4_camera
         std::map<unsigned, cod4::h1_entity> map_models;
         bool world_resolved{};
         std::optional<unsigned> score_popup_label;
+        std::optional<unsigned> score_popup_omnvar;
+        std::int32_t score_popup_omnvar_min{};
         bool score_popup_resolved{};
+        std::vector<cod4::score_popup_event> score_popups;
         bool parts_resolved{};
         utils::hook::detour get_configstring_hook;
         std::map<unsigned, unsigned> weapons;
@@ -287,6 +293,8 @@ namespace cod4_camera
         {
             if (score_popup_resolved) return;
             score_popup_label.reset();
+            score_popup_omnvar.reset();
+            score_popup_omnvar_min = 0;
             const bool recorded = std::ranges::any_of(world.hud_frames, [](const cod4::hud_frame& frame)
             {
                 return std::ranges::any_of(frame.groups[1], [](const cod4::wire_state<160>& element)
@@ -295,6 +303,25 @@ namespace cod4_camera
                 });
             });
             if (!recorded) { score_popup_resolved = true; return; }
+            const auto globals = utils::hook::invoke<unsigned>(0x5A47B0_b);
+            const auto players = utils::hook::invoke<unsigned>(0x5A4790_b);
+            for (unsigned i = globals; i < globals + players; ++i)
+            {
+                const auto* def = static_cast<const std::uint8_t*>(game::Omnvar_GetDef(i));
+                const auto* name = *reinterpret_cast<const char* const*>(def);
+                if (name && std::string_view(name) == "ui_points_popup")
+                {
+                    if (*reinterpret_cast<const std::uint32_t*>(def + 12) != 3)
+                        throw std::runtime_error("Native MWR score popup omnvar is not an integer");
+                    score_popup_omnvar = i - globals;
+                    score_popup_omnvar_min = *reinterpret_cast<const std::int32_t*>(def + 0x20);
+                    lifecycle << "native score popup omnvar index=" << i << " player_offset="
+                        << 0x4540 + *score_popup_omnvar * 8 << " minimum=" << score_popup_omnvar_min << std::endl;
+                    break;
+                }
+            }
+            if (!score_popup_omnvar)
+                throw std::runtime_error("Native MWR score popup omnvar unavailable: ui_points_popup");
             const auto& strings = game::s_netConstStringMaps[game::NETCONSTSTRINGTYPE_LOCSTRING];
             unsigned index = 0;
             for (auto* list = strings.head; list; list = list->next)
@@ -800,20 +827,42 @@ namespace cod4_camera
             put(0x78, frame.origin);
             put(0x84, frame.velocity);
             put(0x12C, frame.angles);
+            if (score_popup_omnvar && !score_popups.empty())
+            {
+                const auto next = std::upper_bound(score_popups.begin(), score_popups.end(), time,
+                    [](int t, const cod4::score_popup_event& event) { return t < event.time; });
+                if (next != score_popups.begin())
+                {
+                    const auto& event = *(next - 1);
+                    const auto score = std::bit_cast<float>(event.element.get(120));
+                    if (std::isfinite(score) && score > 0 && score < 10000 && std::trunc(score) == score)
+                    {
+                        const auto offset = 0x4540 + *score_popup_omnvar * 8;
+                        put(offset, static_cast<std::uint32_t>(event.time));
+                        put(offset + 4, static_cast<std::uint32_t>(static_cast<std::int32_t>(score)
+                            - score_popup_omnvar_min));
+                    }
+                }
+            }
             const auto& player = player_at(time);
             // The native HUD checks live player stats before presenting weapon
             // and match widgets. Preserve the recorded health/death state.
             for (unsigned i = 0; i < 4; ++i) put(0x15C + i * 4, player.stats[i]);
-            if (score_popup_label && !world.hud_frames.empty())
-                for (const auto& element : world.sample_hud(time).groups[1])
-                    if (cod4::is_score_popup(element, track.configstrings))
+            if (score_popup_label && !score_popups.empty())
+            {
+                const auto next = std::upper_bound(score_popups.begin(), score_popups.end(), time,
+                    [](int t, const cod4::score_popup_event& event) { return t < event.time; });
+                if (next != score_popups.begin())
+                {
+                    const auto& event = *(next - 1);
+                    if (time - event.time < static_cast<int>(event.element.get(48)))
                     {
-                        const auto native = cod4::translate_score_popup(element, *score_popup_label);
-                        // CoD4 records this popup in its archival HUD group;
-                        // H1's corresponding bank begins at +0x3A00.
+                        const auto native = cod4::translate_score_popup(event.element, *score_popup_label);
+                        // H1's archival HUD bank begins at +0x3A00.
                         std::memcpy(ps.data() + 0x3A00, native.data(), native.size());
-                        break;
                     }
+                }
+            }
             const auto shock = player.integer("shellshockIndex");
             cod4::write_view_motion(player, time, shock ? shock_profiles.at(shock).index : std::uint8_t{}, put);
             const auto next_body = std::upper_bound(track.frames.begin(), track.frames.end(), time,
@@ -982,6 +1031,8 @@ namespace cod4_camera
                     write_entity(car_effect_entities.at(i));
                 for (std::size_t i = 0, count = cod4::bullet_events_at(bullet_track, time); i < count; ++i)
                     write_entity(bullet_entities.at(i));
+                for (std::size_t i = 0, count = cod4::obituary_events_at(obituary_track, time); i < count; ++i)
+                    write_entity(obituary_entities.at(i));
             }
             // Corpse slots move from COD4 64..71 to H1 42..49. Recorded
             // pickups may precede them in source order, and later grenade
@@ -1094,6 +1145,7 @@ namespace cod4_camera
             grenade_entities.clear(); grenade_times.clear();
             car_effect_entities.clear(); car_effect_times.clear();
             bullet_entities.clear(); bullet_times.clear();
+            obituary_entities.clear();
             unsigned fx_entity_number = map_models.empty() ? 1024u : map_models.rbegin()->first + 1;
             for (const auto& event : grenade_track.events)
             {
@@ -1126,6 +1178,19 @@ namespace cod4_camera
                     << " target=" << event.target << " client=" << event.client << " source_weapon=" << event.weapon
                     << " normal=" << event.parameter << " surface=" << event.surface << " flags=" << event.impact_flags
                     << " origin=" << event.origin[0] << ',' << event.origin[1] << ',' << event.origin[2] << std::endl;
+            }
+            for (const auto& event : obituary_track)
+            {
+                const auto local = static_cast<unsigned>(world.client_num);
+                const auto remap = [local](unsigned client)
+                { return client == 1022 ? 2046u : client == local ? 0u : client == 0u ? local : client; };
+                obituary_entities.push_back(cod4::translate_obituary_event(event, fx_entity_number,
+                    remap(event.attacker), remap(event.victim),
+                    event.source_weapon ? weapons.at(event.source_weapon) : 0));
+                lifecycle << "obituary time=" << event.time << " source_entity=" << event.entity
+                    << " native_entity=" << fx_entity_number << " attacker=" << event.attacker
+                    << " victim=" << event.victim << " mod=" << event.means_of_death << std::endl;
+                ++fx_entity_number;
             }
             std::filesystem::create_directories(conversion_output.parent_path());
             auto temporary = conversion_output;
@@ -1319,6 +1384,7 @@ namespace cod4_camera
                 auto decoded_world = cod4::decode_world(source_bytes);
                 auto decoded_grenades = cod4::collect_grenade_events(decoded_world);
                 auto decoded_bullets = cod4::collect_bullet_events(decoded_world);
+                auto decoded_obituaries = cod4::collect_obituary_events(decoded_world, decoded_players);
                 auto decoded_car_fx = cod4::collect_car_fx(decoded_world, decoded.configstrings);
                 auto decoded_car_animations = cod4::collect_car_animations(decoded_world, decoded.configstrings, decoded_car_fx.events);
                 if (!game::SV_MapExists(decoded.map.c_str())) throw std::runtime_error("This map is not installed in H1: " + decoded.map);
@@ -1337,9 +1403,12 @@ namespace cod4_camera
                     players = std::move(decoded_players);
                     gun_track = std::move(decoded_gun_events);
                     world = std::move(decoded_world);
+                    score_popups = cod4::collect_score_popups(world, track.configstrings);
                     grenade_track = std::move(decoded_grenades);
                     bullet_track = std::move(decoded_bullets);
+                    obituary_track = std::move(decoded_obituaries);
                     bullet_entities.clear(); bullet_times.clear();
+                    obituary_entities.clear();
                     grenade_entities.clear(); grenade_times.clear();
                     grenade_effects_resolved = false;
                     car_effects = std::move(decoded_car_fx);
@@ -1349,6 +1418,8 @@ namespace cod4_camera
                     car_effect_index = 0; car_effect_name.clear();
                     world_resolved = false;
                     score_popup_label.reset();
+                    score_popup_omnvar.reset();
+                    score_popup_omnvar_min = 0;
                     score_popup_resolved = false;
                     source_parts.clear();
                     parts_resolved = false;
