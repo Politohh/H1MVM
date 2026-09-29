@@ -10,6 +10,7 @@
 #include "component/console.hpp"
 #include "component/party.hpp"
 #include "component/scheduler.hpp"
+#include "game/dvars.hpp"
 #include "utils/command_line.hpp"
 #include "utils/hook.hpp"
 
@@ -22,6 +23,7 @@ namespace // demo class
     std::uint64_t converted_draws{};
     std::uint64_t converted_packets_blocked{};
     std::chrono::steady_clock::time_point converted_trace_time{};
+    game::dvar_t* cod4_playback_hud{};
 
     void trace_converted(const char* stage)
     {
@@ -421,6 +423,7 @@ namespace // demo class
                     offset = static_cast<std::size_t>(end - data.begin()) + 1;
                 }
                 converted_ = fields.size() >= 9 && (fields[1] == "H1 COD4 conversion v1" || fields[1] == "H1 COD4 conversion v2");
+                if (cod4_playback_hud) cod4_playback_hud->current.enabled = converted_;
                 if (converted_)
                 {
                     const auto models = cod4::parse_model_metadata({fields.begin() + 9, fields.end()});
@@ -534,6 +537,7 @@ namespace // demo class
         rebuilding_grenade_fx_ = false;
         if (converted_) cod4_camera::clear_model_bindings();
         converted_ = false;
+        if (cod4_playback_hud) cod4_playback_hud->current.enabled = false;
 
 		// ensure that sv_cheats is always disabled after demo playback
 		if (auto* sv_cheats = game::Dvar_FindVar("sv_cheats"); sv_cheats)
@@ -1738,6 +1742,8 @@ namespace demo_playback
 
 			// check run-time address assertions
 			check_address_assertions();
+			cod4_playback_hud = dvars::register_bool("demo_cod4PlaybackHud", false,
+				game::DVAR_FLAG_READ, "Use the converted COD4 replay HUD layout");
 
 			// primary hook for demo playback; read demo data after server time has been updated
 			CL_SetCGameTime_hook.create(game::CL_SetCGameTime, handle_demo_reading);

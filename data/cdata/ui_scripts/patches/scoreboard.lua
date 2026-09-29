@@ -15,6 +15,13 @@ local gametypes = {
 
 local func = LUI.mp_hud.Scoreboard.DetermineIfSingleTeamGameType
 LUI.mp_hud.Scoreboard.DetermineIfSingleTeamGameType = function()
+    -- Converted COD4 demos have no MWR server scoreboard data. The native
+    -- two-team builder adds duplicate headers in that state and aborts mp_hud,
+    -- hiding ammo and every other HUD widget along with the scoreboard.
+    if Engine.GetDvarBool("demo_cod4PlaybackHud") then
+        return true
+    end
+
     local gametype = Engine.GetDvarString("ui_gametype")
     if (gametypes[gametype]) then
         return func()

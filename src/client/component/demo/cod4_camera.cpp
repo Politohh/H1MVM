@@ -779,12 +779,21 @@ namespace cod4_camera
         void feed_snapshot(int time, std::ofstream* converted_file = nullptr)
         {
             const auto frame = track.sample(time);
+            // H1's demo connection is client 0. A COD4 recorder can be any
+            // client; swap its slot with 0 so the player state, client info and
+            // player entities all refer to the same local player. The replay
+            // connection and player state must agree for native UI lookups.
+            const auto local_client = static_cast<unsigned>(world.client_num);
+            const auto remap_client = [local_client](unsigned number)
+            {
+                return number == local_client ? 0u : number == 0u ? local_client : number;
+            };
             alignas(16) std::array<std::uint8_t, 18576> ps{};
             const auto put = [&](std::size_t offset, const auto& value) { std::memcpy(ps.data() + offset, &value, sizeof(value)); };
             // H1's linked-view entity uses ENTITYNUM_NONE, not zero. Zero links
             // the view to entity 0 and applies the player's rotation a second time.
             put(0x2C, std::uint16_t{2047});
-            put(0, static_cast<std::uint8_t>(world.client_num));
+            put(0, std::uint8_t{0});
             put(0x4C, time); // commandTime, verified against the live PC netfield table
             put(0x5C, std::uint32_t{0x4000}); // recorded view: no local input prediction
             put(0x74, cod4::translate_bob_cycle(frame.bob_cycle));
@@ -921,9 +930,20 @@ namespace cod4_camera
                         throw std::runtime_error("Recorded actor has no character identity");
                     const auto& events = cod4::actor_events_at(actor_events, time).actors;
                     const auto event = events.find(number);
-                    write_entity(cod4::translate_actor(entity, cod4::sample_actor_motion(world, number, time),
+                    auto native = cod4::translate_actor(entity, cod4::sample_actor_motion(world, number, time),
                         weapons.at(entity.get(196)), actor_animations.at({entity.get(204), entity.get(208), entity.get(196)}),
-                        event == events.end() ? nullptr : &event->second, alternate_weapons.contains(entity.get(196))));
+                        event == events.end() ? nullptr : &event->second, alternate_weapons.contains(entity.get(196)));
+                    if (entity.get(4) == 1)
+                        cod4::write_native(native, 0, static_cast<std::uint16_t>(remap_client(number)));
+                    cod4::write_native(native, 12, static_cast<std::int8_t>(remap_client(entity.get(140))));
+                    for (const unsigned offset : {2u, 4u})
+                    {
+                        std::uint16_t reference{};
+                        std::memcpy(&reference, native.data() + offset, sizeof(reference));
+                        if (reference < 42)
+                            cod4::write_native(native, offset, static_cast<std::uint16_t>(remap_client(reference)));
+                    }
+                    write_entity(native);
                     continue;
                 }
                 if (entity.get(4) == 3 && entity.get(136))
@@ -984,11 +1004,18 @@ namespace cod4_camera
             utils::hook::invoke<void>(0x4F6C10_b, &packet.msg, 2047, 11);
             context[28] = 0;
             packet.reset_index(); packet.byte(0);
+            std::map<unsigned, cod4::h1_client> snapshot_clients;
             for (const auto& [number, client] : recorded.clients)
             {
                 const auto& models = character_models.at(client_model_key(client));
                 if (!models.body) continue; // Spectators have no recorded character model.
-                const auto native = cod4::translate_client(client, models.body, models.attachments);
+                auto native = cod4::translate_client(client, models.body, models.attachments);
+                const auto destination = remap_client(number);
+                cod4::write_native(native, 0, static_cast<std::uint8_t>(destination));
+                snapshot_clients.emplace(destination, native);
+            }
+            for (const auto& [number, native] : snapshot_clients)
+            {
                 utils::hook::invoke<void>(0x4F3910_b, context.data(), &packet.msg, time, nullptr, native.data(), true);
             }
             packet.bit0(); packet.reset_index(); packet.bit0();
