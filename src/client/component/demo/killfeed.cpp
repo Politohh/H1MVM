@@ -3,6 +3,7 @@
 
 #include "demo_game.hpp"
 #include "cod4_camera.hpp"
+#include "demo_playback.hpp"
 
 #include "game/dvars.hpp"
 #include "component/scheduler.hpp"
@@ -17,6 +18,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <cmath>
 #include <unordered_set>
 
 // =============================================================================
@@ -343,6 +345,48 @@ namespace killfeed
 			}
 		}
 
+		void draw_converted_score_popup()
+		{
+			if (!demo_playback::converted()) return;
+			const auto* cl = game::mp::cl.get();
+			const auto* cg = game::mp::cg.get();
+			if (!cl || !cg) return;
+			// The converted score value is carried in H1's archival HUD bank.
+			// H1's client-demo draw path retains it in cg->ps but does not paint
+			// server HUD elements, so render that value through H1's text API.
+			const auto* element = reinterpret_cast<const std::uint8_t*>(&cg->ps) + 0x3A00;
+			const auto u32 = [element](std::size_t offset)
+			{
+				std::uint32_t value{};
+				std::memcpy(&value, element + offset, sizeof(value));
+				return value;
+			};
+			if (u32(28) != 2 || !u32(76)) return;
+			const auto start = static_cast<std::int32_t>(u32(56));
+			const auto duration = static_cast<std::int32_t>(u32(60));
+			const auto age = cl->serverTime - start;
+			if (duration <= 0 || age < 0 || age >= duration) return;
+			float value{};
+			std::memcpy(&value, element + 128, sizeof(value));
+			if (!std::isfinite(value) || value <= 0.0f || value > 10000.0f) return;
+
+			const auto* placement = game::ScrPlace_GetActivePlacement();
+			const auto font = game::R_RegisterFont("fonts/defaultBold.otf", 42);
+			if (!placement || !font) return;
+			const auto text = std::format("+{}", static_cast<int>(std::lround(value)));
+			const auto scale = placement->realViewportSize[1] / 1080.0f;
+			const auto x = (placement->realViewportSize[0]
+				- static_cast<float>(game::R_TextWidth(text.c_str(), 0x7FFFFFFF, font)) * scale) * 0.5f;
+			const auto y = placement->realViewportSize[1] * 0.375f;
+			const auto from = u32(52), to = u32(48);
+			const auto t = static_cast<float>(age) / static_cast<float>(duration);
+			float color[4]{};
+			for (unsigned i = 0; i < 4; ++i)
+				color[i] = (static_cast<float>((from >> (i * 8)) & 0xFF) * (1.0f - t)
+					+ static_cast<float>((to >> (i * 8)) & 0xFF) * t) / 255.0f;
+			R_AddCmdDrawText(text.c_str(), 0x7FFFFFFF, font, x, y, scale, scale, 0.0f, color, 6);
+		}
+
 		void cg_draw2d_stub(int local_client_num)
 		{
 			// The local match is only a renderer for the imported camera. Its
@@ -352,6 +396,7 @@ namespace killfeed
 			if (cod4_camera::active() && !game::VirtualLobby_Loaded()) return;
 			cg_draw2d_hook.invoke<void>(local_client_num); // stock HUD first
 			draw();                                        // our killfeed on top
+			draw_converted_score_popup();
 		}
 
 		// The "X connected" feed spam is a "player_joined" LUI event fired from these two

@@ -22,22 +22,24 @@ namespace cod4
             std::memcpy(target.data() + offset, &value, sizeof(value));
         };
         // Offsets/widths are from the H1 PC HudElem netfield table
-        // (0x12D7CB0). Only fields needed for a value element are populated.
+        // (0x12D7CB0) and MSG_WriteDeltaHudElems (0x4F4B90). In particular,
+        // the writer checks type at +28 before serializing an element.
         put(0, static_cast<std::uint16_t>(translate_entity_number(source.get(16))));
-        put(4, source.get(0));
-        put(8, source.get(28));
-        put(12, source.get(32));
+        put(4, source.get(28));
+        // CoD4's six-bit screen anchor (18 for this popup) is not H1's
+        // four-bit anchor. Place the native score value above screen center.
+        put(8, 5u);
         put(16, source.get(4));
         put(20, source.get(8));
         put(24, source.get(12));
-        put(28, source.get(24));
+        put(28, source.get(0));
         put(32, source.get(20));
         put(48, source.get(36));
         put(52, source.get(40));
         put(56, source.get(44));
         put(60, source.get(48));
-        put(72, native_plus_label);
-        put(136, source.get(120));
+        put(76, native_plus_label);
+        put(128, source.get(120));
         return target;
     }
 

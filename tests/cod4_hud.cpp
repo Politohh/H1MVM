@@ -31,10 +31,14 @@ int main(int argc, char** argv)
                     throw std::runtime_error("Recorded +5 value changed");
                 const auto native = cod4::translate_score_popup(element, 148);
                 std::uint32_t value = 0, label = 0, fade = 0;
-                std::memcpy(&value, native.data() + 136, 4);
-                std::memcpy(&label, native.data() + 72, 4);
+                std::memcpy(&value, native.data() + 128, 4);
+                std::memcpy(&label, native.data() + 76, 4);
                 std::memcpy(&fade, native.data() + 56, 4);
-                if (std::bit_cast<float>(value) != 5.0f || label != 148 || fade != element.get(44))
+                std::uint32_t type = 0, screen_anchor = 0;
+                std::memcpy(&type, native.data() + 28, 4);
+                std::memcpy(&screen_anchor, native.data() + 8, 4);
+                if (std::bit_cast<float>(value) != 5.0f || label != 148 || fade != element.get(44)
+                    || type != 2 || screen_anchor != 5)
                     throw std::runtime_error("Native score value, label or fade time changed");
                 if (fade != prior_fade) { ++score_changes; prior_fade = fade; }
             }

@@ -809,7 +809,9 @@ namespace cod4_camera
                     if (cod4::is_score_popup(element, track.configstrings))
                     {
                         const auto native = cod4::translate_score_popup(element, *score_popup_label);
-                        std::memcpy(ps.data() + 0x2380, native.data(), native.size());
+                        // CoD4 records this popup in its archival HUD group;
+                        // H1's corresponding bank begins at +0x3A00.
+                        std::memcpy(ps.data() + 0x3A00, native.data(), native.size());
                         break;
                     }
             const auto shock = player.integer("shellshockIndex");
