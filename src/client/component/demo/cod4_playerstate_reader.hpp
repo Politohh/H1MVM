@@ -9,6 +9,7 @@ namespace cod4
     {
         int time{}, sequence{};
         std::array<std::uint32_t, player_fields.size()> values{};
+        std::array<std::int32_t, 5> stats{};
         std::array<std::int16_t, 64> ammo{};
         std::array<std::int16_t, 128> clips{};
         std::uint32_t integer(std::string_view name) const
@@ -152,8 +153,12 @@ namespace cod4
                 if (delta)
                 {
                     const auto previous = baselines.find(sequence - delta);
-                    if (previous == baselines.end()) throw std::runtime_error("Missing COD4 player delta baseline " + std::to_string(sequence - delta));
+                    // CL_ParseSnapshot discards the packet when its referenced
+                    // snapshot is unavailable. Real recordings can start with
+                    // such deltas; never decode them against an invented state.
+                    if (previous == baselines.end()) break;
                     frame.values = previous->second.values;
+                    frame.stats = previous->second.stats;
                     frame.ammo = previous->second.ammo;
                     frame.clips = previous->second.clips;
                 }
@@ -170,9 +175,9 @@ namespace cod4
                 {
                     const auto mask = msg.bits(5);
                     for (unsigned i = 0; i < 3; ++i)
-                        if (mask & (1u << i)) msg.get<std::int16_t>();
-                    if (mask & 8) msg.bits(6);
-                    if (mask & 16) msg.get<std::uint8_t>();
+                        if (mask & (1u << i)) frame.stats[i] = msg.get<std::int16_t>();
+                    if (mask & 8) frame.stats[3] = static_cast<std::int32_t>(msg.bits(6));
+                    if (mask & 16) frame.stats[4] = msg.get<std::uint8_t>();
                 }
                 const auto ammo_groups = [&](auto& counts, unsigned groups)
                 {

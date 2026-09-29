@@ -1,8 +1,96 @@
 # COD4 to H1 mapping coverage
 
-Updated 2026-09-28. Conversion produces a native `.dm_h1` recording using the
+Updated 2026-09-29. Conversion produces a native `.dm_h1` recording using the
 installed MWR models, attachments and animation clips. Use **F9 → Convert COD4
 demo → Refresh → Play**. Play Online remains the ordinary multiplayer entry.
+
+## Current installed build and HUD work
+
+Release x64 executable SHA-256:
+`9A77B7D6FFE0D6DBA5563B2B7A8E5FE4BD9BA2715CE27E78675D7F76BA59B23C`.
+Installed with H1 closed. Rollback executable, 60 preserved demo/report files and
+file-parity manifests are in
+`build/install-backups/20260929-201055-before-hud-main`.
+
+The converter now retains recorded player health and HUD elements. It writes
+health to native H1 player stats and translates recorded `MP_PLUS` numeric
+elements into H1's current HUD with a runtime-resolved MWR localized-string
+index. The Strike source has 595 HUD frames and six recorded +5 popup updates.
+Existing native keyed ammo translation remains in place. All 11 focused CoD4
+regressions and the Release x64 build pass. This HUD build has not yet been
+reconverted or visually checked in H1; match score/timer and other CoD4 HUD
+elements are not mapped to native MWR UI state yet.
+
+## Promod 5v5 stress test
+
+Conversion and automated checks pass for ten players (5v5), all nine remote
+players, eight corpse slots and 100 native animation clips. The 11.5-second
+crash was caused by a missing archived corpse bit and is fixed. Native death
+clips now play instead of snapping to their final pose; the user confirms
+the correction. Recorded flesh impacts and incoming hits now use native MWR
+events; see [the blood-impact report](promod-blood-fx.md) for runtime evidence.
+The complete native replay passes 25 single impact dispatches, 14 native blood
+allocations and seven PVS visibility culls. User blood visual acceptance is pending.
+See [the stress-test report](promod-stress-test.md) for current validation,
+remaining omissions and the preserved historical crash evidence.
+
+Current built/installed EXE SHA-256:
+`3F13EF4253A499916ED31CC6C705ECCC916BAE8FEE3A8C68FF81D33C0A6F5E82`.
+Rollback: `build/install-backups/20260929-165754-before-promod-stress`.
+The rebuilt Promod recording is `dEbilzuuR_2k_deag_r700_crash.0006.dm_h1`.
+The 54 files present at installation were backed up and remain intact.
+
+## Other players, corpses and weapon pickups
+
+The City friend demo now serializes remote player entities, player corpses and
+weapon pickups with native MWR character and weapon assets. Player positions
+and angles interpolate between recorded server snapshots; teleport toggles,
+entity removals and long gaps prevent blending unrelated poses. Movement
+heading, lean, torso/waist pitch, firing, ADS and death flags use native fields.
+
+The original COD4 1.7 process supplied its actual 318-entry animation table.
+The loaded H1 process supplied its animation names, body-channel codecs and
+PC player/corpse/item netfields. Remote actors use H1's packed animation field
+at +84; its native legs and torso restart bits are retained. MWR's separate
+upper-body grenade/stun actions receive a compatible native base pose.
+Weapon-family locomotion selects the corresponding MWR clips. Unsupported
+source animation mappings produce a named conversion error.
+
+COD4 corpse slots 64..71 map to H1's fixed slots 42..49. Recorded corpse
+trajectories select native ragdoll modes 12..14; ordinary initial trajectories
+remain ordinary until the recorded physics handoff. Native simulation supplies
+the skeleton; COD4 ragdoll joint transforms are not present in this wire data.
+Remote fire uses native world events 39/40 instead of local PS events 51/52.
+Respawn clears stale firing payloads while preserving the filtered sequence.
+
+`tests/run-cod4-remote-actors.cmd` passes the City demo's 814 player states,
+969 corpse states and 662 pickup states across 932 world snapshots. These
+represent one friend, two corpses and two pickup entities. It resolves 22
+animation IDs including the empty torso/root, checks 13 recorded friend shots,
+source/native sequence wrap, respawn history, animation packing/restarts,
+native corpse ranges, flag translation, yaw seams and visibility removals.
+Local gun, grenade, world/projectile/body and car-motion regressions also pass.
+
+The earlier City remote-actor build and installation passed with EXE SHA-256
+`FCFC777AA70A93DB30E88FB209B461384659D49773EA20D871F9D353A43E1DF7`.
+All 30 recordings/reports were preserved. That build's install manifest is
+`build/install-backups/20260929-133848-before-remote-actors/manifest.json`;
+the prior gun build is retained in
+`build/install-backups/20260929-133451-before-remote-actors`.
+The old City recording needs a fresh F9 conversion. At that stage, native
+conversion and visual playback, including corpse ragdoll behavior after
+seeking, were pending; the startup command attempt did not produce a new City
+recording. The subsequent Promod native results are documented above.
+
+Live reference data and native decoder disassembly are retained under
+`build/analysis/cod4-city-animations-live.json`,
+`h1-city-actor-reference.json`, `h1-city-actor-codecs.txt` and
+`native-animation-codec-build.txt`. The source City demo SHA-256 is
+`69BDC2648B390EEF7D5B9F3FCA1C59FBE06D385572DD2BC59913666ABC31C6B5`.
+The COD4 animation-table reader later wrote its Promod capture to the former
+City JSON path before separate output filenames were added; that file is no
+longer independent evidence of the original City capture. The new Promod
+capture is stored separately and verifies the same 318 stock names.
 
 ## Weapon identities and animations
 
@@ -114,6 +202,214 @@ Recorded hidden-part bits are translated by bone name into the corresponding
 MWR model's skeleton. This preserves intact and damaged windows when the native
 bone order or bone count differs. Backlot exercises silver and yellow sedans
 and a brown wagon, extending the earlier Crash sedan coverage.
+
+## Destroyed car conversion fix (2026-09-29)
+
+The new `car_explo_to_h1.dm_1` Backlot recording exposed missing destroyed-car
+bone profiles. It contains 7,990 camera archives, 625 server world frames and
+26 car/debris identities. Destroyed yellow/silver sedans have 41 source bones;
+the destroyed brown wagon has 42. Their intact counterparts have 48/54, so
+reusing an intact profile would translate visibility into the wrong bone names.
+
+The catalog now includes these three destroyed variants and their 20 recorded
+detached parts, retaining all 37 existing profiles (60 total). Bone order comes
+from the original COD4 Mod Tools v25 xmodelparts referenced by each model.
+Model and skeleton blob hashes were checked against pinned source tree
+`95c76d6a470bea43fdd5ab591afe8475fac7699d`; no model data is included in the code.
+
+The recording also retains hide-part mask bits beyond the smaller destroyed
+skeletons. Part translation now knows the verified source bone count and ignores
+that unused tail, so it cannot hide extra MWR geometry. Hidden bones within the
+current source skeleton still require an unambiguous native bone match; unknown
+source profiles still fail when visibility data needs translation.
+
+Focused checks pass 18,216 recorded car/debris states, including 1,111 destroyed
+states and 2,515 retained out-of-model bits. Tests reorder the destination bones,
+add native-only geometry and verify that missing active bones remain errors.
+Run `tests\run-cod4-destroyed-vehicle.cmd` with an optional source-demo path.
+Intact-car/glass, projectile/body, grenade FX, model/visibility, character and
+view-motion regressions pass. Character coverage now includes the new recording:
+10 readable demos and 103,260 camera samples, with eight existing reader failures
+reported separately.
+
+Release x64 build and installed executable SHA-256:
+
+`13F475D99E898792F621F6EB384B301DBEFE85D6903DCDFAF7412FC8AF7E359A`
+
+Rollback and source/check provenance are in
+`build/install-backups/20260929-005043-before-destroyed-vehicle`; all 18 existing
+recording/report files remained byte-identical. Evidence is under
+`build/analysis/destroyed-vehicle-installed`.
+
+The subsequent ordinary F9 conversion saved `car_explo_to_h1.dm_h1`. Native
+container and source-camera validation passed all 7,990 snapshots, 13,206,050
+bytes and a 32.2-second recorded span. Output SHA-256:
+`BC236A05A57B36B2B3B857CCA86C13B696E7533D68F1DE97D21B56EE2D1A90A0`.
+The report retains three native frag detonations and omits four detached prop
+identities with no available native counterpart: brown wagon front/back bumpers
+and silver/yellow sedan left-front wheel variants. The output, report, lifecycle
+log and camera validation evidence are retained in
+`build/analysis/destroyed-vehicle-conversion-success`.
+
+The user subsequently confirmed the cars explode and supplied a playback image
+showing the destroyed models. The missing car explosion FX is addressed below.
+
+## Native gun firing FX (2026-09-29)
+
+`backlot_cod4_to_h1.dm_1` (SHA-256
+`594E0BD8B3215997B7C4658F2C16E8D7D72E81D5EFA5E302D8CB38212ECB962D`)
+records 19 shots: 14 AK-47 and five Desert Eagle. Its world event stream has
+no recorded bullet-hit/client-hit/bullet events; impact positions and tracers
+are not invented or simulated by this change. Bullet-impact translation remains
+future work. Firing uses the existing resolved MWR weapon and attachment handle,
+with native muzzle/brass behavior and sounds. The converter validates non-null
+base WeaponDef FX references and logs their native identities; authored null
+references stay optional. Attachment-specific selection stays with native H1.
+
+`cod4_gun_events.hpp` deduplicates the player event ring, handles source sequence
+wrap and excludes pre-recording history. It writes the native PS unpredictable
+ring: sequence +0x104, interleaved events/parameters +0x10C/+0x110. These offsets
+are verified in native CG_CheckPlayerstateEvents (0x328290) and the PC netfields.
+COD4 firing 26/last-shot 27 map to native authoritative firing 51/52; ordinary
+native firing 39/40 deliberately skips this non-predicting local PS path.
+Rechamber 28/brass 29 map to 42/43. The native handler (0xF9400 -> 0xFD690)
+owns weapon FX attachment points and brass scheduling. No event enum is copied
+without a semantic mapping. Delayed actions with a zero held-weapon identity
+are omitted and reported instead of guessing a weapon or rejecting conversion.
+
+`tests/run-cod4-gun-events.cmd` passes all 19 shots across 6,948 camera samples,
+repeated paused samples, restart, native PS payloads, source/native sequence
+wrap and deterministic seek sampling. Scrubbing suppresses transient gun actions
+while catching up; converted gun-only seeks also clear stale native FX. This
+initial implementation does not reconstruct aged gun smoke or brass at a seek
+position. Native gameplay and ordinary H1 demos keep their handler path.
+The collector accepts all ten currently readable fixtures; the eight existing
+source-reader failures remain separate. Fresh world/projectile/body, grenade,
+car FX and car animation/configstring-isolation checks pass.
+
+Release x64 installed, SHA-256:
+`2A7574330343AAAB4F4A4B5B71ADCE327F954E6672AFEC4D81D44C53B546A3EA`.
+Rollback to the car animation binding correction and all 28 current demo/report
+files: `build/install-backups/20260929-024312-before-native-gun-fx`.
+Installed executable, backup and preserved-file parity pass; zero source manifest
+mismatches. Evidence: `build/analysis/gun-fx-installed`.
+
+**Native gun visuals remain unverified.** Relaunch H1, F9 convert the Backlot
+source, Refresh and Play the new numbered file. Check the AK-47 segment around
+5.6-6.8 s and Desert Eagle around 23.8-24.4 s for muzzle flashes, authored smoke,
+brass and shot sounds, then pause/rewind and repeat. Inspect the conversion and
+native event logs. First-person/freecam attachment behavior, visual recoil parity
+and seek playback require runtime confirmation. Existing converted demos keep
+their previous event payload until reconverted. These changes remain local.
+
+## Native car explosion FX (2026-09-29)
+
+The dedicated Backlot recording contains four explicit COD4 `EV_PLAY_FX` (55)
+events referencing effect 14, `explosions/small_vehicle_explosion`, at source
+times 106,850, 117,800 and 124,800 ms (two distinct explosions at the last time).
+Their temporary source entities are 95, 149, 250 and 342. The converter uses the
+recorded origin and orientation, rather than deriving events from model swaps.
+
+Read-only inspection of live Backlot, including a freshly loaded normal map,
+verified native asset `fx/explosions/small_vehicle_explosion` in MWR's FX pool.
+It is absent from the map's scripted FX table. Conversion validates its resident
+definition and one-shot elements; standalone metadata records its name and the
+four event clocks. Native `EV_PLAY_FX` (111, event entity type 131) uses a valid
+native table index, 511, bound to that resident asset only during the converted
+event handler. The previous slot and client clock are restored immediately.
+Ordinary gameplay and H1 demos retain their native table entries.
+
+The existing seek/repeat reset clears stale FX and resets the converted event
+identities. Both grenade and car events reconstruct at their recorded age;
+repeated archives and paused draws do not create a new burst. The car effect's
+own native fire and smoke elements remain native. Separate source
+`EV_PLAY_FX_ON_TAG` damage/burning records are not yet translated by this change.
+
+`tests/run-cod4-car-fx.cmd` verifies the four recorded events, sequence wrap,
+entity reuse, temporary-event deduplication, native payload/orientation, chain
+reaction ordering, pause/seek presence and malformed standalone metadata. The
+collector also passes all ten readable local demos, with 21 explicit car FX
+events; eight existing reader failures remain separate. The three grenade
+detonations in the car fixture remain intact. Grenade and destroyed-car model
+regressions pass, and Release x64 builds successfully.
+
+Installed executable SHA-256:
+`CE73D840469F17D0105089AF1843DAD41EEB7AE39C0212706128753B2BC74E78`.
+Rollback to the accepted model build:
+`build/install-backups/20260929-011221-before-car-fx`. All 20 pre-existing
+recording/report files were preserved byte-for-byte. Build/check/asset evidence
+is retained in `build/analysis/car-fx-installed`. Final installation source/hash provenance is in `build/install-backups/20260929-011704-before-car-fx`.
+
+The user reconverted `car_explo_to_h1.0001.dm_h1` and confirmed the native car
+explosion FX work well. They reported choppy body movement and missing flying
+parts. Detailed seek/pause acceptance remains separate. The car changes remain
+local and unpushed.
+
+## Native car destruction animation and debris physics (2026-09-29)
+
+Read-only inspection of a normal MWR Backlot match verified the native
+ScriptableDef death states for the yellow sedan, silver sedan and brown wagon.
+All three swap to their respective destroyed model and play
+`vehicle_80s_sedan1_destroy` (60 frames at 30 fps). The converter now associates
+four recorded explosions with those destroyed bodies and writes H1's native
+animated trajectory (11), animation index, original placement and start time.
+It removes the old COD4 lift/drop trajectories and derives the duration from
+the resident MWR clip. Standalone `@anim:254:<name>` metadata supplies the clip
+through the existing scoped configstring binding; H1 owns the native XAnim
+tree. Native CG_UpdateEntityScriptedAnimation is at 0x2F28E0.
+
+The first animation build failed playback of `car_explo_to_h1.0002.dm_h1` with
+"Unknown attachment vehicle_80s_sedan1_destroy for custom weapon". Its
+configstring hook used base 4310, so slot 255 appeared at CS 4565 inside the
+custom-weapon range. Native instructions verify animation base 0x10CE (4302)
+and custom-weapon base 0x11CD (4557). The corrected binding uses slot 254 / CS
+4556, restricts lookups to animation indices 1..254 and rejects index 255 in
+metadata. A regression test exercises the production binding helper at the
+previously failing custom-weapon slot and neighboring boundaries. The old
+experimental `@anim:255` file requires reconversion; prior files without that
+metadata remain supported.
+
+The previous script-model translator copied COD4 trajectory ordinals unchanged.
+Native BG_EvaluateTrajectory at 0x2C2750 verifies that COD4 acceleration 6 maps
+to H1 7, and deceleration 7 maps to H1 8. Native PhysicsLaunchClient at
+0x453FB0 verifies COD4 client physics 8 maps to H1 9 for both position and
+rotation. The recorded position delta is the launch point; angular delta is
+the force vector. Both are preserved for MWR's client physics simulation.
+H1 type 11 is animated root motion, not client physics.
+
+`tests/run-cod4-car-motion.cmd` passes four native clip associations, 31 source
+debris launches over 7,591 physics states, 1,111 animated body states, native
+trajectory/index/clock fields, removal of the old pop, animation/weapon
+configstring isolation and malformed metadata.
+Fresh world, glass, projectile/body, grenade FX, car FX and destroyed-skeleton
+checks pass. These source counts include unavailable props; they do not claim
+all 31 launches render. Silver/yellow sedan wheel models and brown wagon
+front/back bumper models remain unavailable. A native wagon wheel exists but
+uses a different authored mesh; it is not substituted for the sedan wheels.
+Part availability remains reported explicitly by conversion.
+
+Corrected Release x64 build installed, SHA-256:
+`C3761FF381C96E6DB53691D86FDCF8F68DB1FFDC4FA742AC0172229C3A004BEA`.
+Immediate rollback (the failed animation build) and all 24 current demo/report
+files are preserved in
+`build/install-backups/20260929-021515-before-car-animation-binding-fix`.
+The user-accepted car FX executable remains in
+`build/install-backups/20260929-015828-before-native-car-motion`.
+Installed EXE and both backup/file parity checks passed; the source manifest
+has zero mismatches. Corrected evidence:
+`build/analysis/car-animation-binding-fix-installed`. Failed-build evidence is
+retained in `build/analysis/car-motion-installed`; native asset/definition evidence is in
+`build/analysis/car-native-current-assets.txt`, `native-car-defs.json` and
+`native-car-defs-summary.txt`.
+
+**Runtime animation/debris acceptance is pending.** The user has been asked to
+relaunch, F9 reconvert the source, Refresh and Play the newest numbered recording.
+The failed `.0002` container independently passes 7,990 snapshots and exact
+source-camera/time validation (32.2 s); that does not establish playback success.
+Existing files keep their previous trajectories and metadata. Native physics supplies local
+simulation; detailed physics reconstruction after seeking is not established
+by these offline checks. Do not claim missing sedan wheels/wagon bumpers fixed
+or push these local changes without a user request.
 
 ## Native grenade explosion FX (2026-09-28)
 

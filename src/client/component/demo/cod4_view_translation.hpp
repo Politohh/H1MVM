@@ -6,10 +6,11 @@ namespace cod4
 {
     inline std::uint16_t translate_bob_cycle(int source)
     {
-        if (source < 0 || source > 255) throw std::runtime_error("Invalid recorded bob cycle");
-        // COD4 BG_GetBobCycle divides by 255; MWR divides its uint16 by
-        // 65535. Preserve the phase, including the endpoint and wrap.
-        return static_cast<std::uint16_t>(source * 257);
+        if (source < 0) throw std::runtime_error("Invalid recorded bob cycle");
+        // COD4 BG_GetBobCycle reads only the low byte of the predicted int
+        // before dividing by 255. Archives can retain a carry above 255.
+        // MWR divides its uint16 by 65535; retain the native wrapped phase.
+        return static_cast<std::uint16_t>((source & 255) * 257);
     }
 
     struct shock_profile { std::uint8_t index{}; std::string name; };

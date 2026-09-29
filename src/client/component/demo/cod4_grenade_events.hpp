@@ -11,7 +11,7 @@ namespace cod4
         {
         case 45: return 98;  // EV_GRENADE_EXPLODE
         case 48: return 103; // EV_FLASHBANG_EXPLODE
-        case 49: return 104; // EV_CUSTOM_EXPLODE (recorded concussion)
+        case 49: return 104; // EV_CUSTOM_EXPLODE (smoke/concussion weapon FX)
         default: return 0;
         }
     }
@@ -84,7 +84,8 @@ namespace cod4
     {
         if (event == 45) return weapon == "frag_grenade_mp" || weapon == "frag_grenade_short_mp";
         if (event == 48) return weapon == "flash_grenade_mp";
-        if (event == 49) return weapon == "concussion_grenade_mp" || weapon == "flash_grenade_mp";
+        if (event == 49) return weapon == "concussion_grenade_mp" || weapon == "flash_grenade_mp"
+            || weapon == "smoke_grenade_mp";
         return false;
     }
 

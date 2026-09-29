@@ -66,7 +66,7 @@ if source is not None:
         assert archive[:28] == recorded[:28] and archive[36:] == recorded[36:], "Recorded camera changed"
         source_bob = struct.unpack_from('<i', recorded, 28)[0]
         native_bob = struct.unpack_from('<i', archive, 28)[0]
-        assert 0 <= source_bob <= 255 and native_bob == source_bob * 257, "Wrong converted bob phase"
+        assert source_bob >= 0 and native_bob == (source_bob & 255) * 257, "Wrong converted bob phase"
         relative = struct.unpack_from('<i', recorded, 32)[0]
         yaw = struct.unpack_from('<f', recorded, 40)[0]
         packed = struct.unpack_from('<i', archive, 32)[0]

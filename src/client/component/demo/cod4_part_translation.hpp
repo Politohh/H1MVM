@@ -15,6 +15,7 @@ namespace cod4
     struct part_mapping
     {
         std::array<int, 128> destination{};
+        std::size_t source_count{};
         part_mapping() { destination.fill(-1); }
     };
 
@@ -51,6 +52,7 @@ namespace cod4
         if (source.empty() || source.size() > 128 || destination.empty() || destination.size() > 256)
             throw std::runtime_error("Invalid model bone table for part translation");
         part_mapping result;
+        result.source_count = source.size();
         for (std::size_t i = 0; i < source.size(); ++i)
         {
             if (source[i].empty() || std::count(source.begin(), source.end(), source[i]) != 1)
@@ -71,7 +73,13 @@ namespace cod4
         {
             // IW3 and H1 number these bits from the most significant bit.
             if (!(source[bone / 32] & (0x80000000u >> (bone % 32)))) continue;
-            if (!mapping || mapping->destination[bone] < 0 || mapping->destination[bone] >= 256)
+            if (!mapping || !mapping->source_count || mapping->source_count > 128)
+                throw std::runtime_error("Recorded hidden model part has no source bone table");
+            // setModel can retain the intact car's mask when replacing it
+            // with a smaller destroyed skeleton. Bits beyond this verified
+            // source model have no geometry; do not map them to H1's extra bones.
+            if (bone >= mapping->source_count) continue;
+            if (mapping->destination[bone] < 0 || mapping->destination[bone] >= 256)
                 throw std::runtime_error("Recorded hidden model part has no remastered bone mapping");
             const auto target = static_cast<unsigned>(mapping->destination[bone]);
             result[target / 32] |= 0x80000000u >> (target % 32);

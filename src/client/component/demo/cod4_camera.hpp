@@ -15,7 +15,8 @@ namespace cod4_camera
     bool active();
     void bootstrap_demo(const std::string& map, const std::vector<std::uint8_t>& gamestate);
     // Saved converted files bind resident remastered assets to unused model slots.
-    void set_model_bindings(const std::map<unsigned, std::string>& bindings);
+    void set_model_bindings(const std::map<unsigned, std::string>& bindings,
+        const std::map<unsigned, std::string>& animations = {});
     void clear_model_bindings();
     // Own the client's snapshot clock while replaying a COD4 recording.
     bool prepare_client_frame();

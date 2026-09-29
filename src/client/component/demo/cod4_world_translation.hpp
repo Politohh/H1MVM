@@ -6,6 +6,23 @@ namespace cod4
 {
     using h1_entity = std::array<std::uint8_t, 256>;
     using h1_client = std::array<std::uint8_t, 212>;
+    struct entity_snapshot
+    {
+        std::map<unsigned, h1_entity> entities;
+        void add(const h1_entity& entity)
+        {
+            std::uint16_t number{};
+            std::memcpy(&number, entity.data(), sizeof(number));
+            if (number >= 2047 || !entities.emplace(number, entity).second)
+                throw std::runtime_error("Duplicate or invalid native snapshot entity number");
+        }
+    };
+    inline bool script_model_is_brush(const entity_state& source)
+    {
+        // COD4 CG_ScriptMover selects an inline BSP brush when solid is
+        // 0xFFFFFF. Its index is not an XModel configstring or asset ordinal.
+        return source.get(4) == 6 && source.get(152) == 0xFFFFFFu;
+    }
 
     template<std::size_t N, typename T> void write_native(std::array<std::uint8_t, N>& data,
         std::size_t offset, const T& value)
@@ -21,6 +38,15 @@ namespace cod4
     }
 
     struct trajectory_sample { std::array<float, 3> origin{}, velocity{}; };
+    inline unsigned native_trajectory_type(unsigned source)
+    {
+        // Verified against H1 BG_EvaluateTrajectory (0x2C2750) and
+        // PhysicsLaunchClient (0x453FB0). H1 adds low gravity before the
+        // eased types; 9 is client physics, 11 is animated root motion.
+        if (source <= 5) return source;
+        if (source <= 8) return source + 1;
+        throw std::runtime_error("Unsupported COD4 script model trajectory");
+    }
     inline trajectory_sample sample_trajectory(const entity_state& source, unsigned offset, int time)
     {
         const auto type = source.get(offset);
@@ -117,20 +143,22 @@ namespace cod4
         // CG's entity update (0xEAC70) passes centity+0x214 to DObjSetHidePartBits
         // (0x5C40B0), which copies eight words. entityState starts at +0x13C.
         for (unsigned i = 0; i < hidden.size(); ++i) write_native(result, 216 + i * 4, hidden[i]);
-        // Ordinary COD4 trajectories retain their clock, base and velocity.
-        // H1's secure trajectory types are never copied from native demo memory.
+        // Preserve the recorded launch point/force for native client physics.
+        // These are not velocity vectors when COD4 trType is 8.
         for (unsigned i = 0; i < 9; ++i)
         {
             write_native(result, 96 + i * 4, source.get(12 + i * 4));
             write_native(result, 132 + i * 4, source.get(48 + i * 4));
         }
+        write_native(result, 96, native_trajectory_type(source.get(12)));
+        write_native(result, 132, native_trajectory_type(source.get(48)));
         return result;
     }
 
     inline h1_client translate_client(const client_state& source, std::uint16_t body,
         const std::array<std::uint16_t, 6>& attachments)
     {
-        if (source.get(0) >= 32 || !body || body >= 1024)
+        if (source.get(0) >= 42 || !body || body >= 1024)
             throw std::runtime_error("Invalid H1 client model translation");
         h1_client result{};
         write_native(result, 0, static_cast<std::uint8_t>(source.get(0)));

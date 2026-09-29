@@ -22,6 +22,10 @@ namespace cod4
         std::set<std::string> names;
         std::map<unsigned, std::string> bindings;
         std::map<unsigned, int> grenade_times;
+        std::map<unsigned, int> car_fx_times;
+        std::map<unsigned, int> bullet_times;
+        std::map<unsigned, std::string> fx_bindings;
+        std::map<unsigned, std::string> animation_bindings;
     };
     inline model_metadata parse_model_metadata(const std::vector<std::string>& entries)
     {
@@ -29,19 +33,40 @@ namespace cod4
         model_metadata result;
         for (const auto& entry : entries)
         {
-            if (entry.starts_with("@grenade:"))
+            if (entry.starts_with("@fx:") || entry.starts_with("@anim:"))
             {
                 const std::string_view text(entry);
-                const auto separator = text.find(':', 9);
-                if (separator == text.npos) throw std::runtime_error("Incomplete grenade timing record");
+                const bool animation = entry.starts_with("@anim:");
+                const auto prefix = animation ? 6u : 4u;
+                auto& bindings = animation ? result.animation_bindings : result.fx_bindings;
+                const auto separator = text.find(':', prefix);
+                if (separator == text.npos) throw std::runtime_error("Incomplete converted FX binding");
+                unsigned index{};
+                const auto parsed = std::from_chars(text.data() + prefix, text.data() + separator, index);
+                const auto name = text.substr(separator + 1);
+                if (parsed.ec != std::errc{} || parsed.ptr != text.data() + separator || !index || index >= (animation ? 255u : 512u)
+                    || !valid_model_name(name) || !bindings.emplace(index, name).second)
+                    throw std::runtime_error("Invalid converted FX binding");
+                continue;
+            }
+            if (entry.starts_with("@grenade:") || entry.starts_with("@carfx:") || entry.starts_with("@impact:"))
+            {
+                const std::string_view text(entry);
+                const bool car = entry.starts_with("@carfx:");
+                const bool bullet = entry.starts_with("@impact:");
+                const auto prefix = car ? 7u : bullet ? 8u : 9u;
+                auto& times = car ? result.car_fx_times : bullet ? result.bullet_times : result.grenade_times;
+                const auto separator = text.find(':', prefix);
+                if (separator == text.npos) throw std::runtime_error("Incomplete converted FX timing record");
                 unsigned number{};
                 int time{};
-                const auto entity = std::from_chars(text.data() + 9, text.data() + separator, number);
+                const auto entity = std::from_chars(text.data() + prefix, text.data() + separator, number);
                 const auto clock = std::from_chars(text.data() + separator + 1, text.data() + text.size(), time);
                 if (entity.ec != std::errc{} || entity.ptr != text.data() + separator || number < 1024 || number >= 2046
                     || clock.ec != std::errc{} || clock.ptr != text.data() + text.size() || time < 0
-                    || !result.grenade_times.emplace(number, time).second)
-                    throw std::runtime_error("Invalid grenade timing record");
+                    || result.grenade_times.contains(number) || result.car_fx_times.contains(number) || result.bullet_times.contains(number)
+                    || !times.emplace(number, time).second)
+                    throw std::runtime_error("Invalid converted FX timing record");
                 continue;
             }
             if (!entry.starts_with("@model:"))
@@ -62,6 +87,8 @@ namespace cod4
             result.names.emplace(name);
         }
         if (result.names.size() > 512) throw std::runtime_error("Too many converted model names");
+        if (!result.car_fx_times.empty() && result.fx_bindings.empty())
+            throw std::runtime_error("Converted car FX has no native binding");
         return result;
     }
 }

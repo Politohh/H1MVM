@@ -57,12 +57,17 @@ namespace // demo class
 		void bootstrap_map_load();
         bool is_converted() const { return converted_; }
         const std::map<unsigned, int>& grenade_times() const { return grenade_times_; }
+        const std::map<unsigned, std::string>& fx_bindings() const { return fx_bindings_; }
         void reset_grenade_fx();
+        bool claim_bullet_event(unsigned number) { return fired_bullet_events_.insert(number).second; }
         bool rebuilding_grenade_fx() const { return rebuilding_grenade_fx_; }
         void finish_grenade_fx_rebuild() { if (!seeking_) rebuilding_grenade_fx_ = false; }
         bool is_bootstrapping() const { return bootstrapping_; }
         bool converted_models_ready() const
         {
+            // Converted playback bypasses the normal frontend map-preload
+            // transition. Advance the native transient queue across batches.
+            utils::hook::invoke<void>(0x757A0_b);
             for (const auto& name : converted_models_)
                 if (!utils::hook::invoke<bool>(0x75470_b, name.c_str())) return false;
             return true;
@@ -98,6 +103,8 @@ namespace // demo class
 		bool converted_{}, bootstrapping_{};
         std::set<std::string> converted_models_;
         std::map<unsigned, int> grenade_times_;
+        std::map<unsigned, std::string> fx_bindings_;
+        std::set<unsigned> fired_bullet_events_;
         bool rebuilding_grenade_fx_{};
         bool repeat_{};
 		bool skip_timeout_{};
@@ -393,6 +400,7 @@ namespace // demo class
         std::vector<std::uint8_t> initial;
         std::vector<std::string> model_names;
         std::map<unsigned, std::string> model_bindings;
+        std::map<unsigned, std::string> animation_bindings;
         for (int guard = 0; guard < 8 && input && initial.empty(); ++guard)
         {
             std::uint8_t id{}; std::uint32_t size{};
@@ -418,7 +426,11 @@ namespace // demo class
                     const auto models = cod4::parse_model_metadata({fields.begin() + 9, fields.end()});
                     model_names.assign(models.names.begin(), models.names.end());
                     model_bindings = models.bindings;
+                    animation_bindings = models.animation_bindings;
                     grenade_times_ = models.grenade_times;
+                    grenade_times_.insert(models.car_fx_times.begin(), models.car_fx_times.end());
+                    grenade_times_.insert(models.bullet_times.begin(), models.bullet_times.end());
+                    fx_bindings_ = models.fx_bindings;
                 }
             }
             if ((id & 31) == 2 && converted_ && data.size() > 8)
@@ -442,7 +454,7 @@ namespace // demo class
         converted_draws = converted_packets_blocked = 0;
         converted_trace_time = {};
         trace_converted("bootstrap begin");
-        cod4_camera::set_model_bindings(model_bindings);
+        cod4_camera::set_model_bindings(model_bindings, animation_bindings);
         cod4_camera::bootstrap_demo(*mapname, initial);
         trace_converted("bootstrap complete");
         for (const auto& name : model_names)
@@ -517,6 +529,8 @@ namespace // demo class
         for (const auto& name : converted_models_) utils::hook::invoke<void>(0x76850_b, name.c_str());
         converted_models_.clear();
         grenade_times_.clear();
+        fired_bullet_events_.clear();
+        fx_bindings_.clear();
         rebuilding_grenade_fx_ = false;
         if (converted_) cod4_camera::clear_model_bindings();
         converted_ = false;
@@ -530,8 +544,11 @@ namespace // demo class
 
     void demo_playback_t::reset_grenade_fx()
     {
-        if (!converted_ || grenade_times_.empty()) return;
+        // Converted gun-only recordings also own native flashes and smoke.
+        // Clear them on seek/restart even without grenade/car timing metadata.
+        if (!converted_) return;
         rebuilding_grenade_fx_ = true;
+        fired_bullet_events_.clear();
         if (*game::mp::connstate != game::CA_ACTIVE) return;
         // Native FX_KillAllEffects takes the full int local-client argument,
         // acquires the system write lock and clears entity FX references.
@@ -637,6 +654,50 @@ namespace // hooks
     utils::hook::detour CG_EntityEvent_hook;
     utils::hook::detour CG_PlaySound_hook;
     thread_local bool suppress_grenade_sound{};
+    utils::hook::detour FX_PlayOrientedEffectWithMarkEntity_hook;
+    utils::hook::detour CG_ShouldCullImpactFX_hook;
+    thread_local unsigned bullet_effect_entity{};
+    thread_local bool unbound_flesh_impact{};
+
+    bool bullet_should_cull_impact(const int local_client_num, const float* origin,
+        const float* normal, const unsigned short target)
+    {
+        if (!unbound_flesh_impact || target != 2046 || !origin || !normal)
+            return CG_ShouldCullImpactFX_hook.invoke<bool>(local_client_num, origin, normal, target);
+        // COD4 records flesh but not its victim identity. H1's world branch
+        // backface-culls oriented wall marks; its player branch skips that
+        // angle test for volumetric blood. Use the same native PVS test as
+        // the player branch without inventing a victim or changing a dvar.
+        const auto* enabled = *reinterpret_cast<game::dvar_t**>(0x390BA98_b);
+        bool culled{};
+        if (enabled && enabled->current.enabled)
+        {
+            const std::array<float, 3> point{origin[0] + normal[0], origin[1] + normal[1], origin[2] + normal[2]};
+            const auto leaf = utils::hook::invoke<int>(0x65B970_b, point.data());
+            const auto* cg = reinterpret_cast<const std::uint8_t*>(game::CG_GetLocalClientGlobals());
+            int view_leaf = -1;
+            if (cg) std::memcpy(&view_leaf, cg + 0x177750, sizeof(view_leaf));
+            culled = leaf >= 0 && view_leaf >= 0 && !utils::hook::invoke<int>(0x6602B0_b, leaf, view_leaf);
+        }
+        if (converted_trace.is_open())
+            converted_trace << "native bullet visibility entity=" << bullet_effect_entity
+                << " culled=" << culled << " unbound_flesh=1" << std::endl;
+        return culled;
+    }
+
+    game::FxEffect* bullet_play_oriented_effect(const int local_client_num, const game::FxEffectDef* effect,
+        const int time, const float* origin, const float* axis, const unsigned short mark_entity, const bool viewmodel)
+    {
+        // Passive evidence of the engine's selected blood asset and allocation.
+        // The event handler still performs all effect selection and spawning.
+        auto* result = FX_PlayOrientedEffectWithMarkEntity_hook.invoke<game::FxEffect*>(local_client_num,
+            effect, time, origin, axis, mark_entity, viewmodel);
+        if (bullet_effect_entity && converted_trace.is_open() && effect && origin)
+            converted_trace << "native bullet FX entity=" << bullet_effect_entity << " effect=" << effect->name
+                << " time=" << time << " spawned=" << (result != nullptr)
+                << " origin=" << origin[0] << ',' << origin[1] << ',' << origin[2] << std::endl;
+        return result;
+    }
 
     int grenade_play_sound(const int local_client_num, const int entity_num, const float* origin, const void* alias)
     {
@@ -649,34 +710,89 @@ namespace // hooks
 
     void grenade_entity_event(const int local_client_num, std::uint8_t* entity, const unsigned event, const unsigned flags)
     {
+        // Recorded local PS and remote entity gun rings use their respective
+        // native firing paths. Do not turn skipped shots into flashes while
+        // scrubbing. Ordinary H1 demos and gameplay keep the native behavior.
+        if (demo.is_converted() && (event == 42 || event == 43
+            || ((flags & 1u) ? (event == 51 || event == 52) : (event == 39 || event == 40))))
+        {
+            if (demo.is_seeking() || demo.rebuilding_grenade_fx()) return;
+            CG_EntityEvent_hook.invoke<void>(local_client_num, entity, event, flags);
+            if (converted_trace.is_open())
+            {
+                const auto* cg = reinterpret_cast<const std::uint8_t*>(game::CG_GetLocalClientGlobals());
+                converted_trace << "native gun event=" << event << " flags=" << flags
+                    << " time=" << (cg ? *reinterpret_cast<const int*>(cg + 0x92BE8) : -1) << std::endl;
+            }
+            return;
+        }
         const auto& times = demo.grenade_times();
         unsigned short number{};
         if (entity) std::memcpy(&number, entity + 0x13C, sizeof(number));
         const auto found = times.find(number);
         if (!demo.is_converted() || found == times.end() || !entity
-            || entity[0x146] != 20 + event || (event != 98 && event != 103 && event != 104))
+            || entity[0x146] != 20 + event || (event != 98 && event != 103 && event != 104 && event != 111
+                && event != 77 && event != 80 && event != 81))
         {
             CG_EntityEvent_hook.invoke<void>(local_client_num, entity, event, flags);
             return;
         }
+        // Native centity event history can reset during a player respawn.
+        // Stable converted impact identities fire once until seek/restart
+        // explicitly clears both the effect system and this dispatch history.
+        if ((event == 77 || event == 80 || event == 81) && !demo.claim_bullet_event(number)) return;
         // CG_EntityEvent supplies cg.time to native FX_PlayEffect. Use the
-        // original detonation clock, so skipped snapshots and seeks create
-        // the MWR burst with its correct age instead of a new explosion now.
+        // original event clock, so skipped snapshots and seeks create
+        // the MWR burst or impact with its recorded age.
         auto* cg = reinterpret_cast<std::uint8_t*>(game::CG_GetLocalClientGlobals());
         if (!cg) return;
         auto& time = *reinterpret_cast<int*>(cg + 0x92BE8);
+        game::FxEffectDef** effect_slot{};
+        game::FxEffectDef* saved_effect{};
+        if (event == 111)
+        {
+            unsigned index{};
+            std::memcpy(&index, entity + 0x160, sizeof(index));
+            const auto binding = demo.fx_bindings().find(index);
+            if (binding == demo.fx_bindings().end() || !index || index >= 512
+                || !game::DB_XAssetExists(game::ASSET_TYPE_FX, binding->second.c_str())
+                || game::DB_IsXAssetDefault(game::ASSET_TYPE_FX, binding->second.c_str()))
+            {
+                game::Com_Error(game::ERR_DROP, "Converted car FX native asset unavailable");
+                return;
+            }
+            const auto asset = game::DB_FindXAssetHeader(game::ASSET_TYPE_FX, binding->second.c_str(), false).fx;
+            if (!asset)
+            {
+                game::Com_Error(game::ERR_DROP, "Converted car FX native definition unavailable");
+                return;
+            }
+            effect_slot = reinterpret_cast<game::FxEffectDef**>(0x3909D00_b) + index;
+            saved_effect = *effect_slot;
+            *effect_slot = asset;
+        }
         const auto saved = time;
         const auto saved_sound = suppress_grenade_sound;
+        const auto saved_bullet = bullet_effect_entity;
+        const auto saved_flesh = unbound_flesh_impact;
+        bullet_effect_entity = event == 77 || event == 80 || event == 81 ? number : 0;
+        unsigned short target{};
+        std::memcpy(&target, entity + 0x140, sizeof(target));
+        unbound_flesh_impact = event == 77 && entity[0x147] == 7 && target == 2046;
         suppress_grenade_sound = demo.rebuilding_grenade_fx();
         time = found->second;
-        const auto restore = gsl::finally([&time, saved, saved_sound]
+        const auto restore = gsl::finally([&time, saved, saved_sound, saved_bullet, saved_flesh, effect_slot, saved_effect]
         {
             time = saved;
             suppress_grenade_sound = saved_sound;
+            bullet_effect_entity = saved_bullet;
+            unbound_flesh_impact = saved_flesh;
+            if (effect_slot) *effect_slot = saved_effect;
         });
         CG_EntityEvent_hook.invoke<void>(local_client_num, entity, event, flags);
         if (converted_trace.is_open())
-            converted_trace << "native grenade event entity=" << number << " event=" << event
+            converted_trace << (event == 111 ? "native car FX event entity=" : bullet_effect_entity
+                ? "native bullet impact entity=" : "native grenade event entity=") << number << " event=" << event
                 << " recorded=" << found->second << " playback=" << saved
                 << " age=" << static_cast<std::int64_t>(saved) - found->second
                 << " reconstruct=" << suppress_grenade_sound << std::endl;
@@ -1634,6 +1750,8 @@ namespace demo_playback
 			CG_DrawActiveFrame_hook.create(game::CG_DrawActiveFrame, draw_active_frame_stub);
             CG_EntityEvent_hook.create(0xF9400_b, grenade_entity_event);
             CG_PlaySound_hook.create(0x31D040_b, grenade_play_sound);
+            FX_PlayOrientedEffectWithMarkEntity_hook.create(0x3D66D0_b, bullet_play_oriented_effect);
+            CG_ShouldCullImpactFX_hook.create(0xF36B0_b, bullet_should_cull_impact);
 
 			// ===== STAGE 2a: real playback-support hooks. All verified pass-through when
 			// no demo is playing, so they install on valid addresses and stay inert until
@@ -1721,6 +1839,32 @@ namespace demo_playback
 
 				demo.toggle_paused();
 			});
+
+            // Read-only native corpse diagnostics for animation/seek regressions.
+            command::add("demoactorstate", []
+            {
+                const auto* cl = game::mp::cl.get();
+                if (!demo.is_demo_playing() || !demo.is_converted() || !cl || !game::CL_IsCgameInitialized())
+                {
+                    console::error("a converted demo must be active to inspect its actors\n");
+                    return;
+                }
+                const auto* cgs = static_cast<const std::uint8_t*>(game::CG_GetServerCommandsState());
+                if (!cgs) return;
+                console::info("demoactorstate time=%d cgs=%p\n", cl->serverTime, cgs);
+                // CG_Corpse (0xF28C0) owns eight 0x740-byte character records
+                // at cgs+0x26D0. XAnimGetTime (0x5CC5B0) only reads their tree.
+                for (unsigned slot = 0; slot < 8; ++slot)
+                {
+                    const auto* info = cgs + 0x26D0 + slot * 0x740;
+                    const auto* tree = *reinterpret_cast<void* const*>(info + 0x4B0);
+                    const auto animation = *reinterpret_cast<const unsigned*>(info + 0x4C8) & 2047u;
+                    if (!tree || !animation) continue;
+                    const auto phase = utils::hook::invoke<float>(0x5CC5B0_b, tree, animation);
+                    console::info("demoactorstate corpse=%u client=%u legs=%u phase=%.6f\n", 42 + slot,
+                        *reinterpret_cast<const unsigned*>(info), animation, phase);
+                }
+            });
 
 			// add command line support to play demos; this makes it possible to double click on a demo file to play it
 			const auto& args = utils::command_line::get_args();

@@ -1,10 +1,23 @@
 # Next prompt: native MWR weapon and grenade FX
 
-Status on 2026-09-29: native frag, flash and recorded concussion events are now
-implemented. The corrected Crash F9 conversion/playback was accepted by the
-user. Continue next with [car explosion events](next-prompt-car-explosions.md).
-The broader firing, impact, smoke and launcher priorities below remain future
-work; this original handoff is retained for context.
+Status on 2026-09-29: native frag/flash/concussion and car explosion FX are
+implemented; grenade and car FX visuals were accepted. The car animation binding
+regression was corrected; native car animation/debris visuals still need
+confirmation. Gun firing events are now implemented and installed for the
+requested `backlot_cod4_to_h1.dm_1` fixture: 19 shots, 14 AK-47 and five Desert
+Eagle. Native visuals remain pending a fresh conversion/playback. Current EXE:
+`2A7574330343AAAB4F4A4B5B71ADCE327F954E6672AFEC4D81D44C53B546A3EA`.
+Backup: `build/install-backups/20260929-024312-before-native-gun-fx` (28 files).
+This is a historical FX handoff. The current installed build is listed in
+`docs/cod4-mapping-coverage.md`.
+Evidence: `build/analysis/gun-fx-installed`; see current mapping coverage.
+Native gun PS sequence is +0x104, event/parameter ring +0x10C/+0x110. Use H1
+SV_FIRE_WEAPON 51/52 for recorded local shots; normal 39/40 skips this path.
+Rechamber/brass map to 42/43. Do not claim bullet impacts, remote actor firing
+or aged gun smoke/brass seek reconstruction complete; this Backlot recording
+contains no recorded bullet impacts. The broader priorities below are retained
+for context, not a statement that all work is complete. Car handoff is at
+[next-prompt-car-explosions.md](next-prompt-car-explosions.md).
 
 Continue the COD4-to-H1 demo converter in `F:\Dev\h1-cod4-demo`, private repository
 `https://github.com/Politohh/h1-cod4-demo`, on the current `main` branch. The verified
@@ -125,7 +138,8 @@ checks for event counts/timing, wrapping sequences and seek behavior. Validate
 actual native effect rendering in representative firing and grenade segments;
 compilation or finding an FX name is not visual acceptance. Report the events
 implemented, unsupported events observed, produced demo names and exact runtime
-results. Update the coverage document. Do not push the FX changes until I ask.
+results. Update the coverage document. The user subsequently authorized pushing
+the converter work to main.
 
 Use the Computer Use skill for UI interaction. If I press physical Escape, stop
 UI input and continue source/build/log work. Do not stop the whole task because

@@ -96,9 +96,8 @@ int main(int argc, char** argv)
         check(rejected, "Recorded visibility silently dropped without mapping");
         auto outside = brown;
         outside.set(240, 1); // Source bone 127 is outside this 48-bone model.
-        rejected = false;
-        try { cod4::translate_script_model(outside, 768, &parts); } catch (const std::exception&) { rejected = true; }
-        check(rejected, "Out-of-model hidden part accepted");
+        check(cod4::translate_script_model(outside, 768, &parts) == car,
+            "Out-of-model mask tail hid unrelated native geometry");
         const auto body = cod4::translate_client(client, 769, {770,0,0,0,0,0});
         check(native<std::uint16_t>(body,16) == 769 && native<std::uint16_t>(body,18) == 770
             && native<unsigned>(body,96) == 2 && native<std::uint16_t>(body,12) == 2047, "H1 client state offsets wrong");

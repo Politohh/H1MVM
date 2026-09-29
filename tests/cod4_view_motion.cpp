@@ -33,9 +33,11 @@ int main(int argc, char** argv)
             check(std::abs(bob / 255.0 - cod4::translate_bob_cycle(bob) / 65535.0) < 1e-12,
                 "Native walking/bob phase changed");
         check(cod4::translate_bob_cycle(255) == 65535 && cod4::translate_bob_cycle(0) == 0, "Bob wrap changed");
-        rejects([] { cod4::translate_bob_cycle(-1); }); rejects([] { cod4::translate_bob_cycle(256); });
+        rejects([] { cod4::translate_bob_cycle(-1); });
+        check(cod4::translate_bob_cycle(256) == 0 && cod4::translate_bob_cycle(275) == 19 * 257,
+            "Predicted archive bob carry changed the native low-byte phase");
         cod4::player_frame p;
-        const std::map<unsigned, std::string> native_profiles{{2, "flashbang_mp"}, {6, "concussion_grenade_mp"}};
+        const std::map<unsigned, std::string> native_profiles{{2, "flashbang_mp"}, {6, "concussion_grenade_mp"}, {3, "damage_mp"}};
         set(p, "shellshockIndex", 15); set(p, "shellshockTime", 62650); set(p, "shellshockDuration", 3163);
         set(p, "damageEvent", 255); set(p, "damageYaw", 255); set(p, "damagePitch", 128); set(p, "damageCount", 127);
         set(p, "holdBreathScale", std::bit_cast<unsigned>(1.0f)); set(p, "speed", 190); set(p, "gravity", 800);
@@ -89,7 +91,7 @@ int main(int argc, char** argv)
             const auto players = cod4::decode_players(bytes);
             const auto profiles = cod4::resolve_shock_profiles(players, camera.configstrings, native_profiles);
             const auto dynamic_registry = cod4::complete_shock_registry(players, camera.configstrings, {}, false,
-                [](const auto& name) { return name == "flashbang_mp" || name == "concussion_grenade_mp"; });
+                [](const auto& name) { return name == "flashbang_mp" || name == "concussion_grenade_mp" || name == "damage_mp"; });
             const auto dynamic_profiles = cod4::resolve_shock_profiles(players, camera.configstrings, dynamic_registry);
             check(dynamic_profiles.size() == profiles.size(), "Fixture effect lost in ordinary configstring registry");
             // Observed City map registry: original concussion retains its name,
@@ -98,7 +100,8 @@ int main(int argc, char** argv)
                 {{1, "concussion_grenade_mp"}, {2, "damage_mp"}, {3, "default"}, {4, "flashbang_mp"},
                  {5, "frag_grenade_mp"}, {6, "pain"}, {7, "stun_grenade_mp"}, {8, "underwater"}});
             for (const auto& [source, profile] : observed_profiles)
-                check(profile.index == (profile.name == "flashbang_mp" ? 4 : 1), "Observed H1 effect slot changed");
+                check(profile.index == (profile.name == "flashbang_mp" ? 4 : profile.name == "damage_mp" ? 2 : 1),
+                    "Observed H1 effect slot changed");
             for (const auto& frame : camera.frames) { cod4::translate_bob_cycle(frame.bob_cycle); ++archive_count; }
             for (const auto& player : players)
             {

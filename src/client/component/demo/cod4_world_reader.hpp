@@ -27,17 +27,37 @@ namespace cod4
         std::map<unsigned, entity_state> entities;
         std::map<unsigned, client_state> clients;
     };
+    struct hud_frame
+    {
+        int time{};
+        std::array<std::vector<wire_state<160>>, 2> groups;
+    };
+    struct server_command
+    {
+        int time{}, sequence{}, index{};
+        std::string text;
+    };
     struct world_track
     {
         int client_num{};
+        std::size_t discarded_deltas{};
         std::map<unsigned, entity_state> baselines;
         std::vector<world_frame> frames;
+        std::vector<hud_frame> hud_frames;
+        std::vector<server_command> commands;
         const world_frame& sample(int time) const
         {
             if (frames.empty()) throw std::runtime_error("Empty COD4 world track");
             const auto next = std::upper_bound(frames.begin(), frames.end(), time,
                 [](int t, const world_frame& f) { return t < f.time; });
             return next == frames.begin() ? frames.front() : *(next - 1);
+        }
+        const hud_frame& sample_hud(int time) const
+        {
+            if (hud_frames.empty()) throw std::runtime_error("Empty COD4 HUD track");
+            const auto next = std::upper_bound(hud_frames.begin(), hud_frames.end(), time,
+                [](int t, const hud_frame& f) { return t < f.time; });
+            return next == hud_frames.begin() ? hud_frames.front() : *(next - 1);
         }
     };
     namespace detail
@@ -108,9 +128,10 @@ namespace cod4
             if (msg.bits(1))
             {
                 const auto mask = msg.bits(5);
-                for (unsigned i = 0; i < 3; ++i) if (mask & (1u << i)) msg.get<std::int16_t>();
-                if (mask & 8) msg.bits(6);
-                if (mask & 16) msg.get<std::uint8_t>();
+                for (unsigned i = 0; i < 3; ++i)
+                    if (mask & (1u << i)) frame.stats[i] = msg.get<std::int16_t>();
+                if (mask & 8) frame.stats[3] = static_cast<std::int32_t>(msg.bits(6));
+                if (mask & 16) frame.stats[4] = msg.get<std::uint8_t>();
             }
             if (msg.bits(1)) for (unsigned i = 0; i < 4; ++i) if (msg.bits(1))
             {
@@ -138,6 +159,7 @@ namespace cod4
         struct baseline { player_frame player; detail::player_tail tail; world_frame world; };
         std::map<int, baseline> history;
         bool eof = false;
+        int last_time = 0;
         while (file.pos < bytes.size())
         {
             const auto type = file.get<std::uint8_t>();
@@ -154,7 +176,12 @@ namespace cod4
                 const auto op = msg.get<std::uint8_t>();
                 if (op == 7) break;
                 if (!op) continue;
-                if (op == 4) { msg.get<int>(); msg.string(); continue; }
+                if (op == 4)
+                {
+                    const auto index = msg.get<int>();
+                    track.commands.push_back({last_time, sequence, index, msg.string()});
+                    continue;
+                }
                 if (op == 11) { msg.get<int>(); msg.get<std::uint8_t>(); msg.string(); msg.string(); continue; }
                 if (op == 1)
                 {
@@ -182,11 +209,14 @@ namespace cod4
                 }
                 if (op != 6) throw std::runtime_error("Unsupported COD4 world service " + std::to_string(op));
                 const int time = msg.get<int>(); const auto delta = msg.get<std::uint8_t>(); msg.get<std::uint8_t>();
+                last_time = time;
                 baseline current;
                 if (delta)
                 {
                     const auto found = history.find(sequence - delta);
-                    if (found == history.end()) throw std::runtime_error("Missing COD4 world delta baseline");
+                    // Match COD4 CL_ParseSnapshot's MSG_Discard on an absent
+                    // delta frame, preserving only snapshots we can reconstruct.
+                    if (found == history.end()) { ++track.discarded_deltas; break; }
                     current = found->second;
                 }
                 current.player.time = time; current.player.sequence = sequence;
@@ -219,6 +249,16 @@ namespace cod4
                 history[sequence] = current;
                 while (!history.empty() && history.begin()->first < sequence - 255) history.erase(history.begin());
                 while (!track.frames.empty() && track.frames.back().time >= time) track.frames.pop_back();
+                while (!track.hud_frames.empty() && track.hud_frames.back().time >= time) track.hud_frames.pop_back();
+                hud_frame hud;
+                hud.time = time;
+                for (unsigned group = 0; group < 2; ++group)
+                    for (const auto& element : current.tail.hud[group])
+                    {
+                        if (!element.get(0)) break;
+                        hud.groups[group].push_back(element);
+                    }
+                track.hud_frames.push_back(std::move(hud));
                 track.frames.push_back(std::move(current.world));
             }
         }
