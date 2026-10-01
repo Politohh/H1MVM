@@ -23,6 +23,43 @@ int main(int argc, char** argv)
         check(codec.legs.size() > 1000, "Missing native animation catalog");
         std::map<std::string_view, unsigned> catalog;
         for (const auto& [name, id] : names) catalog.emplace(name, id);
+        // The long Diablo recording exercises grenade crouch strafes that
+        // the short Strike fixture does not. Preserve direction and restarts.
+        const std::array<unsigned, 4> crouch_sources{128, 120, 119, 118};
+        const std::array<std::string_view, 4> crouch_targets{
+            "mp_crouch_hold_run", "mp_crouch_hold_run_b", "mp_crouch_hold_run_l", "mp_crouch_hold_run_r"};
+        for (unsigned i = 0; i < crouch_sources.size(); ++i)
+            for (unsigned restart : {0u, 512u})
+            {
+                check(cod4::actor_animation_name(crouch_sources[i] | restart, "frag_grenade_mp", catalog) == crouch_targets[i],
+                    "Grenade crouch movement lost its direction");
+                const auto resolved = cod4::resolve_actor_animation(crouch_sources[i] | restart, "frag_grenade_mp", catalog);
+                check(codec.legs.at(resolved & 2047u) >= 0, "Grenade crouch movement needs a native leg channel");
+                check((resolved & 2048u) == (restart << 2), "Grenade crouch restart was lost");
+            }
+        // Validate both native channels and restart bits for the additional
+        // Diablo poses, including all four grenade crawl directions.
+        const std::array<std::pair<unsigned, std::string_view>, 8> diablo_clips{{
+            {72, "pb_prone_hold"}, {78, "pb_prone_crawl_hold"},
+            {69, "pb_prone_crawl_back_hold"}, {71, "pb_prone_crawl_left_hold"},
+            {70, "pb_prone_crawl_right_hold"}, {303, "h1_mp_prone_hold_grenade_throw"},
+            {283, "mp_pistol_crouch_reload"}, {173, "mp_pistol_crouch_idle"}
+        }};
+        for (const auto& [source, target] : diablo_clips)
+            for (unsigned restart : {0u, 512u})
+            {
+                const auto weapon = source == 283 || source == 173 ? "deserteagle_mp" : "frag_grenade_mp";
+                const auto resolved = cod4::resolve_actor_animation(source | restart, weapon, catalog);
+                check(resolved == (names.at(std::string(target)) | (restart << 2)), "Wrong Diablo clip or restart");
+                const bool upper = source == 303 || source == 283;
+                const auto packed = upper
+                    ? cod4::actor_animation(source == 303 ? 72 : 173, source | restart, weapon, catalog, codec)
+                    : cod4::actor_animation(source | restart, 0, weapon, catalog, codec);
+                const auto encoded = upper ? ((packed >> 1) & 511u) : ((packed >> 11) & 2047u);
+                check(encoded == unsigned((upper ? codec.torso : codec.legs).at(resolved & 2047u)), "Wrong Diablo native channel");
+                check(upper ? ((packed >> 1) & 512u) == restart : ((packed >> 11) & 2048u) == (restart << 2),
+                    "Lost Diablo packed restart");
+            }
         std::map<std::string, unsigned> failures;
         unsigned recorded_flinches{};
         for (int fixture = 2; fixture < argc; ++fixture)

@@ -122,7 +122,7 @@ inline constexpr std::array<std::string_view, 42> vehicle_bones_13{
     "tag_mirror_left", "tag_mirror_right",
 };
 struct vehicle_bone_profile { std::string_view model; std::span<const std::string_view> bones; };
-inline constexpr std::array<vehicle_bone_profile, 62> vehicle_bone_profiles{{
+inline constexpr std::array<vehicle_bone_profile, 66> vehicle_bone_profiles{{
     {"vehicle_80s_hatch1_brn_destructible_mp", vehicle_bones_0},
     {"vehicle_80s_hatch1_green_destructible_mp", vehicle_bones_0},
     {"vehicle_80s_hatch1_red_destructible_mp", vehicle_bones_0},
@@ -135,8 +135,12 @@ inline constexpr std::array<vehicle_bone_profile, 62> vehicle_bone_profiles{{
     {"vehicle_80s_hatch2_silv_destructible_mp", vehicle_bones_0},
     {"vehicle_80s_hatch2_tan_destructible_mp", vehicle_bones_0},
     {"vehicle_80s_hatch2_yel_destructible_mp", vehicle_bones_0},
+    {"vehicle_80s_sedan1_brn_destroyed", vehicle_bones_6},
     {"vehicle_80s_sedan1_brn_destructible_mp", vehicle_bones_0},
+    {"vehicle_80s_sedan1_brn_wheel_lf", vehicle_bones_12},
+    {"vehicle_80s_sedan1_green_destroyed", vehicle_bones_6},
     {"vehicle_80s_sedan1_green_destructible_mp", vehicle_bones_0},
+    {"vehicle_80s_sedan1_green_wheel_lf", vehicle_bones_12},
     {"vehicle_80s_sedan1_red_destroyed", vehicle_bones_6},
     {"vehicle_80s_sedan1_red_destructible_mp", vehicle_bones_0},
     {"vehicle_80s_sedan1_red_wheel_lf", vehicle_bones_12},

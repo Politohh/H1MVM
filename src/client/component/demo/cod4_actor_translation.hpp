@@ -4,6 +4,39 @@
 
 namespace cod4
 {
+    inline std::map<unsigned, client_state> clients_with_corpse_identities(const world_track& world, int time)
+    {
+        auto frame = std::upper_bound(world.frames.begin(), world.frames.end(), time,
+            [](int t, const world_frame& f) { return t < f.time; });
+        if (frame == world.frames.begin()) return world.sample(time).clients;
+        --frame;
+        auto clients = frame->clients;
+        for (const auto& [number, entity] : frame->entities)
+        {
+            if (entity.get(4) != 2) continue;
+            const auto client_number = entity.get(140);
+            if (const auto client = clients.find(client_number); client != clients.end() && client->second.get(8)) continue;
+            // A disconnected client's corpse can outlive its client-state row.
+            // Recover only recorded identity within this corpse's continuous
+            // lifetime; never borrow a future player or a prior corpse slot.
+            auto prior = frame;
+            while (prior != world.frames.begin())
+            {
+                --prior;
+                const auto corpse = prior->entities.find(number);
+                if (corpse == prior->entities.end() || corpse->second.get(4) != 2
+                    || corpse->second.get(140) != client_number) break;
+                const auto client = prior->clients.find(client_number);
+                if (client != prior->clients.end() && client->second.get(8))
+                {
+                    clients.insert_or_assign(client_number, client->second);
+                    break;
+                }
+            }
+        }
+        return clients;
+    }
+
     struct actor_animation_codec
     {
         std::vector<std::int16_t> legs, torso;

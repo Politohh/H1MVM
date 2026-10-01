@@ -41,12 +41,14 @@ namespace cod4
         // Verified Promod/stock names and MWR's live locomotion channels.
         constexpr std::array<std::string_view, 4> directions{"forward", "back", "left", "right"};
         constexpr std::array<std::string_view, 4> crouch{"mp_crouch_f", "mp_crouch_b", "mp_crouch_l", "mp_crouch_r"};
+        constexpr std::array<std::string_view, 4> grenade_crouch{"mp_crouch_hold_run", "mp_crouch_hold_run_b", "mp_crouch_hold_run_l", "mp_crouch_hold_run_r"};
         constexpr std::array<std::string_view, 4> pistol_crouch{"mp_pistol_crouch_walk_f", "mp_pistol_crouch_walk_b", "mp_pistol_crouch_walk_l", "mp_pistol_crouch_walk_r"};
         constexpr std::array<std::string_view, 4> pistol_walk{"mp_pistol_stand_walk_f", "mp_pistol_stand_walk_b", "mp_pistol_stand_walk_l", "mp_pistol_stand_walk_r"};
         for (unsigned i = 0; i < directions.size(); ++i)
         {
             const auto direction = std::string(directions[i]);
             if (name == "pb_crouch_run_" + direction || name == "pb_crouch_shoot_run_" + direction) return crouch[i];
+            if (name == "pb_crouch_run_" + direction + "_grenade") return grenade_crouch[i];
             if (name == "pb_crouch_run_" + direction + "_pistol" || name == "pb_crouch_walk_" + direction + "_pistol") return pistol_crouch[i];
             if (name == "pb_combatwalk_" + direction + "_loop_pistol") return pistol_walk[i];
             if (name == "pb_combatrun_" + direction + "_loop_pistol") return native_runs[static_cast<unsigned>(body_family::pistol)][i];
@@ -58,6 +60,11 @@ namespace cod4
         if (name == "pb_standjump_land_pistol") return "standjump_land_pistol";
         if (name == "pb_prone_aim") return family == body_family::sniper ? "pb_prone_aim_sniper" : "mp_prone_idle_iw6";
         if (name == "pb_prone_aim_pistol") return "mp_pistol_prone_idle";
+        if (name == "pb_prone_aim_grenade") return "pb_prone_hold";
+        if (name == "pb_prone_grenade_crawl") return "pb_prone_crawl_hold";
+        if (name == "pb_prone_grenade_crawl_back") return "pb_prone_crawl_back_hold";
+        if (name == "pb_prone_grenade_crawl_left") return "pb_prone_crawl_left_hold";
+        if (name == "pb_prone_grenade_crawl_right") return "pb_prone_crawl_right_hold";
         if (name == "pb_prone2crouch") return pistol ? "mp_pistol_prone_2_crouch" : launcher ? "mp_rpg_prone_2_crouch" : "mp_prone_2_crouch";
         if (name == "pb_prone2crouchrun") return pistol ? "mp_pistol_prone_2_crouch_f" : launcher ? "mp_rpg_prone_2_crouch_f" : "mp_iw6_prone_2_crouch_f";
         // Native authored reactions replace these two legacy death clips.
@@ -67,6 +74,10 @@ namespace cod4
         if (name == "pb_stand_ads") return "mp_stand_ads_aim_5";
         if (name == "pb_crouch_alert") return "mp_crouch_idle";
         if (name == "pb_crouch_ads") return "mp_crouch_idle_ads";
+        // COD4 labels this an unfinished placeholder, used by jumpbk while
+        // crouching/prone. MWR has no equivalent; retain the crouched pose.
+        if (name == "pb_chicken_dance_crouch") return pistol ? "mp_pistol_crouch_idle"
+            : launcher ? "mp_rpg_crouch_idle" : family == body_family::hold ? "mp_crouch_hold_idle" : "mp_crouch_idle";
         if (name == "pb_crouch_alert_pistol" || name == "pb_crouch_ads_pistol") return "mp_pistol_crouch_idle";
         if (name == "pb_stand__shoot_ads_pistol") return "pt_stand_shoot_pistol";
         if (name == "pb_stand_alert_pistol" || name == "pb_stand_ads_pistol") return "mp_pistol_stand_idle";
@@ -75,12 +86,12 @@ namespace cod4
         if (name == "pb_stand_grenade_throw") return "h1_mp_hold_grenade_throw";
         if (name == "pb_crouch_grenade_pullpin") return "h1_mp_crouch_hold_grenade_pull";
         if (name == "pb_crouch_grenade_throw") return "h1_mp_crouch_hold_grenade_throw";
-        if (name == "pb_crouch_run_forward_grenade") return "mp_crouch_hold_run";
         if (name == "pb_crouch_bombplant") return "mp_srchdstry_crouch_bomb_idle";
         if (name == "pb_prone_bombplant") return "mp_srchdstry_prone_bomb_idle";
         if (name == "mp_mantle_over_mid") return "mp_mantle_over_33";
         if (name == "pt_stand_grenade_throw") return "h1_mp_hold_grenade_throw";
         if (name == "pt_crouch_grenade_throw") return "h1_mp_crouch_hold_grenade_throw";
+        if (name == "pt_prone_grenade_throw") return "h1_mp_prone_hold_grenade_throw";
         if (name == "pt_rifle_fire_ads") return "pt_stand_shoot_ads";
         if (name == "pt_stand_shoot_shotgun") return "pt_stand_shoot";
         // COD4's directional flinches have no one-to-one directional MWR clip.
@@ -100,6 +111,7 @@ namespace cod4
         if (name == "pt_prone_pullout_pose") return pistol ? "mp_prone_weapon_swap_lg2pistol" : "mp_prone_weapon_switch_iw6";
         if (name.starts_with("pt_reload_stand_")) return pistol ? "mp_pistol_stand_reload" : launcher ? "mp_rpg_reload" : "mp_stand_reload";
         if (name.starts_with("pt_reload_crouch_")) return pistol ? "mp_pistol_crouch_reload" : launcher ? "mp_rpg_crouch_reload" : "mp_crouch_reload";
+        if (name == "pt_reload_crouchwalk_pistol") return "mp_pistol_crouch_reload";
         if (name.starts_with("pt_reload_prone_")) return pistol ? "mp_pistol_prone_reload" : launcher ? "mp_rpg_prone_reload" : "mp_prone_reload_iw6";
         // The remaster replaces COD4's stun stumble with its own flinch clips.
         if (name.starts_with("pb_stumble_")) return pistol ? "mp_flinch_pistol_stand_a" : launcher ? "mp_rpg_stand_flinch_a" : "mp_flinch_stand_a";

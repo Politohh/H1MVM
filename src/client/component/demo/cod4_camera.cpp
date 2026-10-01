@@ -959,6 +959,7 @@ namespace cod4_camera
             // of any live server. Entity and client writers use MWR's PC tables.
             packet.bit0(); packet.bit0(); packet.reset_index();
             const auto& recorded = world.sample(time);
+            const auto recorded_clients = cod4::clients_with_corpse_identities(world, time);
             cod4::h1_entity from{};
             utils::hook::invoke<void>(0x4EC490_b, from.data(), -1);
             // This gamestate has no entity baselines: the client starts with
@@ -976,8 +977,8 @@ namespace cod4_camera
                 if ((entity.get(4) == 1 || entity.get(4) == 2) && time >= world.frames.front().time)
                 {
                     if (entity.get(4) == 1 && number == static_cast<unsigned>(world.client_num)) continue;
-                    const auto client = recorded.clients.find(entity.get(140));
-                    if (client == recorded.clients.end() || !client->second.get(8))
+                    const auto client = recorded_clients.find(entity.get(140));
+                    if (client == recorded_clients.end() || !client->second.get(8))
                         throw std::runtime_error("Recorded actor has no character identity");
                     const auto& events = cod4::actor_events_at(actor_events, time).actors;
                     const auto event = events.find(number);
@@ -1058,7 +1059,7 @@ namespace cod4_camera
             context[28] = 0;
             packet.reset_index(); packet.byte(0);
             std::map<unsigned, cod4::h1_client> snapshot_clients;
-            for (const auto& [number, client] : recorded.clients)
+            for (const auto& [number, client] : recorded_clients)
             {
                 const auto& models = character_models.at(client_model_key(client));
                 if (!models.body) continue; // Spectators have no recorded character model.
