@@ -5,6 +5,7 @@
 #include "demo_utils.hpp"
 #include "cod4_camera.hpp"
 #include "cod4_model_metadata.hpp"
+#include "cod4_obituary_events.hpp"
 
 #include "component/command.hpp"
 #include "component/console.hpp"
@@ -58,6 +59,7 @@ namespace // demo class
 		[[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> peek_duration();
 		void bootstrap_map_load();
         bool is_converted() const { return converted_; }
+        bool has_legacy_obituaries() const { return legacy_obituaries_; }
         const std::map<unsigned, int>& grenade_times() const { return grenade_times_; }
         const std::map<unsigned, std::string>& fx_bindings() const { return fx_bindings_; }
         void reset_grenade_fx();
@@ -102,7 +104,7 @@ namespace // demo class
 	private:
 		void repeat();
 
-		bool converted_{}, bootstrapping_{};
+		bool converted_{}, bootstrapping_{}, legacy_obituaries_{};
         std::set<std::string> converted_models_;
         std::map<unsigned, int> grenade_times_;
         std::map<unsigned, std::string> fx_bindings_;
@@ -229,6 +231,8 @@ namespace // demo class
 		}
 
 		stop();
+
+		game::Dvar_SetFromStringByNameFromSource("developer", "1", game::DVAR_SOURCE_INTERNAL);
 
 		file_ = std::move(file);
 		assert(file_.good() && file_.is_open());
@@ -422,7 +426,9 @@ namespace // demo class
                     fields.emplace_back(data.begin() + offset, end);
                     offset = static_cast<std::size_t>(end - data.begin()) + 1;
                 }
-                converted_ = fields.size() >= 9 && (fields[1] == "H1 COD4 conversion v1" || fields[1] == "H1 COD4 conversion v2");
+                converted_ = fields.size() >= 9 && (fields[1] == "H1 COD4 conversion v1"
+                    || fields[1] == "H1 COD4 conversion v2" || fields[1] == "H1 COD4 conversion v3");
+                legacy_obituaries_ = converted_ && fields[1] == "H1 COD4 conversion v2";
                 if (cod4_playback_hud) cod4_playback_hud->current.enabled = converted_;
                 if (converted_)
                 {
@@ -537,6 +543,7 @@ namespace // demo class
         rebuilding_grenade_fx_ = false;
         if (converted_) cod4_camera::clear_model_bindings();
         converted_ = false;
+        legacy_obituaries_ = false;
         if (cod4_playback_hud) cod4_playback_hud->current.enabled = false;
 
 		// ensure that sv_cheats is always disabled after demo playback
@@ -656,6 +663,7 @@ namespace // hooks
 	utils::hook::detour CL_GetPredictedVehicleForServerTime_hook;
 	utils::hook::detour CG_CalcViewValues_hook;
     utils::hook::detour CG_EntityEvent_hook;
+    utils::hook::detour BG_PlayerAnimation_hook;
     utils::hook::detour CG_PlaySound_hook;
     thread_local bool suppress_grenade_sound{};
     utils::hook::detour FX_PlayOrientedEffectWithMarkEntity_hook;
@@ -712,8 +720,42 @@ namespace // hooks
         return CG_PlaySound_hook.invoke<int>(local_client_num, entity_num, origin, alias);
     }
 
+    void player_animation(const int local_client, std::uint8_t* entity, std::uint8_t* character,
+        const float* angles, const float* origin, const int time, const int torso, const int legs,
+        const bool update_time)
+    {
+        // Older conversions preserved sparse COD4 client numbers, but H1
+        // only allocates player trees for slots 0..17 (0x31C890). Reject
+        // those files before either sequence selection or XAnim playback
+        // dereferences an uninitialized tree. Fresh conversions compact all
+        // player identities and their references into native player slots.
+        if (demo.is_converted() && character && entity
+            && (entity[10] == 1 || entity[10] == 2) && entity[12] >= 18)
+        {
+            game::Com_Error(game::ERR_DROP,
+                "This converted demo uses unsupported player slots. Reconvert the original COD4 demo with this build.");
+            return;
+        }
+        BG_PlayerAnimation_hook.invoke<void>(local_client, entity, character, angles, origin,
+            time, torso, legs, update_time);
+    }
+
     void grenade_entity_event(const int local_client_num, std::uint8_t* entity, const unsigned event, const unsigned flags)
     {
+        if (demo.is_converted() && demo.has_legacy_obituaries() && entity && event == 140 && entity[0x146] == 160)
+        {
+            // Dispatch the repaired v2 payload straight to native CG_Obituary;
+            // the generic event preamble treats its old MOD byte as a weapon.
+            cod4::h1_entity corrected{};
+            std::memcpy(corrected.data(), entity + 0x13C, corrected.size());
+            cod4::repair_legacy_obituary(corrected);
+            unsigned parameter{};
+            std::memcpy(&parameter, corrected.data() + 36, sizeof(parameter));
+            utils::hook::invoke<void>(0x10B750_b, local_client_num, corrected.data(), parameter);
+            if (converted_trace.is_open())
+                converted_trace << "legacy obituary repaired parameter=" << parameter << std::endl;
+            return;
+        }
         // Recorded local PS and remote entity gun rings use their respective
         // native firing paths. Do not turn skipped shots into flashes while
         // scrubbing. Ordinary H1 demos and gameplay keep the native behavior.
@@ -1265,6 +1307,8 @@ namespace // hooks
 	{
         const std::uint8_t* popup_def = nullptr;
         const std::uint32_t* popup_record = nullptr;
+        const std::uint8_t* hitmarker_def = nullptr;
+        const std::uint32_t* hitmarker_record = nullptr;
         const auto snap_time = *reinterpret_cast<const std::uint32_t*>(static_cast<const std::uint8_t*>(new_snap) + 0x4C);
         if (demo.is_demo_playing())
         {
@@ -1283,6 +1327,12 @@ namespace // hooks
                 {
                     popup_def = def;
                     popup_record = reinterpret_cast<const std::uint32_t*>(
+                        static_cast<const std::uint8_t*>(new_snap) + 0x4540 + (i - globals) * 8);
+                }
+                if (demo.is_converted() && key == "damage_feedback" && (def[8] & 8) && i >= globals)
+                {
+                    hitmarker_def = def;
+                    hitmarker_record = reinterpret_cast<const std::uint32_t*>(
                         static_cast<const std::uint8_t*>(new_snap) + 0x4540 + (i - globals) * 8);
                 }
                 const bool selected = key == "ui_loadout_selected" || key == "ui_team_selected";
@@ -1305,8 +1355,8 @@ namespace // hooks
         // native old/new snapshot path can therefore miss the UI edge, even
         // though Game.GetOmnvar already reads the recorded value. Dispatch the
         // same native omnvar notification once per recorded score change.
-        static std::uint32_t last_time{}, last_popup_marker{};
-        if (snap_time < last_time) last_popup_marker = 0;
+        static std::uint32_t last_time{}, last_popup_marker{}, last_hitmarker{};
+        if (snap_time < last_time || !demo.is_converted()) last_popup_marker = last_hitmarker = 0;
         last_time = snap_time;
         if (demo.is_converted() && popup_def && popup_record && popup_record[0]
             && popup_record[1] > 0 && popup_record[0] != last_popup_marker
@@ -1315,6 +1365,17 @@ namespace // hooks
             last_popup_marker = popup_record[0];
             utils::hook::invoke<void>(0x26E430_b, client_num, popup_def, popup_record,
                 *game::hks::lua_state);
+        }
+        // The native damagefeedbackhud.lua listens to this string omnvar and
+        // plays MWR's own material/animation. Repeated equal hits are distinct
+        // timeModified edges; never retrigger a held snapshot or a stale seek.
+        if (demo.is_converted() && hitmarker_def && hitmarker_record && hitmarker_record[0]
+            && hitmarker_record[0] != last_hitmarker && *game::hks::lua_state)
+        {
+            last_hitmarker = hitmarker_record[0];
+            if (snap_time >= hitmarker_record[0] && snap_time - hitmarker_record[0] <= 250)
+                utils::hook::invoke<void>(0x26E430_b, client_num, hitmarker_def, hitmarker_record,
+                    *game::hks::lua_state);
         }
 	}
 
@@ -1779,6 +1840,7 @@ namespace demo_playback
 			// actually suppresses local input (movement/fire/ADS), not a hand-written cg field.
 			CG_DrawActiveFrame_hook.create(game::CG_DrawActiveFrame, draw_active_frame_stub);
             CG_EntityEvent_hook.create(0xF9400_b, grenade_entity_event);
+            BG_PlayerAnimation_hook.create(0x2B8EF0_b, player_animation);
             CG_PlaySound_hook.create(0x31D040_b, grenade_play_sound);
             FX_PlayOrientedEffectWithMarkEntity_hook.create(0x3D66D0_b, bullet_play_oriented_effect);
             CG_ShouldCullImpactFX_hook.create(0xF36B0_b, bullet_should_cull_impact);

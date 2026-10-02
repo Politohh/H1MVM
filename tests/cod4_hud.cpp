@@ -52,13 +52,18 @@ int main(int argc, char** argv)
         }
         if (score_changes < 4) throw std::runtime_error("Recorded score popup updates were lost");
         const auto popups = cod4::collect_score_popups(world, camera.configstrings);
-        const std::array<int, 5> expected{11071700, 11073650, 11075300, 11082600, 11083900};
+        const std::array<int, 5> expected{11071750, 11073700, 11075350, 11082650, 11083950};
         if (popups.size() != expected.size()) throw std::runtime_error("Unexpected Strike popup count");
         for (std::size_t i = 0; i < expected.size(); ++i)
             if (popups[i].time != expected[i] || popups[i].element.get(44) != static_cast<unsigned>(expected[i]))
-                throw std::runtime_error("Score popup does not start at its recorded score change");
-        const auto obituaries = cod4::collect_obituary_events(world, players);
-        if (obituaries.size() != 18 || obituaries[7].time != expected[0]
+                throw std::runtime_error("Score popup does not start at its recorded kill");
+        std::map<int, std::string> configs{{8, camera.configstrings.at(12)}};
+        cod4::translate_minimap_configstrings(camera.configstrings, configs);
+        if (configs.at(1228) != camera.configstrings.at(823)
+            || configs.at(8) != camera.configstrings.at(12) || configs.at(1227) != "0")
+            throw std::runtime_error("Native compass material/bounds/north mapping changed");
+        const auto obituaries = cod4::collect_obituary_events(world);
+        if (obituaries.size() != 18 || obituaries[7].time != expected[0] - 50
             || obituaries[7].attacker != 0 || obituaries[7].victim != 3
             || obituaries[7].source_weapon != 17)
             throw std::runtime_error("Recorded Strike obituary events were lost");
@@ -69,7 +74,7 @@ int main(int argc, char** argv)
         std::uint32_t packed{};
         std::memcpy(&packed, obituary.data() + 76, sizeof(packed));
         if (obituary[10] != 160 || target != 3 || attacker != 0
-            || packed != (17u | 27u << 17))
+            || packed != 27u)
             throw std::runtime_error("H1 obituary event payload changed");
         std::cout << "PASS: " << world.hud_frames.size() << " HUD frames, recorded health and "
                   << score_changes << " +5 popup updates, " << obituaries.size() << " obituaries\n";

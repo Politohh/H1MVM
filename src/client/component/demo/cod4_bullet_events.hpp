@@ -1,4 +1,5 @@
 #pragma once
+#include "cod4_client_slots.hpp"
 #include "cod4_grenade_events.hpp"
 
 namespace cod4
@@ -80,30 +81,42 @@ namespace cod4
     }
 
     inline h1_entity translate_bullet_event(const bullet_event& event, unsigned number,
-        unsigned weapon, bool alternate = false)
+        unsigned weapon, bool alternate = false, unsigned recorded_client = 0,
+        const client_slot_map* slots = nullptr)
     {
         const auto native_event = native_bullet_event(event.source_event);
         if (!native_event || number < 1024 || number >= 2046 || !(weapon & 255u)
             || weapon >= (1u << 27) || event.time < 0 || event.surface >= 29
             || (event.source_event == 41 && event.parameter >= 162) || event.client >= 42
-            || event.impact_flags > 128)
+            || event.impact_flags > 128 || recorded_client >= 42)
             throw std::runtime_error("Invalid native bullet impact event");
         for (const auto& vector : {event.origin, event.start})
             for (const auto coordinate : vector)
                 if (!std::isfinite(coordinate)) throw std::runtime_error("Invalid native bullet impact position");
         h1_entity result{};
+        // Player entities and client state swap the recorder with H1 client
+        // zero. Impacts must use the same identities for native muzzle/tracer
+        // and victim lookups, especially when somebody else occupies slot 0.
+        const auto remap = [recorded_client, slots](unsigned client)
+        { return slots ? slots->reference(client) : client == recorded_client ? 0u : client == 0 ? recorded_client : client; };
+        const auto entity_reference = [&](unsigned source)
+        {
+            return slots ? static_cast<std::uint16_t>(slots->reference(translate_entity_number(source)))
+                : translate_entity_number(remap(source));
+        };
         write_native(result, 0, static_cast<std::uint16_t>(number));
-        write_native(result, 2, translate_entity_number(event.shooter));
+        write_native(result, 2, entity_reference(event.shooter));
         // Stock Bullet_ImpactEffect leaves groundEntityNum at zero; it
         // does not record a victim identity. MWR interprets entity 0 as a
         // player and adds a second player-impact pass. Preserve an explicit
         // nonzero target, but encode an unbound impact as ENTITYNUM_WORLD.
         // ENTITYNUM_NONE explicitly suppresses H1's impact-effect selection.
-        write_native(result, 4, event.target ? translate_entity_number(event.target) : std::uint16_t{2046});
+        write_native(result, 4, event.target ? entity_reference(event.target) : std::uint16_t{2046});
         write_native(result, 6, static_cast<std::uint8_t>(alternate));
         write_native(result, 10, static_cast<std::uint8_t>(20 + native_event));
         write_native(result, 11, grenade_surface(event.surface));
-        write_native(result, 12, static_cast<std::int8_t>(event.client));
+        const auto client = remap(event.client);
+        write_native(result, 12, static_cast<std::int8_t>(client < 18 ? client : -1));
         // COD4 records one impact per event; it has no H1 shot-count field.
         write_native(result, 28, std::uint8_t{1});
         write_native(result, 36, event.parameter);

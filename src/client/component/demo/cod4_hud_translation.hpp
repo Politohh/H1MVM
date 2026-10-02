@@ -1,11 +1,81 @@
 #pragma once
 
 #include "cod4_world_translation.hpp"
-#include <charconv>
+#include "cod4_obituary_events.hpp"
 #include <set>
 
 namespace cod4
 {
+    // Map fastfiles may retain the COD4 name or use MWR's DLC material name.
+    // Select only an actual native asset, retaining the recorded compass bounds.
+    template <typename Available>
+    std::optional<std::string> resolve_minimap_material(const std::string& config, Available available)
+    {
+        const auto start = config.find_first_not_of(" \t\r\n");
+        if (start == std::string::npos) return std::nullopt;
+        const bool quoted = config[start] == '"';
+        const auto begin = start + (quoted ? 1 : 0);
+        const auto end = config.find_first_of(quoted ? "\"" : " \t\r\n", begin);
+        if (end == std::string::npos || end == begin) return std::nullopt;
+        const auto name = config.substr(begin, end - begin);
+        if (!name.starts_with("compass_map_") || name == "compass_map_default") return std::nullopt;
+        if (available(name)) return config;
+        const auto alternate = name.ends_with("_dlc") ? name.substr(0, name.size() - 4) : name + "_dlc";
+        if (!available(alternate)) return std::nullopt;
+        auto result = config;
+        result.replace(begin, end - begin, alternate);
+        return result;
+    }
+
+    struct hitmarker_event
+    {
+        int time{};
+        bool juggernaut{};
+    };
+
+    inline std::vector<hitmarker_event> collect_hitmarkers(const world_track& world,
+        const std::map<int, std::string>& configstrings)
+    {
+        std::vector<hitmarker_event> events;
+        std::set<unsigned> seen;
+        for (const auto& frame : world.hud_frames)
+        {
+            for (const auto& group : frame.groups)
+            for (const auto& element : group)
+            {
+                if (element.get(0) != 6) continue;
+                const auto material = configstrings.find(2002 + element.get(64));
+                if (material == configstrings.end() || (material->second != "damage_feedback"
+                    && material->second != "damage_feedback_j")) continue;
+                const auto time = element.get(44);
+                // This shader fades FROM visible immediately on a hit. Unlike
+                // MP_PLUS, its fadeStartTime is the hit, not the dismissal.
+                // Ignore initial history and stale HUD restored by edited demos.
+                if (!time || !seen.insert(time).second || &frame == &world.hud_frames.front()
+                    || !(element.get(40) >> 24) || (element.get(36) >> 24) || !element.get(48)
+                    || static_cast<std::int64_t>(frame.time) - time < 0
+                    || static_cast<std::int64_t>(frame.time) - time > 250) continue;
+                events.push_back({static_cast<int>(time), material->second == "damage_feedback_j"});
+            }
+        }
+        std::ranges::sort(events, {}, &hitmarker_event::time);
+        return events;
+    }
+
+    inline void translate_minimap_configstrings(const std::map<int, std::string>& source,
+        std::map<int, std::string>& target)
+    {
+        // H1 SetMiniMap (0x440B10) writes 1228; CG (0x305E10) parses the
+        // material and four bounds there. North yaw is 1227 (0x305F60).
+        // COD4 uses 823/822. Map center (12 -> 8) is a separate field.
+        if (const auto map = source.find(823); map != source.end())
+        {
+            target[1228] = map->second;
+            const auto north = source.find(822);
+            target[1227] = north == source.end() ? "0" : north->second;
+        }
+    }
+
     using h1_hud_element = std::array<std::uint8_t, 192>;
 
     // A CoD4 HE_TYPE_VALUE carrying MP_PLUS is the recorded score popup.
@@ -60,75 +130,48 @@ namespace cod4
         wire_state<160> element;
     };
 
-    // In some Promod recordings the archival HUD popup is authored well after
-    // the score changes. Match a consistent run of +N popups to the recorded
-    // team-score commands; otherwise retain the HUD's original timing.
+    // Promod makes MP_PLUS opaque on the award, then starts fading it a second
+    // later. fadeStartTime is the dismissal, not the award time. Detect the
+    // visible edge, including repeated equal scores, instead of the fade-out.
     inline std::vector<score_popup_event> collect_score_popups(const world_track& world,
         const std::map<int, std::string>& configstrings)
     {
-        struct score_change { int time; char team; int delta; };
-        std::vector<score_change> changes;
-        std::array<int, 2> prior{};
-        std::array<bool, 2> seen{};
-        for (const auto& command : world.commands)
-        {
-            const auto& text = command.text;
-            if (text.size() < 3 || (text[0] != 'G' && text[0] != 'H') || text[1] != ' ') continue;
-            int score{};
-            const auto [end, error] = std::from_chars(text.data() + 2, text.data() + text.size(), score);
-            if (error != std::errc{} || end != text.data() + text.size()) continue;
-            const unsigned team = text[0] == 'H';
-            if (seen[team] && score > prior[team]) changes.push_back({command.time, text[0], score - prior[team]});
-            prior[team] = score;
-            seen[team] = true;
-        }
-
         std::vector<score_popup_event> events;
-        unsigned last_start{};
+        const auto kills = collect_obituary_events(world);
+        std::set<std::size_t> used_kills;
+        const hud_frame* previous = nullptr;
         for (const auto& frame : world.hud_frames)
-            for (const auto& element : frame.groups[1])
-            {
-                if (!is_score_popup(element, configstrings)) continue;
-                const auto start = element.get(44);
-                if (start == last_start || start > static_cast<unsigned>(frame.time + 100)
-                    || start + 100 < static_cast<unsigned>(frame.time)) continue;
-                last_start = start;
-                events.push_back({static_cast<int>(start), element});
-            }
-
-        struct candidate { std::size_t event; std::size_t change; int delay; };
-        std::vector<candidate> candidates;
-        std::map<std::pair<char, int>, unsigned> support;
-        for (std::size_t i = 0; i < events.size(); ++i)
         {
-            const auto value = std::bit_cast<float>(events[i].element.get(120));
-            if (!std::isfinite(value) || value < 1 || value > 10000 || std::trunc(value) != value) continue;
-            for (std::size_t j = 0; j < changes.size(); ++j)
+            for (std::size_t slot = 0; slot < frame.groups[1].size(); ++slot)
             {
-                const int delay = events[i].time - changes[j].time;
-                if (changes[j].delta != static_cast<int>(value) || delay < 250 || delay > 2000) continue;
-                candidates.push_back({i, j, delay});
-                ++support[{changes[j].team, (delay + 25) / 50}];
-            }
-        }
-        if (!support.empty())
-        {
-            const auto best = std::max_element(support.begin(), support.end(),
-                [](const auto& a, const auto& b) { return a.second < b.second; });
-            if (best->second >= 2)
-            {
-                std::set<std::size_t> used;
-                for (const auto& candidate : candidates)
+                const auto& element = frame.groups[1][slot];
+                if (!previous || !is_score_popup(element, configstrings) || !(element.get(36) >> 24)) continue;
+                const auto value = std::bit_cast<float>(element.get(120));
+                if (!std::isfinite(value) || value < 1 || value > 10000 || std::trunc(value) != value) continue;
+                if (slot < previous->groups[1].size())
                 {
-                    const auto& change = changes[candidate.change];
-                    if (change.team != best->first.first
-                        || std::abs(candidate.delay - best->first.second * 50) > 50
-                        || !used.insert(candidate.change).second) continue;
-                    auto& event = events[candidate.event];
-                    event.time = change.time;
-                    event.element.set(44, static_cast<unsigned>(event.time));
+                    const auto& prior = previous->groups[1][slot];
+                    if (is_score_popup(prior, configstrings) && (prior.get(36) >> 24)
+                        && prior.get(120) == element.get(120)) continue;
                 }
+                auto time = frame.time;
+                // The script HUD normally arrives one snapshot after the
+                // obituary. Match only this recorder's recent, unused kill;
+                // assists/objective awards keep their own recorded time.
+                for (std::size_t i = kills.size(); i-- > 0;)
+                {
+                    const auto& kill = kills[i];
+                    if (kill.time > frame.time) continue;
+                    if (frame.time - kill.time > 150) break;
+                    if (kill.attacker != static_cast<unsigned>(world.client_num)
+                        || kill.victim == kill.attacker || !used_kills.insert(i).second) continue;
+                    time = kill.time;
+                    break;
+                }
+                auto& event = events.emplace_back(score_popup_event{time, element});
+                event.element.set(44, static_cast<unsigned>(time));
             }
+            previous = &frame;
         }
         std::ranges::sort(events, {}, &score_popup_event::time);
         return events;

@@ -7,21 +7,33 @@ namespace cod4
     struct obituary_event
     {
         int time{};
-        unsigned entity{}, attacker{}, victim{}, means_of_death{}, source_weapon{};
+        unsigned entity{}, attacker{}, victim{}, event_parameter{}, source_weapon{};
     };
 
-    inline std::vector<obituary_event> collect_obituary_events(const world_track& world,
-        const std::vector<player_frame>& players)
+    inline unsigned native_obituary_death(unsigned source_parameter)
+    {
+        // COD4 uses 0x80 | MOD; H1 uses 200 + its own MOD ordinal.
+        // Verified native icon branches: melee, headshot, crush, fall,
+        // suicide, generic death and impact. Unnamed causes use died.
+        switch (source_parameter & 127u)
+        {
+        case 7: return 208;
+        case 8: return 209;
+        case 9: return 212;
+        case 11: return 213;
+        case 12: return 214;
+        case 13: return 215;
+        case 15: return 217;
+        default: return 200;
+        }
+    }
+
+    inline std::vector<obituary_event> collect_obituary_events(const world_track& world)
     {
         std::vector<obituary_event> events;
         std::map<unsigned, entity_state> previous;
-        std::map<unsigned, unsigned> last_weapon;
         for (const auto& frame : world.frames)
         {
-            for (const auto& [number, entity] : frame.entities)
-            {
-                if (entity.get(4) == 1 && entity.get(196)) last_weapon[number] = entity.get(196);
-            }
             for (const auto& [number, entity] : frame.entities)
             {
                 // COD4 EV_OBITUARY (66) is a one-shot event entity. An entity
@@ -30,18 +42,13 @@ namespace cod4
                 // Source netfields name +116 otherEntityNum (victim) and
                 // +120 attackerEntityNum; the H1 fields differ.
                 const auto victim = entity.get(116), attacker = entity.get(120);
-                const auto means = entity.get(156);
-                if ((attacker >= 42 && attacker != 1022) || victim >= 42 || means > 255)
+                const auto parameter = entity.get(156);
+                if ((attacker >= 42 && attacker != 1022) || victim >= 42 || parameter > 255)
                     throw std::runtime_error("Invalid COD4 obituary payload");
-                unsigned weapon = last_weapon.contains(attacker) ? last_weapon.at(attacker) : 0;
-                if (attacker == static_cast<unsigned>(world.client_num) && !players.empty())
-                {
-                    const auto next = std::upper_bound(players.begin(), players.end(), frame.time,
-                        [](int time, const player_frame& player) { return time < player.time; });
-                    const auto& player = next == players.begin() ? players.front() : *(next - 1);
-                    weapon = player.integer("weapon");
-                }
-                events.push_back({frame.time, number, attacker, victim, means, weapon});
+                // A low parameter is the kill weapon itself, not MOD or the
+                // attacker's currently held weapon (which can already change).
+                events.push_back({frame.time, number, attacker, victim, parameter,
+                    parameter < 128 ? parameter : 0});
             }
             previous = frame.entities;
         }
@@ -49,10 +56,10 @@ namespace cod4
     }
 
     inline h1_entity translate_obituary_event(const obituary_event& event, unsigned number,
-        unsigned attacker, unsigned victim, unsigned native_weapon)
+        unsigned attacker, unsigned victim, unsigned native_weapon, bool alternate = false)
     {
         if (number < 1024 || number >= 2046 || (attacker >= 42 && attacker != 2046)
-            || victim >= 42 || native_weapon >= (1u << 27))
+            || victim >= 42 || native_weapon >= (1u << 27) || event.event_parameter > 255)
             throw std::runtime_error("Invalid H1 obituary client or entity number");
         h1_entity result{};
         write_native(result, 0, static_cast<std::uint16_t>(number));
@@ -62,11 +69,27 @@ namespace cod4
         // entity has eType 20 + event and the attacker in otherEntityNum2.
         write_native(result, 10, std::uint8_t{20 + 140});
         write_native(result, 12, std::int8_t{-1});
-        // CG_Obituary reads the low byte as MOD and bits 17..26 as its
-        // weapon index. Passing the CoD4 MOD alone selected unrelated icons.
-        write_native(result, 76, event.means_of_death | ((native_weapon & 0x3ffu) << 17));
+        // CG_EntityEvent dereferences the low weapon byte before dispatching
+        // CG_Obituary. Keep the complete native weapon/attachment value here.
+        // Special deaths use eventParm >= 200 and the safe null weapon.
+        const bool special = event.event_parameter >= 128;
+        write_native(result, 6, static_cast<std::uint8_t>(!special && alternate));
+        write_native(result, 36, special ? native_obituary_death(event.event_parameter) : 0u);
+        write_native(result, 76, special ? 0u : native_weapon);
         write_native(result, 168, static_cast<std::uint16_t>(attacker));
         return result;
+    }
+
+    inline void repair_legacy_obituary(h1_entity& entity)
+    {
+        // v2 stored source eventParm in the weapon byte and shifted a native
+        // weapon index into attachment bits. Keep old files playable; fresh
+        // conversions retain the exact recorded kill weapon and attachments.
+        std::uint32_t packed{};
+        std::memcpy(&packed, entity.data() + 76, sizeof(packed));
+        const auto parameter = packed & 255u;
+        write_native(entity, 36, parameter >= 128 ? native_obituary_death(parameter) : 0u);
+        write_native(entity, 76, parameter >= 128 ? 0u : (packed >> 17) & 0x3ffu);
     }
 
     inline std::size_t obituary_events_at(const std::vector<obituary_event>& events, int time)

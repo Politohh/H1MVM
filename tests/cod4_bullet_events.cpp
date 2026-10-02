@@ -45,6 +45,13 @@ int main(int argc, char** argv)
             world.frames = {{1000,1,{{312,source}},{}}};
             const auto hit = cod4::collect_bullet_events(world).at(0);
             const auto data = cod4::translate_bullet_event(hit,1500,17,true);
+            const auto remapped = cod4::translate_bullet_event(hit,1500,17,true,8);
+            check(native<unsigned short>(remapped,2) == 0 && native<unsigned short>(remapped,4) == 2047
+                && remapped[12] == 6, "Recorder impact identity was not remapped");
+            auto remote = hit; remote.shooter = 0; remote.target = 8; remote.client = 0;
+            const auto remote_data = cod4::translate_bullet_event(remote,1500,17,true,8);
+            check(native<unsigned short>(remote_data,2) == 8 && native<unsigned short>(remote_data,4) == 0
+                && remote_data[12] == 8, "Remote shot was attributed to the first-person recorder");
             check(data[10] == (event == 41 ? 97 : event == 42 ? 100 : 101)
                 && native<unsigned short>(data,2) == 8 && native<unsigned short>(data,4) == 2047
                 && data[6] == 1 && data[11] == 7 && data[12] == 6 && data[28] == 1
