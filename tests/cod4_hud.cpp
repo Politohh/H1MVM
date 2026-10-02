@@ -17,6 +17,38 @@ int main(int argc, char** argv)
         if (recorded_client == world.frames.front().clients.end())
             throw std::runtime_error("Recorded Strike client name unavailable");
         const auto native_client = cod4::translate_client(recorded_client->second, 1, {});
+        for (unsigned team : {0u, 1u, 2u, 3u})
+        {
+            const auto stored = cod4::native_team_selection(team, -1);
+            if (static_cast<std::int64_t>(stored) - 1 != team)
+                throw std::runtime_error("Native integer omnvar lost recorded team enum");
+        }
+        for (unsigned team : {0u, 1u, 2u, 3u})
+        {
+            auto client = recorded_client->second;
+            client.set(4, team);
+            const auto native = cod4::translate_client(client, 1, {});
+            unsigned native_team{}, agent_team_slot{}, costume{};
+            std::memcpy(&native_team, native.data() + 8, 4);
+            std::memcpy(&agent_team_slot, native.data() + 76, 4);
+            std::memcpy(&costume, native.data() + 96, 4);
+            if (native_team != team || agent_team_slot != 0 || costume != 0)
+                throw std::runtime_error("Team membership corrupted native character/costume data");
+        }
+        const std::array<std::string_view, 7> offhand_names{"", "ak47_mp", "frag_grenade_mp",
+            "flash_grenade_mp", "smoke_grenade_mp", "concussion_grenade_mp", "c4_mp"};
+        const auto name = [&](unsigned weapon) { return offhand_names.at(weapon); };
+        if (cod4::select_hud_offhands(std::vector<unsigned>{1, 2, 3}, 1, name) != std::pair{2u, 3u}
+            || cod4::select_hud_offhands(std::vector<unsigned>{1, 4, 2}, 0, name) != std::pair{2u, 4u}
+            || cod4::select_hud_offhands(std::vector<unsigned>{5, 2, 1}, 0, name) != std::pair{2u, 5u}
+            || cod4::select_hud_offhands(std::vector<unsigned>{1, 6}, 1, name) != std::pair{0u, 0u}
+            || cod4::select_hud_offhands(std::vector<unsigned>{2, 3, 4}, 0, name) != std::pair{2u, 4u})
+            throw std::runtime_error("Native HUD offhand selection lost recorded inventory/secondary class");
+        if (cod4::native_faction(cod4::character_family::usmc_desert) != "marines"
+            || cod4::native_faction(cod4::character_family::arab_desert) != "opfor"
+            || cod4::native_faction(cod4::character_family::sas_woodland) != "sas"
+            || cod4::native_faction(cod4::character_family::spetsnaz_urban) != "russian")
+            throw std::runtime_error("Recorded character faction mismatch");
         if (std::string_view(reinterpret_cast<const char*>(native_client.data() + 42)) != "POLITO")
             throw std::runtime_error("Recorded killer name was lost in H1 client state");
         if (players.size() != 595 || world.hud_frames.size() != players.size())

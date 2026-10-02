@@ -82,7 +82,11 @@ namespace cod4
 
     inline bool grenade_weapon_matches(unsigned event, std::string_view weapon)
     {
-        if (event == 45) return weapon == "frag_grenade_mp" || weapon == "frag_grenade_short_mp";
+        // EV_GRENADE_EXPLODE also carries planted explosives. Native MWR C4
+        // and claymore definitions use impactType 9, just like frag grenades;
+        // retain their own weapon identity through the native impact-FX path.
+        if (event == 45) return weapon == "frag_grenade_mp" || weapon == "frag_grenade_short_mp"
+            || weapon == "claymore_mp" || weapon == "c4_mp";
         if (event == 48) return weapon == "flash_grenade_mp";
         if (event == 49) return weapon == "concussion_grenade_mp" || weapon == "flash_grenade_mp"
             || weapon == "smoke_grenade_mp";

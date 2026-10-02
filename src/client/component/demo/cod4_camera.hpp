@@ -2,6 +2,7 @@
 #include "theater_camera.hpp"
 #include <string>
 #include <map>
+#include <set>
 
 namespace cod4_camera
 {
@@ -18,6 +19,9 @@ namespace cod4_camera
     void set_model_bindings(const std::map<unsigned, std::string>& bindings,
         const std::map<unsigned, std::string>& animations = {});
     void clear_model_bindings();
+    void validate_model_budget(const std::set<std::string>& models);
+    // Register the recorded vehicle slot before native helicopter pose evaluation.
+    void prepare_helicopter_vehicle(const std::uint8_t* entity_state);
     // Own the client's snapshot clock while replaying a COD4 recording.
     bool prepare_client_frame();
     void finish_client_frame();

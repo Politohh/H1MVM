@@ -32,6 +32,7 @@ namespace cod4
         std::map<int, std::string> configstrings;
         std::vector<camera_frame> frames;
         std::size_t packets{}, archives{}, replaced_frames{};
+        unsigned protocol{}; // Zero denotes the original headerless COD4 format.
 
         camera_frame sample(double time) const
         {
@@ -65,6 +66,7 @@ namespace cod4
         {
             std::span<const std::uint8_t> bytes;
             std::size_t pos{}, bit{};
+            unsigned protocol{};
             void require(std::size_t n) const
             {
                 if (pos > bytes.size() || n > bytes.size() - pos)
@@ -144,6 +146,39 @@ namespace cod4
             return out;
         }
 
+        inline unsigned read_protocol_header(reader& file)
+        {
+            // CoD4x CL_ReadDemoProtocolInfo: protocol, legacy EOF, reserved u64.
+            // This is a file header, never an in-stream packet or camera record.
+            if (file.pos != 1) throw std::runtime_error("Misplaced COD4 protocol header");
+            const auto protocol = file.get<std::uint32_t>();
+            const auto legacy_end = file.get<std::int32_t>();
+            const auto reserved = file.get<std::uint64_t>();
+            if (legacy_end != -1 || reserved) throw std::runtime_error("Invalid CoD4x protocol header");
+            if (protocol != 21) throw std::runtime_error("Unsupported CoD4x protocol " + std::to_string(protocol));
+            file.protocol = protocol;
+            return protocol;
+        }
+
+        template <typename Consume>
+        void read_configstrings(reader& msg, unsigned protocol, Consume consume)
+        {
+            // CoD4x uses 32-bit count/indices and a second configstring bank.
+            const auto count = protocol ? msg.get<std::uint32_t>() : msg.get<std::uint16_t>();
+            const unsigned limit = protocol ? 8192 : 4096;
+            if (count > limit) throw std::runtime_error("Unsupported COD4 configstring layout");
+            int index = -1;
+            for (unsigned i = 0; i < count; ++i)
+            {
+                const auto next = protocol ? msg.get<std::int32_t>()
+                    : msg.bits(1) ? index + 1 : static_cast<int>(msg.bits(12));
+                if (next <= index || next < 0 || static_cast<unsigned>(next) >= limit)
+                    throw std::runtime_error("Invalid COD4 configstring index");
+                index = next;
+                consume(index, msg.string());
+            }
+        }
+
         inline void read_gamestate(std::span<const std::uint8_t> packet, camera_track& track)
         {
             if (packet.size() < 5) throw std::runtime_error("Missing COD4 gamestate");
@@ -152,17 +187,10 @@ namespace cod4
             if (msg.get<std::uint8_t>() != 1) throw std::runtime_error("Expected COD4 gamestate");
             msg.get<std::int32_t>(); // server command sequence
             if (msg.get<std::uint8_t>() != 2) throw std::runtime_error("Expected COD4 configstrings");
-            const auto count = msg.get<std::uint16_t>();
-            if (count > 4096) throw std::runtime_error("Unsupported COD4 configstring layout");
-            int index = -1;
-            for (unsigned i = 0; i < count; ++i)
+            read_configstrings(msg, track.protocol, [&](int index, const std::string& value)
             {
-                const int next = msg.bits(1) ? index + 1 : static_cast<int>(msg.bits(12));
-                if (next <= index || next >= 4096) throw std::runtime_error("Invalid COD4 configstring index");
-                index = next;
-                const auto value = msg.string();
                 track.configstrings.emplace(index, value);
-                if (index != 0) continue;
+                if (index != 0) return;
                 constexpr std::string_view key = "\\mapname\\";
                 const auto begin = value.find(key);
                 if (begin == std::string::npos) throw std::runtime_error("COD4 mapname missing");
@@ -170,7 +198,7 @@ namespace cod4
                 if (map.empty() || map.size() > 64 || map.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != std::string::npos)
                     throw std::runtime_error("Invalid COD4 mapname");
                 track.map = map;
-            }
+            });
             if (track.map.empty()) throw std::runtime_error("COD4 serverinfo missing");
         }
     }
@@ -183,6 +211,7 @@ namespace cod4
         while (file.pos < bytes.size())
         {
             const auto type = file.get<std::uint8_t>();
+            if (type == 2) { track.protocol = detail::read_protocol_header(file); continue; }
             if (type == 0)
             {
                 file.get<std::int32_t>(); // message sequence

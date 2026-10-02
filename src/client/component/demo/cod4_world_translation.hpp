@@ -156,7 +156,7 @@ namespace cod4
     }
 
     inline h1_client translate_client(const client_state& source, std::uint16_t body,
-        const std::array<std::uint16_t, 6>& attachments)
+        const std::array<std::uint16_t, 6>& attachments, std::string_view recorded_name = {})
     {
         if (source.get(0) >= 42 || !body || body >= 1024)
             throw std::runtime_error("Invalid H1 client model translation");
@@ -170,7 +170,15 @@ namespace cod4
         // CG_UpdateClientInfo copies 32 bytes from native clientState +42
         // into bgs.clientinfo.name. The CoD4 name is 16 bytes at +60.
         std::memcpy(result.data() + 42, source.words.data() + 15, 16);
-        write_native(result, 96, source.get(4));
+        if (!recorded_name.empty())
+        {
+            std::memset(result.data() + 42, 0, 32);
+            std::memcpy(result.data() + 42, recorded_name.data(), std::min(recorded_name.size(), std::size_t{31}));
+        }
+        // CG's PLAYER path 0x330839 -> 0x32F1B0 -> 0x32E880 reads
+        // clientState.team at +8, maintaining characterInfo +12/+16.
+        // The adjacent 0x32E770 path uses AGENT state (+76), not clients.
+        write_native(result, 8, source.get(4));
         return result;
     }
 }

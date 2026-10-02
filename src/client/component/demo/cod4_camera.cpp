@@ -14,8 +14,11 @@
 #include "cod4_gun_events.hpp"
 #include "cod4_actor_translation.hpp"
 #include "cod4_car_fx.hpp"
+#include "cod4_airstrike.hpp"
+#include "cod4_helicopter.hpp"
 #include "cod4_car_motion.hpp"
 #include "cod4_model_metadata.hpp"
+#include "cod4_transient_budget.hpp"
 #include "cod4_model_translation.hpp"
 #include "demo_playback.hpp"
 #include "demo_game.hpp"
@@ -57,6 +60,15 @@ namespace cod4_camera
         std::map<unsigned, int> car_effect_times;
         unsigned car_effect_index{};
         std::string car_effect_name;
+        cod4::airstrike_track airstrikes;
+        cod4::helicopter_track helicopters;
+        std::map<unsigned, unsigned> helicopter_definitions;
+        std::map<std::string, unsigned> helicopter_sounds;
+        bool helicopters_resolved{};
+        cod4::jet_fx_parameters jet_parameters;
+        std::vector<cod4::h1_entity> airstrike_entities;
+        std::map<unsigned, int> airstrike_times;
+        bool airstrikes_resolved{};
         std::vector<cod4::car_animation> car_animations;
         int car_animation_duration{};
         std::map<unsigned, std::string> animation_bindings;
@@ -86,7 +98,10 @@ namespace cod4_camera
         std::array<unsigned, 2> hitmarker_values{};
         bool hitmarkers_resolved{};
         bool minimap_resolved{};
+        std::optional<unsigned> team_selection_omnvar;
+        std::int32_t team_selection_min{};
         bool converted_bindings{};
+        std::atomic_bool replay_asset_pool{};
         bool parts_resolved{};
         utils::hook::detour get_configstring_hook;
         std::map<unsigned, unsigned> weapons;
@@ -96,6 +111,7 @@ namespace cod4_camera
         std::vector<std::pair<unsigned, unsigned>> body_indices;
         std::vector<cod4::ammo_slots> source_ammo;
         std::set<std::string> requested_models;
+        std::set<std::string> acquired_models;
         status state;
         using clock = std::chrono::steady_clock;
         clock::time_point last_tick, load_started;
@@ -114,6 +130,20 @@ namespace cod4_camera
         bool shocks_resolved{};
         void save_initial_gamestate(const std::string& map);
         std::ofstream lifecycle;
+
+        std::uint8_t reserve_view_weapon_pool(const char* name, unsigned native_count)
+        {
+            // Replace only the view-weapon reservation call at 0x7445D. The
+            // native allocator still owns slot links, virtual reservations,
+            // on-demand page commits, and teardown. No live pool is resized.
+            const auto used = *reinterpret_cast<const unsigned*>(0x14D51A4_b);
+            const auto count = cod4::view_weapon_slot_budget(replay_asset_pool.load(), native_count, used);
+            const auto category = utils::hook::invoke<std::uint8_t>(0x74100_b, name, count);
+            if (replay_asset_pool.load())
+                console::info("COD4 replay: native transient pool %s slots=%u (normal=%u, preceding=%u)\n",
+                    name, count, native_count, used);
+            return category;
+        }
 
         bool minimap_material_available(const std::string& name)
         {
@@ -147,7 +177,6 @@ namespace cod4_camera
         {
             if (requested_models.insert(name).second)
             {
-                utils::hook::invoke<void>(0x75720_b, name.c_str());
                 lifecycle << "request model " << name << std::endl;
             }
         }
@@ -251,7 +280,9 @@ namespace cod4_camera
             for (const auto& frame : world.frames)
             {
                 for (const auto& [number, entity] : frame.entities)
-                    if (entity.get(4) == 6 && entity.get(136) && !cod4::script_model_is_brush(entity)
+                    if (entity.get(4) == 12) source_model(entity.get(216));
+                for (const auto& [number, entity] : frame.entities)
+                    if ((entity.get(4) == 6 || entity.get(4) == 13) && entity.get(136) && !cod4::script_model_is_brush(entity)
                         && !source_model(entity.get(136), true))
                         omitted_prop_entities[entity.get(136)].insert(number);
                 for (const auto& [number, client] : frame.clients)
@@ -413,6 +444,62 @@ namespace cod4_camera
         void resolve_minimap()
         {
             if (minimap_resolved) return;
+            team_selection_omnvar.reset();
+            const auto globals = utils::hook::invoke<unsigned>(0x5A47B0_b);
+            const auto per_player = utils::hook::invoke<unsigned>(0x5A4790_b);
+            for (unsigned i = globals; i < globals + per_player; ++i)
+            {
+                const auto* def = static_cast<const std::uint8_t*>(game::Omnvar_GetDef(i));
+                const auto* name = *reinterpret_cast<const char* const*>(def);
+                if (!name || std::string_view(name) != "ui_team_selected") continue;
+                if (!(def[8] & 8) || *reinterpret_cast<const unsigned*>(def + 12) != 3)
+                    throw std::runtime_error("Native HUD team selection is not a player integer");
+                team_selection_omnvar = i - globals;
+                team_selection_min = *reinterpret_cast<const std::int32_t*>(def + 0x20);
+                break;
+            }
+            if (!team_selection_omnvar)
+                throw std::runtime_error("Native HUD team selection omnvar unavailable");
+            // Native _teams::initscoreboard normally supplies these dvars.
+            // Client-only replay has no GSC server. Resolve its faction rows
+            // from recorded characters, then archive the dvars in systeminfo:
+            // CL_SystemInfoChanged (0x342ED0) applies configstring 1 on load.
+            std::map<unsigned, std::string_view> factions;
+            for (const auto& snapshot : world.frames)
+                for (const auto& [number, client] : snapshot.clients)
+                {
+                    const auto team = client.get(4);
+                    if ((team != 1 && team != 2) || factions.contains(team)) continue;
+                    const auto body = track.configstrings.find(830 + client.get(8));
+                    if (body == track.configstrings.end()) continue;
+                    if (const auto* identity = cod4::source_character_for(body->second))
+                        factions.emplace(team, cod4::native_faction(identity->family));
+                }
+            const auto* table = game::DB_FindXAssetHeader(game::ASSET_TYPE_STRINGTABLE,
+                "mp/factiontable.csv", false).stringTable;
+            if (table && table->columnCount > 16)
+                for (const auto& [team, faction] : factions)
+                    for (int row = 0; row < table->rowCount; ++row)
+                    {
+                        const auto column = [&](int col) { return game::StringTable_GetColumnValueForRow(
+                            const_cast<game::StringTable*>(table), row, col); };
+                        if (faction != column(0)) continue;
+                        const std::string icon = column(5);
+                        if (!minimap_material_available(icon)) break;
+                        const auto set = [&](const std::string& name, const std::string& value)
+                        {
+                            initial_configs[1] += "\\" + name + "\\" + value;
+                            game::Dvar_SetFromStringByNameFromSource(name.c_str(), value.c_str(), game::DVAR_SOURCE_INTERNAL);
+                        };
+                        const std::string side = team == 1 ? "Axis" : "Allies";
+                        set("g_TeamName_" + side, column(2));
+                        set("g_TeamIcon_" + side, icon);
+                        set("g_TeamIcon_My" + side, icon);
+                        set("g_TeamIcon_Enemy" + side, icon);
+                        set("g_ScoresColor_" + side, std::format("{} {} {}", column(14), column(15), column(16)));
+                        lifecycle << "native HUD faction team=" << team << " faction=" << faction << " icon=" << icon << std::endl;
+                        break;
+                    }
             if (const auto config = initial_configs.find(1228); config != initial_configs.end() && !config->second.empty())
             {
                 const auto resolved = cod4::resolve_minimap_material(config->second, minimap_material_available);
@@ -420,8 +507,8 @@ namespace cod4_camera
                 lifecycle << "native minimap " << config->second << " -> " << *resolved << std::endl;
                 config->second = *resolved;
                 utils::hook::invoke<void>(0x342F90_b, 1228, resolved->c_str());
-                save_initial_gamestate(track.map);
             }
+            save_initial_gamestate(track.map);
             minimap_resolved = true;
         }
 
@@ -432,8 +519,8 @@ namespace cod4_camera
             {
                 for (const auto& [number, entity] : frame.entities)
                 {
-                    const auto index = entity.get(136);
-                    if (entity.get(4) != 6 || !index || cod4::script_model_is_brush(entity) || source_parts.contains(index)) continue;
+                    const auto index = entity.get(entity.get(4) == 12 ? 216 : 136);
+                    if ((entity.get(4) != 6 && entity.get(4) != 13 && entity.get(4) != 12) || !index || cod4::script_model_is_brush(entity) || source_parts.contains(index)) continue;
                     if (!source_models.at(index)) continue; // Omitted props have no native skeleton.
                     const auto& name = track.configstrings.at(830 + index);
                     const auto bones = cod4::source_bones(name);
@@ -519,8 +606,9 @@ namespace cod4_camera
             }
             // Only the recorded camera player's inventory needs view models.
             // Remote actors and pickups use world models. H1 reserves six
-            // simultaneous transient view-weapon slots; requesting every 5v5
-            // participant's view kit exhausts that native allocator.
+            // simultaneous transient view-weapon slots in normal matches. Demo
+            // bootstrap reserves a bounded larger pool for inventory changes
+            // across the recording; remote actors still need no view assets.
             const auto view_weapons = recorded_weapons;
             for (const auto& movement : track.frames)
             {
@@ -549,7 +637,8 @@ namespace cod4_camera
             {
                 if (event.weapon >= names.size() || !cod4::grenade_weapon_matches(event.source_event, names[event.weapon]))
                     throw std::runtime_error("Recorded grenade explosion has no verified native weapon mapping: event "
-                        + std::to_string(event.source_event) + ", weapon " + std::to_string(event.weapon));
+                        + std::to_string(event.source_event) + ", weapon " + std::to_string(event.weapon)
+                        + (event.weapon < names.size() ? " (" + names[event.weapon] + ")" : ""));
                 recorded_weapons.insert(event.weapon);
             }
             for (const auto& event : bullet_track) recorded_weapons.insert(event.weapon);
@@ -593,7 +682,6 @@ namespace cod4_camera
                         }
                         if (!model.empty() && requested_models.insert(model).second)
                         {
-                            utils::hook::invoke<void>(0x75720_b, model.c_str());
                             lifecycle << "request kit model " << model << std::endl;
                         }
                     }
@@ -628,7 +716,6 @@ namespace cod4_camera
                     const std::string model_name = model->name;
                     if (requested_models.insert(model_name).second)
                     {
-                        utils::hook::invoke<void>(0x75720_b, model_name.c_str());
                         lifecycle << "request model " << model_name << std::endl;
                     }
                 };
@@ -715,7 +802,7 @@ namespace cod4_camera
                 if (event.source_event == 45)
                 {
                     if (def->impactType != game::IMPACT_TYPE_GRENADE_EXPLODE)
-                        throw std::runtime_error("Native frag has an unsupported impact type: " + std::string(def->szInternalName));
+                        throw std::runtime_error("Native explosive has an unsupported impact type: " + std::string(def->szInternalName));
                     // CG_GetImpactEffect (0x101D00), impact type 9 -> row 13
                     // (0x101F83); table getter 0x316450 is shared with the native
                     // event handler. It is ready after cgame initialization,
@@ -752,6 +839,98 @@ namespace cod4_camera
                 << " oneshot_elements=" << effect->elemDefCountOneShot << std::endl;
         }
 
+        void register_helicopter_definition(unsigned index, std::string_view name)
+        {
+            const auto lookup = [](unsigned slot) -> std::string_view
+            {
+                const auto* def = reinterpret_cast<game::VehicleDef**>(0xCABA310_b)[slot];
+                return def && def->type == game::VEH_HELICOPTER && def->name ? def->name : "";
+            };
+            if (cod4::ensure_helicopter_definition(index, name, lookup, [](std::string_view expected, unsigned slot)
+                {
+                    const std::string asset(expected);
+                    if (!game::DB_XAssetExists(game::ASSET_TYPE_VEHICLE, asset.c_str())
+                        || game::DB_IsXAssetDefault(game::ASSET_TYPE_VEHICLE, asset.c_str()))
+                        throw std::runtime_error("Native MWR helicopter definition unavailable: " + asset);
+                    const auto* def = game::DB_FindXAssetHeader(game::ASSET_TYPE_VEHICLE, asset.c_str(), false).vehDef;
+                    if (!def || def->type != game::VEH_HELICOPTER)
+                        throw std::runtime_error("Invalid native helicopter vehicle type: " + asset);
+                    // Native CG vehicle configstring update: load this definition
+                    // and populate cg_vehicleDefs[slot]. Asset residency alone
+                    // does not populate the client registry during replay bootstrap.
+                    utils::hook::invoke<void>(0x5FD1F0_b, asset.c_str(), slot);
+                }))
+                console::info("COD4 replay: registered native helicopter %s in vehicle slot %u\n",
+                    std::string(name).c_str(), index);
+        }
+
+        void resolve_helicopters()
+        {
+            if (helicopters_resolved) return;
+            for (const auto& [model, name] : helicopters.definitions)
+            {
+                unsigned index = 0;
+                for (unsigned i = 1; i < 64; ++i)
+                    if (name == get_configstring(2232 + i)) { index = i; break; }
+                if (!index || !game::DB_XAssetExists(game::ASSET_TYPE_VEHICLE, name.c_str())
+                    || game::DB_IsXAssetDefault(game::ASSET_TYPE_VEHICLE, name.c_str()))
+                    throw std::runtime_error("Native MWR helicopter definition unavailable: " + name);
+                const auto* def = game::DB_FindXAssetHeader(game::ASSET_TYPE_VEHICLE, name.c_str(), false).vehDef;
+                if (!def || def->type != game::VEH_HELICOPTER)
+                    throw std::runtime_error("Invalid native helicopter vehicle type: " + name);
+                register_helicopter_definition(index, name);
+                helicopter_definitions[model] = index;
+                lifecycle << "native helicopter " << name << " definition=" << index
+                    << " source_model=" << model << " native_model=" << source_models.at(model) << std::endl;
+            }
+            for (const auto& name : helicopters.sounds)
+            {
+                unsigned index = 0;
+                // CG_PlayLoopSound (0x31D2D0) resolves IDs <512 through
+                // configstring 2328+ID; these are native looping sound aliases.
+                for (unsigned i = 1; i < 512; ++i)
+                    if (name == get_configstring(2328 + i)) { index = i; break; }
+                if (!index) throw std::runtime_error("Native MWR helicopter loop sound unavailable: " + name);
+                helicopter_sounds[name] = index;
+                lifecycle << "native helicopter loop " << name << " index=" << index << std::endl;
+            }
+            helicopters_resolved = true;
+        }
+
+        void resolve_airstrikes()
+        {
+            if (airstrikes_resolved) return;
+            for (const auto& [index, name] : airstrikes.effects)
+            {
+                if (!game::DB_XAssetExists(game::ASSET_TYPE_FX, name.c_str())
+                    || game::DB_IsXAssetDefault(game::ASSET_TYPE_FX, name.c_str()))
+                    throw std::runtime_error("Native MWR airstrike FX unavailable: " + name);
+                lifecycle << "native airstrike FX " << name << " index=" << index << std::endl;
+            }
+            for (const auto& [key, fx] : airstrikes.plane_tags)
+            {
+                const auto model_index = key.first;
+                if (!model_index || !source_models.at(model_index))
+                    throw std::runtime_error("Native MWR strike plane unavailable");
+                const auto effect = cod4::jet_effect(fx);
+                if (!effect) continue;
+                const auto* name = get_configstring(1240 + source_models.at(model_index));
+                const auto* model = game::DB_FindXAssetHeader(game::ASSET_TYPE_XMODEL, name, false).model;
+                if (!model || !model->boneNames) throw std::runtime_error("Native strike plane skeleton unavailable");
+                unsigned bone = 0;
+                for (; bone < model->numBones; ++bone)
+                {
+                    const auto* tag = game::SL_ConvertToString(model->boneNames[bone]);
+                    if (tag && fx.tag == tag) break;
+                }
+                if (bone >= model->numBones || bone >= 254)
+                    throw std::runtime_error("Native strike plane FX tag unavailable: " + fx.tag);
+                jet_parameters[key] = effect | (bone << 9);
+                lifecycle << "native jet tag " << name << ' ' << fx.tag << " bone=" << bone << std::endl;
+            }
+            airstrikes_resolved = true;
+        }
+
         bool resolve_body_assets()
         {
             if (!body_indices.empty()) return true;
@@ -780,18 +959,33 @@ namespace cod4_camera
                 std::memcpy(&torso, data + 0x6EEA0 + i * 2, 2);
                 codec.legs.push_back(legs); codec.torso.push_back(torso);
             }
+            std::set<std::tuple<unsigned, unsigned, unsigned>> checked_actor_states;
+            std::set<std::string> animation_failures;
             for (const auto& snapshot : world.frames)
                 for (const auto& [number, entity] : snapshot.entities)
                 {
                     if (entity.get(4) != 1 && entity.get(4) != 2) continue;
                     const auto key = std::tuple{entity.get(204), entity.get(208), entity.get(196)};
-                    if (actor_animations.contains(key)) continue;
+                    if (!checked_actor_states.insert(key).second) continue;
                     const auto& weapon = source_weapon_names.at(entity.get(196));
-                    const auto packed = cod4::actor_animation(entity.get(204), entity.get(208), weapon, catalog, codec);
-                    actor_animations.emplace(key, packed);
-                    lifecycle << "native actor animation source_legs=" << entity.get(204)
-                        << " source_torso=" << entity.get(208) << " weapon=" << weapon << " packed=" << packed << std::endl;
+                    try
+                    {
+                        const auto packed = cod4::actor_animation(entity.get(204), entity.get(208), weapon, catalog, codec);
+                        actor_animations.emplace(key, packed);
+                        lifecycle << "native actor animation source_legs=" << entity.get(204)
+                            << " source_torso=" << entity.get(208) << " weapon=" << weapon << " packed=" << packed << std::endl;
+                    }
+                    catch (const std::runtime_error& error)
+                    {
+                        animation_failures.insert(error.what());
+                    }
                 }
+            if (!animation_failures.empty())
+            {
+                for (const auto& failure : animation_failures) lifecycle << "animation audit: " << failure << std::endl;
+                throw std::runtime_error(std::format("{} actor animation mapping failure(s); see demos/cod4-replay-last.log. First: {}",
+                    animation_failures.size(), *animation_failures.begin()));
+            }
             lifecycle << "remote actors ready animation_states=" << actor_animations.size()
                 << " gun_actions=" << actor_events.actions << std::endl;
             std::vector<std::pair<unsigned, unsigned>> indices;
@@ -857,6 +1051,7 @@ namespace cod4_camera
 
         void bootstrap_client(const std::string& map)
         {
+            replay_asset_pool = true;
             bootstrapping = true;
             const auto clear_bootstrap = gsl::finally([] { bootstrapping = false; });
             if (game::VirtualLobby_Loaded()) utils::hook::invoke<void>(0x13C9C0_b, 1);
@@ -940,6 +1135,15 @@ namespace cod4_camera
                 }
             }
             const auto& player = player_at(time);
+            if (team_selection_omnvar)
+            {
+                const auto& clients = world.sample(time).clients;
+                const auto client = clients.find(static_cast<unsigned>(world.client_num));
+                const unsigned team = client == clients.end() ? 0u : client->second.get(4);
+                const auto offset = 0x4540 + *team_selection_omnvar * 8;
+                put(offset, static_cast<unsigned>(time));
+                put(offset + 4, cod4::native_team_selection(team, team_selection_min));
+            }
             // The native HUD checks live player stats before presenting weapon
             // and match widgets. Preserve the recorded health/death state.
             for (unsigned i = 0; i < 4; ++i) put(0x15C + i * 4, player.stats[i]);
@@ -1010,6 +1214,14 @@ namespace cod4_camera
                     add_inventory(source);
             }
             std::set<unsigned> equipped;
+            const auto [lethal, tactical] = cod4::select_hud_offhands(inventory,
+                player.integer("offhandSecondary"), [](unsigned source) -> std::string_view
+                { return source_weapon_names.at(source); });
+            static_assert(offsetof(game::mp::playerState_s, weapCommon) == 904);
+            static_assert(offsetof(game::mp::PlayerWeaponCommonState, lethalWeapon) == 4);
+            static_assert(offsetof(game::mp::PlayerWeaponCommonState, tacticalWeapon) == 8);
+            put(908, lethal ? weapons.at(lethal) : 0u);
+            put(912, tactical ? weapons.at(tactical) : 0u);
             std::map<std::uint64_t, int> reserves, clips;
             for (const auto source : inventory)
             {
@@ -1057,13 +1269,12 @@ namespace cod4_camera
             const auto& recorded = world.sample(time);
             const auto recorded_clients = cod4::clients_with_corpse_identities(world, time);
             cod4::h1_entity from{};
-            utils::hook::invoke<void>(0x4EC490_b, from.data(), -1);
-            // This gamestate has no entity baselines: the client starts with
-            // surface/target 0. MSG_InitEntityState supplies flesh (7) and
-            // ENTITYNUM_WORLD (2046); omitting either as unchanged would
-            // lose flesh or turn an unbound impact into a hit on player 0.
-            from[11] = 0;
-            cod4::write_native(from, 4, std::uint16_t{0});
+            // The gamestate contains no entity baselines: CL decodes from
+            // zeroed records. MSG_InitEntityState (0x4EC490) instead supplies
+            // position type 3, rotation type 1, flesh and ENTITYNUM_WORLD.
+            // Using those defaults here omits equal values from the wire,
+            // leaving linear-stop jets with stationary type 0 in playback.
+            // Protect only the zero origin as required by the native writer.
             const std::array<float, 3> zero{};
             utils::hook::invoke<void>(0x5B0CF0_b, from.data() + 96, zero.data());
             cod4::entity_snapshot snapshot_entities;
@@ -1105,12 +1316,34 @@ namespace cod4_camera
                     write_entity(native);
                     continue;
                 }
+                if (entity.get(4) == 12)
+                {
+                    const auto index = entity.get(216);
+                    const auto& vehicle_frame = helicopters.at(time);
+                    const auto sound = vehicle_frame.loops.find(number);
+                    const auto parts = source_parts.find(index);
+                    write_entity(cod4::translate_helicopter(cod4::sample_helicopter(world, number, time),
+                        source_models.at(index), helicopter_definitions.at(index), vehicle_frame.slots.at(number),
+                        sound == vehicle_frame.loops.end() ? 0 : helicopter_sounds.at(sound->second),
+                        parts == source_parts.end() ? nullptr : &parts->second));
+                    continue;
+                }
+                if (entity.get(4) == 13)
+                {
+                    const auto index = entity.get(136);
+                    const auto parts = source_parts.find(index);
+                    write_entity(cod4::translate_plane(entity, source_models.at(index), jet_parameters,
+                        parts == source_parts.end() ? nullptr : &parts->second));
+                    continue;
+                }
                 if (entity.get(4) != 6 || !entity.get(136) || cod4::script_model_is_brush(entity)) continue;
                 const auto index = entity.get(136);
                 if (!source_models.at(index)) continue; // Never serialize a default or invented replacement.
                 const auto parts = source_parts.find(index);
                 auto native = cod4::translate_script_model(entity, source_models.at(index),
                     parts == source_parts.end() ? nullptr : &parts->second);
+                if (track.configstrings.at(830 + index) == "projectile_cbu97_clusterbomb")
+                    cod4::preserve_clusterbomb_trajectory(native, entity, time);
                 const auto animation = std::find_if(car_animations.rbegin(), car_animations.rend(), [&](const auto& car)
                 { return car.entity == number && car.model == index && car.time <= time; });
                 if (animation != car_animations.rend()) cod4::apply_car_animation(native, *animation, car_animation_duration);
@@ -1124,6 +1357,8 @@ namespace cod4_camera
                     write_entity(grenade_entities.at(i));
                 for (std::size_t i = 0, count = cod4::car_fx_at(car_effects.events, time); i < count; ++i)
                     write_entity(car_effect_entities.at(i));
+                for (std::size_t i = 0, count = cod4::car_fx_at(airstrikes.bursts, time); i < count; ++i)
+                    write_entity(airstrike_entities.at(i));
                 for (std::size_t i = 0, count = cod4::bullet_events_at(bullet_track, time); i < count; ++i)
                     write_entity(bullet_entities.at(i));
                 for (std::size_t i = 0, count = cod4::obituary_events_at(obituary_track, time); i < count; ++i)
@@ -1157,7 +1392,10 @@ namespace cod4_camera
             {
                 const auto& models = character_models.at(client_model_key(client));
                 if (!models.body) continue; // Spectators have no recorded character model.
-                auto native = cod4::translate_client(client, models.body, models.attachments);
+                const auto& names = world.sample(time).client_names;
+                const auto name = names.find(number);
+                auto native = cod4::translate_client(client, models.body, models.attachments,
+                    name == names.end() ? std::string_view{} : std::string_view(name->second));
                 const auto destination = remap_client(number);
                 cod4::write_native(native, 0, static_cast<std::uint8_t>(destination));
                 snapshot_clients.emplace(destination, native);
@@ -1193,8 +1431,10 @@ namespace cod4_camera
         void stop_locked(const std::string& message)
         {
             state.active = state.loading = false;
-            for (const auto& name : requested_models)
+            replay_asset_pool = false;
+            for (const auto& name : acquired_models)
                 utils::hook::invoke<void>(0x76850_b, name.c_str());
+            acquired_models.clear();
             requested_models.clear();
             model_bindings.clear();
             animation_bindings.clear();
@@ -1239,6 +1479,7 @@ namespace cod4_camera
         {
             grenade_entities.clear(); grenade_times.clear();
             car_effect_entities.clear(); car_effect_times.clear();
+            airstrike_entities.clear(); airstrike_times.clear();
             bullet_entities.clear(); bullet_times.clear();
             obituary_entities.clear();
             unsigned fx_entity_number = map_models.empty() ? 1024u : map_models.rbegin()->first + 1;
@@ -1261,6 +1502,13 @@ namespace cod4_camera
                     << " index=" << car_effect_index << " origin=" << event.origin[0] << ',' << event.origin[1]
                     << ',' << event.origin[2] << " angles=" << event.angles[0] << ',' << event.angles[1]
                     << ',' << event.angles[2] << std::endl;
+            }
+            for (const auto& event : airstrikes.bursts)
+            {
+                airstrike_entities.push_back(cod4::translate_car_fx(event, fx_entity_number, cod4::airstrike_burst_index));
+                airstrike_times.emplace(fx_entity_number++, event.time);
+                lifecycle << "airstrike burst time=" << event.time << " source_entity=" << event.entity
+                    << " native_entity=" << fx_entity_number - 1 << " effect=" << cod4::native_airstrike_burst << std::endl;
             }
             for (const auto& event : bullet_track)
             {
@@ -1306,6 +1554,10 @@ namespace cod4_camera
             { header += std::format("@grenade:{}:{}", entity, time); header.push_back('\0'); }
             for (const auto& [entity, time] : car_effect_times)
             { header += std::format("@carfx:{}:{}", entity, time); header.push_back('\0'); }
+            for (const auto& [entity, time] : airstrike_times)
+            { header += std::format("@scriptfx:{}:{}", entity, time); header.push_back('\0'); }
+            for (const auto& [index, name] : airstrikes.effects)
+            { header += std::format("@fx:{}:{}", index, name); header.push_back('\0'); }
             for (const auto& [entity, time] : bullet_times)
             { header += std::format("@impact:{}:{}", entity, time); header.push_back('\0'); }
             if (!car_effect_times.empty())
@@ -1400,6 +1652,14 @@ namespace cod4_camera
                     << ", origin " << event.origin[0] << ' ' << event.origin[1] << ' ' << event.origin[2]
                     << ", direction " << event.parameter << ", flags " << event.impact_flags << '\n';
             report << "Native MWR car explosion FX: " << car_effects.events.size() << '\n';
+            report << "Native MWR strike plane entities: " << airstrikes.planes.size() << '\n';
+            report << "Native MWR cluster bursts: " << airstrikes.bursts.size() << '\n';
+            report << "Native jet FX tag bindings: " << jet_parameters.size() << '\n';
+            report << "Native MWR helicopter entities: " << helicopters.entities.size() << '\n';
+            report << "Helicopter event-bearing states (combat events not yet translated): " << helicopters.event_states << '\n';
+            for (const auto& event : airstrikes.bursts)
+                report << "Cluster burst: source time " << event.time << " ms, source entity " << event.entity
+                    << ", native FX " << cod4::native_airstrike_burst << '\n';
             report << "Native MWR car destruction animations: " << car_animations.size() << '\n';
             for (const auto& car : car_animations)
                 report << "Car animation: entity " << car.entity << ", time " << car.time
@@ -1485,6 +1745,8 @@ namespace cod4_camera
                 auto decoded_bullets = cod4::collect_bullet_events(decoded_world);
                 auto decoded_obituaries = cod4::collect_obituary_events(decoded_world);
                 auto decoded_car_fx = cod4::collect_car_fx(decoded_world, decoded.configstrings);
+                auto decoded_airstrikes = cod4::collect_airstrikes(decoded_world, decoded.configstrings);
+                auto decoded_helicopters = cod4::collect_helicopters(decoded_world, decoded.configstrings);
                 auto decoded_car_animations = cod4::collect_car_animations(decoded_world, decoded.configstrings, decoded_car_fx.events);
                 if (!game::SV_MapExists(decoded.map.c_str())) throw std::runtime_error("This map is not installed in H1: " + decoded.map);
                 game::Dvar_SetFromStringByNameFromSource("developer", "1", game::DVAR_SOURCE_INTERNAL);
@@ -1517,6 +1779,11 @@ namespace cod4_camera
                     grenade_entities.clear(); grenade_times.clear();
                     grenade_effects_resolved = false;
                     car_effects = std::move(decoded_car_fx);
+                    airstrikes = std::move(decoded_airstrikes);
+                    helicopters = std::move(decoded_helicopters);
+                    helicopter_definitions.clear(); helicopter_sounds.clear(); helicopters_resolved = false;
+                    jet_parameters.clear(); airstrike_entities.clear(); airstrike_times.clear();
+                    airstrikes_resolved = false;
                     car_animations = std::move(decoded_car_animations);
                     car_animation_duration = 0;
                     car_effect_entities.clear(); car_effect_times.clear();
@@ -1577,7 +1844,58 @@ namespace cod4_camera
     status get_status() { std::lock_guard lock(mutex); return state; }
     bool active() { std::lock_guard lock(mutex); return state.active; }
 
-    void clear_model_bindings() { model_bindings.clear(); animation_bindings.clear(); converted_bindings = false; }
+    void validate_model_budget(const std::set<std::string>& models)
+    {
+        std::map<unsigned, std::set<unsigned>> required;
+        for (const auto& name : models)
+        {
+            std::array<std::uint16_t, 8> entries{};
+            const auto count = utils::hook::invoke<int>(0x75210_b, name.c_str(), 7, entries.data());
+            if (count < 0 || count > static_cast<int>(entries.size()))
+                throw std::runtime_error("Invalid native transient model lookup: " + name);
+            for (int i = 0; i < count; ++i)
+            {
+                // Model records identify their owning zone. Several parts of
+                // one kit share a zone and consume only one native slot.
+                if (entries[i] >= 9216) throw std::runtime_error("Invalid native transient model index");
+                const auto zone = *reinterpret_cast<const std::uint16_t*>(0x152E0B0_b + entries[i] * 12 + 6);
+                if (zone >= 7144) throw std::runtime_error("Invalid native transient zone index");
+                const auto category = *reinterpret_cast<const std::uint8_t*>(0x14D6D40_b + zone * 48 + 8);
+                if (category >= 13) throw std::runtime_error("Invalid native transient category");
+                required[category].insert(zone);
+            }
+        }
+        for (const auto& [category, zones] : required)
+        {
+            const auto* pool = reinterpret_cast<const std::uint8_t*>(0x14D4BF0_b + category * 112);
+            const auto capacity = *reinterpret_cast<const unsigned*>(pool + 0x48);
+            if (zones.size() > capacity)
+                throw std::runtime_error(std::format("Demo needs {} native {} asset slots; this session has {}",
+                    zones.size(), reinterpret_cast<const char*>(pool), capacity));
+        }
+    }
+
+    void prepare_helicopter_vehicle(const std::uint8_t* entity_state)
+    {
+        if (!entity_state || entity_state[10] != 12)
+            throw std::runtime_error("Invalid replay helicopter state");
+        unsigned packed{}, model{};
+        std::memcpy(&packed, entity_state + 168, sizeof(packed));
+        std::memcpy(&model, entity_state + 208, sizeof(model));
+        if (packed >= 512 || !(packed >> 3) || !model || model >= 1024)
+            throw std::runtime_error("Invalid replay helicopter vehicle/model index");
+        const auto definition = packed >> 3;
+        const auto expected = cod4::native_helicopter_definition(get_configstring(1240 + model));
+        if (expected != get_configstring(2232 + definition))
+            throw std::runtime_error("Recorded helicopter definition no longer matches this map's registry");
+        register_helicopter_definition(definition, expected);
+    }
+
+    void clear_model_bindings()
+    {
+        model_bindings.clear(); animation_bindings.clear(); converted_bindings = false;
+        replay_asset_pool = false;
+    }
     void set_model_bindings(const std::map<unsigned, std::string>& bindings,
         const std::map<unsigned, std::string>& animations)
     {
@@ -1601,6 +1919,7 @@ namespace cod4_camera
 
     void bootstrap_demo(const std::string& map, const std::vector<std::uint8_t>& gamestate)
     {
+        replay_asset_pool = true;
         bootstrapping = true;
         const auto clear = gsl::finally([] { bootstrapping = false; });
         if (game::VirtualLobby_Loaded()) utils::hook::invoke<void>(0x13C9C0_b, 1);
@@ -1704,10 +2023,15 @@ namespace cod4_camera
             // its map-preload flag is set. Client-only conversion does not set
             // that flag, so service H1's own transient queue before readiness.
             // Requesting many Promod characters/weapons spans multiple batches.
+            validate_model_budget(requested_models);
+            for (const auto& name : requested_models)
+                if (acquired_models.insert(name).second) utils::hook::invoke<void>(0x75720_b, name.c_str());
             utils::hook::invoke<void>(0x757A0_b);
             for (const auto& name : requested_models)
                 if (!utils::hook::invoke<bool>(0x75470_b, name.c_str())) return true;
             resolve_world_parts();
+            resolve_airstrikes();
+            resolve_helicopters();
             if (!resolve_body_assets()) return true;
             if (converting)
             {
@@ -1843,6 +2167,7 @@ namespace cod4_camera
         {
             if (!game::environment::is_mp() || game::environment::is_dedi()) return;
             get_configstring_hook.create(0x33B820_b, get_configstring);
+            utils::hook::call(0x7445D_b, reserve_view_weapon_pool);
             command::add("cod4cam", [](const command::params& args)
             {
                 if (args.size() != 2) { console::info("Usage: cod4cam \"path/to/demo.dm_1\"\n"); return; }

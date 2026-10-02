@@ -21,3 +21,16 @@ The MWR table splits heads from bodies where some original COD4 models contain
 an integrated head. It also defines distinct SAS and Spetsnaz ghillie hands for
 the single original `viewhands_marine_sniper` identity. Test expectations use
 the recorded body context to resolve those relationships.
+
+## Native actor animation reference
+
+`mwr-native-actor-codecs.tsv` contains names and leg/torso channel indices only,
+captured read-only from the installed H1/MWR Strike animation table on
+2026-10-02 at 00:18:10 (PID 38604, 1,709 rows). Negative channel values mean
+that the clip cannot be assigned to that channel. No animation keyframes or
+game binary data are included. The runtime always resolves the currently
+loaded native table; these indices are test evidence, not hardcoded runtime IDs.
+
+SHA-256 of the captured table: `C108E73AD77D5B8DF6C9E5D7DD64193D6198635B7847315042C75CC7964A27B1`.
+Run `tests/run-cod4-actor-catalog.cmd` to audit all 247 named CoD4 actor entries
+against it, including native body channels and animation restart bits.

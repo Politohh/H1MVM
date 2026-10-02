@@ -71,6 +71,7 @@ namespace cod4
             case -86: return float_bits(msg.bits(5) / 10.0f + 1.4f);
             case -90: case -91: case -92:
                 {
+                    if (msg.protocol) return msg.get<std::uint32_t>(); // CoD4x sends full-precision origins.
                     const float prior = std::bit_cast<float>(old);
                     if (!msg.bits(1)) return float_bits(prior + static_cast<int>(msg.bits(7)) - 64);
                     const auto c = static_cast<int>(center[field.bits + 92] + 0.5f);
@@ -127,6 +128,7 @@ namespace cod4
         while (file.pos < bytes.size())
         {
             const auto type = file.get<std::uint8_t>();
+            if (type == 2) { detail::read_protocol_header(file); continue; }
             if (type == 1) { file.require(52); file.pos += 52; continue; }
             if (type != 0) throw std::runtime_error("Unsupported COD4 block in player decoder");
             const int sequence = file.get<int>(), size = file.get<int>();
@@ -138,6 +140,7 @@ namespace cod4
             if (first) { first = false; continue; }
             const auto decoded = detail::decompress(packet.subspan(4));
             detail::reader msg{decoded};
+            msg.protocol = file.protocol;
             while (msg.pos < decoded.size())
             {
                 const auto op = msg.get<std::uint8_t>();

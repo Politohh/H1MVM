@@ -1,5 +1,6 @@
 #include "component/demo/cod4_grenade_events.hpp"
 #include "component/demo/cod4_model_metadata.hpp"
+#include "component/demo/cod4_weapon_catalog.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -27,6 +28,16 @@ int main(int argc, char** argv)
 {
     try
     {
+        for (const auto weapon : {"claymore_mp", "c4_mp"})
+        {
+            check(cod4::grenade_weapon_matches(45, weapon), "Planted explosive rejected as a grenade event");
+            check(!cod4::grenade_weapon_matches(48, weapon) && !cod4::grenade_weapon_matches(49, weapon),
+                "Planted explosive accepted as a flash/custom detonation");
+            check(cod4::map_weapon(weapon).base == std::string("h1_") + weapon,
+                "Planted explosive substituted another weapon");
+        }
+        check(!cod4::grenade_weapon_matches(45, "ak47_mp") && !cod4::grenade_weapon_matches(45, "custom_bomb_mp"),
+            "Unverified explosive weapon accepted");
         cod4::world_track synthetic;
         synthetic.frames = {{1000,1,{{300,explosion(255,44)}},{}},
             {1050,2,{{300,explosion(0)}},{}}, {1100,3,{{300,explosion(0)}},{}}};
@@ -108,6 +119,22 @@ int main(int argc, char** argv)
                 check(grenades.events.size() == 2 && grenades.events[0].time == 62550
                     && grenades.events[1].time == 70350 && grenades.events[1].source_event == 45,
                     "Backlot explosion inventory changed");
+            if (std::filesystem::path(argv[arg]).filename() == "demo0011.dm_1")
+            {
+                check(grenades.events.size() == 25, "Protocol-21 detonation inventory changed");
+                std::vector<int> claymores;
+                for (const auto& event : grenades.events)
+                    if (weapons.at(event.weapon) == "claymore_mp")
+                    {
+                        check(event.weapon == 39 && event.source_event == 45, "Recorded claymore identity changed");
+                        const auto native_event = cod4::translate_grenade_event(event, 1500, 55);
+                        check(native_event[10] == 118 && native<unsigned>(native_event,76) == 55
+                            && native<unsigned>(native_event,36) == event.parameter,
+                            "Claymore native event lost its weapon/direction");
+                        claymores.push_back(event.time);
+                    }
+                check(claymores == std::vector<int>{105977100, 105996600}, "Recorded claymore detonations lost");
+            }
             if (std::filesystem::path(argv[arg]).filename() == "city_cod4_to_h1_test_player_____.dm_1")
                 check(grenades.events.size() == 5 && grenades.events[1].time == 102050
                     && grenades.events[1].source_event == 48 && grenades.events[2].time == 103000

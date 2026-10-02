@@ -63,7 +63,14 @@ namespace cod4
             // clips. Keep their recorded restart while supplying a native base.
             if (!(source_torso & 511u)) torso = legs;
             const auto source_name = source_body_animations.at(source_legs & 511u);
-            const auto base = source_name.find("grenade") != std::string_view::npos ? "mp_hold_idle" : "mp_stand_idle";
+            const auto family = weapon.empty() ? body_family::hold : map_weapon(weapon).body;
+            const bool hold = family == body_family::hold || source_name.find("grenade") != std::string_view::npos;
+            const bool pistol = family == body_family::pistol, launcher = family == body_family::launcher;
+            const auto base = source_name.find("prone") != std::string_view::npos
+                ? (hold ? "pb_prone_hold" : pistol ? "mp_pistol_prone_idle" : launcher ? "mp_rpg_prone_idle" : "mp_prone_idle_iw6")
+                : source_name.find("crouch") != std::string_view::npos
+                ? (hold ? "mp_crouch_hold_idle" : pistol ? "mp_pistol_crouch_idle" : launcher ? "mp_rpg_crouch_idle" : "mp_crouch_idle")
+                : (hold ? "mp_hold_idle" : pistol ? "mp_pistol_stand_idle" : launcher ? "mp_rpg_idle" : "mp_stand_idle");
             legs = resolve_body_animation(base, (source_legs & 512u) ? 2048u : 0u, catalog);
         }
         return codec.pack(legs, torso);

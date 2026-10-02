@@ -55,6 +55,8 @@ namespace cod4
         std::string_view body = {})
     {
         if (!valid_model_name(source)) throw std::runtime_error("Invalid COD4 model name");
+        if (source == "vehicle_mi24p_hind_desert") return "h1_vehicle_mi24_hind";
+        if (source == "vehicle_mig29_desert") return "h1_vehicle_mig29";
         if (const auto* assets = character_assets_for(source, map)) return assets->body;
         const auto* context = source_character_for(body);
         if (context && source == context->head)

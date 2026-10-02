@@ -26,6 +26,7 @@ namespace cod4
         int time{}, sequence{};
         std::map<unsigned, entity_state> entities;
         std::map<unsigned, client_state> clients;
+        std::map<unsigned, std::string> client_names; // CoD4x sends these outside clientState.
     };
     struct hud_frame
     {
@@ -62,6 +63,14 @@ namespace cod4
     };
     namespace detail
     {
+        inline void read_client_identity(reader& msg, std::map<unsigned, std::string>& names)
+        {
+            const auto client = msg.get<std::uint8_t>();
+            if (client >= 64) throw std::runtime_error("Invalid CoD4x client identity");
+            names[client] = msg.string();
+            msg.string(); // clan tag is separate from the recorded player name
+        }
+
         inline unsigned entity_index(reader& msg, int& prior, unsigned width)
         {
             if (msg.bits(1)) ++prior;
@@ -158,11 +167,13 @@ namespace cod4
         world_track track;
         struct baseline { player_frame player; detail::player_tail tail; world_frame world; };
         std::map<int, baseline> history;
+        std::map<unsigned, std::string> client_names;
         bool eof = false;
         int last_time = 0;
         while (file.pos < bytes.size())
         {
             const auto type = file.get<std::uint8_t>();
+            if (type == 2) { detail::read_protocol_header(file); continue; }
             if (type == 1) { file.require(52); file.pos += 52; continue; }
             if (type != 0) throw std::runtime_error("Unsupported COD4 world block");
             const auto sequence = file.get<int>(), size = file.get<int>();
@@ -171,6 +182,7 @@ namespace cod4
             file.require(size);
             const auto decoded = detail::decompress(bytes.subspan(file.pos + 4, size - 4)); file.pos += size;
             detail::reader msg{decoded};
+            msg.protocol = file.protocol;
             while (msg.pos < decoded.size())
             {
                 const auto op = msg.get<std::uint8_t>();
@@ -182,7 +194,12 @@ namespace cod4
                     track.commands.push_back({last_time, sequence, index, msg.string()});
                     continue;
                 }
-                if (op == 11) { msg.get<int>(); msg.get<std::uint8_t>(); msg.string(); msg.string(); continue; }
+                if (op == 11)
+                {
+                    msg.get<int>(); // config data sequence
+                    detail::read_client_identity(msg, client_names);
+                    continue;
+                }
                 if (op == 1)
                 {
                     msg.get<int>(); int prior = -1;
@@ -192,8 +209,7 @@ namespace cod4
                         if (section == 7) break;
                         if (section == 2)
                         {
-                            const auto n = msg.get<std::uint16_t>(); int index = -1;
-                            for (unsigned i = 0; i < n; ++i) { index = msg.bits(1) ? index + 1 : msg.bits(12); msg.string(); }
+                            detail::read_configstrings(msg, camera.protocol, [](int, const std::string&) {});
                         }
                         else if (section == 3)
                         {
@@ -202,8 +218,14 @@ namespace cod4
                             if (!detail::entity_delta(msg, 0, state, number, center)) throw std::runtime_error("Removed COD4 gamestate baseline");
                             track.baselines[number] = state;
                         }
-                        else throw std::runtime_error("Unknown COD4 gamestate section");
+                        else if (section == 11 && camera.protocol)
+                        {
+                            detail::read_client_identity(msg, client_names);
+                        }
+                        else throw std::runtime_error("Unknown COD4 gamestate section " + std::to_string(section)
+                            + " at byte " + std::to_string(msg.pos - 1));
                     }
+                    if (camera.protocol) msg.get<int>(); // config data sequence
                     track.client_num = msg.get<int>(); msg.get<int>();
                     continue;
                 }
@@ -221,6 +243,7 @@ namespace cod4
                 }
                 current.player.time = time; current.player.sequence = sequence;
                 current.world.time = time; current.world.sequence = sequence;
+                current.world.client_names = client_names;
                 detail::read_player_prefix(msg, current.player);
                 detail::read_player_tail(msg, time, current.tail, center);
                 int prior = -1;

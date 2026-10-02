@@ -49,12 +49,14 @@ namespace cod4
                     throw std::runtime_error("Invalid converted FX binding");
                 continue;
             }
-            if (entry.starts_with("@grenade:") || entry.starts_with("@carfx:") || entry.starts_with("@impact:"))
+            if (entry.starts_with("@grenade:") || entry.starts_with("@carfx:") || entry.starts_with("@impact:")
+                || entry.starts_with("@scriptfx:"))
             {
                 const std::string_view text(entry);
-                const bool car = entry.starts_with("@carfx:");
+                const bool scripted = entry.starts_with("@scriptfx:");
+                const bool car = entry.starts_with("@carfx:") || scripted;
                 const bool bullet = entry.starts_with("@impact:");
-                const auto prefix = car ? 7u : bullet ? 8u : 9u;
+                const auto prefix = scripted ? 10u : car ? 7u : bullet ? 8u : 9u;
                 auto& times = car ? result.car_fx_times : bullet ? result.bullet_times : result.grenade_times;
                 const auto separator = text.find(':', prefix);
                 if (separator == text.npos) throw std::runtime_error("Incomplete converted FX timing record");

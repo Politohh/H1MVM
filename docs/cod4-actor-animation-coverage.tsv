@@ -1,0 +1,1977 @@
+source_index	source_name	weapon_family	native_name	match	native_index	leg_channel	torso_channel
+3	pl_crouchturn_90left	0	mp_crouch_aim_turn_l	native replacement	687	680	-1
+3	pl_crouchturn_90left	1	mp_crouch_aim_turn_l	native replacement	687	680	-1
+3	pl_crouchturn_90left	2	mp_crouch_aim_turn_l	native replacement	687	680	-1
+3	pl_crouchturn_90left	3	mp_crouch_aim_turn_l	native replacement	687	680	-1
+3	pl_crouchturn_90left	4	mp_crouch_aim_turn_l	native replacement	687	680	-1
+3	pl_crouchturn_90left	5	mp_pistol_crouch_aim_turn_l	native replacement	663	656	-1
+3	pl_crouchturn_90left	6	mp_rpg_crouch_turn_l	native replacement	653	646	-1
+3	pl_crouchturn_90left	7	mp_hold_crouch_turn_l	native replacement	681	674	-1
+4	pl_crouchturn_90right	0	mp_crouch_aim_turn_r	native replacement	686	679	-1
+4	pl_crouchturn_90right	1	mp_crouch_aim_turn_r	native replacement	686	679	-1
+4	pl_crouchturn_90right	2	mp_crouch_aim_turn_r	native replacement	686	679	-1
+4	pl_crouchturn_90right	3	mp_crouch_aim_turn_r	native replacement	686	679	-1
+4	pl_crouchturn_90right	4	mp_crouch_aim_turn_r	native replacement	686	679	-1
+4	pl_crouchturn_90right	5	mp_pistol_crouch_aim_turn_r	native replacement	662	655	-1
+4	pl_crouchturn_90right	6	mp_rpg_crouch_turn_r	native replacement	652	645	-1
+4	pl_crouchturn_90right	7	mp_hold_crouch_turn_r	native replacement	680	673	-1
+7	pb_crouch_pain_holdstomach	0	mp_flinch_crouch_a	native replacement	1050	-1	192
+7	pb_crouch_pain_holdstomach	1	mp_flinch_crouch_a	native replacement	1050	-1	192
+7	pb_crouch_pain_holdstomach	2	mp_flinch_crouch_a	native replacement	1050	-1	192
+7	pb_crouch_pain_holdstomach	3	mp_flinch_crouch_a	native replacement	1050	-1	192
+7	pb_crouch_pain_holdstomach	4	mp_flinch_crouch_a	native replacement	1050	-1	192
+7	pb_crouch_pain_holdstomach	5	mp_flinch_pistol_crouch_a	native replacement	1053	-1	195
+7	pb_crouch_pain_holdstomach	6	mp_rpg_crouch_flinch_a	native replacement	1023	-1	165
+7	pb_crouch_pain_holdstomach	7	h1_mp_crouch_hold_flinch_a	native replacement	1042	-1	184
+8	pb_prone_painb_holdhead	0	mp_flinch_prone_a	native replacement	1056	-1	198
+8	pb_prone_painb_holdhead	1	mp_flinch_prone_a	native replacement	1056	-1	198
+8	pb_prone_painb_holdhead	2	mp_flinch_prone_a	native replacement	1056	-1	198
+8	pb_prone_painb_holdhead	3	mp_flinch_prone_a	native replacement	1056	-1	198
+8	pb_prone_painb_holdhead	4	mp_flinch_prone_a	native replacement	1056	-1	198
+8	pb_prone_painb_holdhead	5	mp_flinch_pistol_prone_a	native replacement	1058	-1	200
+8	pb_prone_painb_holdhead	6	mp_rpg_prone_flinch_a	native replacement	1026	-1	168
+8	pb_prone_painb_holdhead	7	h1_mp_prone_hold_flinch_a	native replacement	1039	-1	181
+9	pb_prone_paina_holdchest	0	mp_flinch_prone_a	native replacement	1056	-1	198
+9	pb_prone_paina_holdchest	1	mp_flinch_prone_a	native replacement	1056	-1	198
+9	pb_prone_paina_holdchest	2	mp_flinch_prone_a	native replacement	1056	-1	198
+9	pb_prone_paina_holdchest	3	mp_flinch_prone_a	native replacement	1056	-1	198
+9	pb_prone_paina_holdchest	4	mp_flinch_prone_a	native replacement	1056	-1	198
+9	pb_prone_paina_holdchest	5	mp_flinch_pistol_prone_a	native replacement	1058	-1	200
+9	pb_prone_paina_holdchest	6	mp_rpg_prone_flinch_a	native replacement	1026	-1	168
+9	pb_prone_paina_holdchest	7	h1_mp_prone_hold_flinch_a	native replacement	1039	-1	181
+10	pb_stumble_grenade_back	0	mp_flinch_stand_a	native replacement	1061	-1	203
+10	pb_stumble_grenade_back	1	mp_flinch_stand_a	native replacement	1061	-1	203
+10	pb_stumble_grenade_back	2	mp_flinch_stand_a	native replacement	1061	-1	203
+10	pb_stumble_grenade_back	3	mp_flinch_stand_a	native replacement	1061	-1	203
+10	pb_stumble_grenade_back	4	mp_flinch_stand_a	native replacement	1061	-1	203
+10	pb_stumble_grenade_back	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+10	pb_stumble_grenade_back	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+10	pb_stumble_grenade_back	7	mp_flinch_stand_a	native replacement	1061	-1	203
+11	pb_stumble_grenade_forward	0	mp_flinch_stand_a	native replacement	1061	-1	203
+11	pb_stumble_grenade_forward	1	mp_flinch_stand_a	native replacement	1061	-1	203
+11	pb_stumble_grenade_forward	2	mp_flinch_stand_a	native replacement	1061	-1	203
+11	pb_stumble_grenade_forward	3	mp_flinch_stand_a	native replacement	1061	-1	203
+11	pb_stumble_grenade_forward	4	mp_flinch_stand_a	native replacement	1061	-1	203
+11	pb_stumble_grenade_forward	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+11	pb_stumble_grenade_forward	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+11	pb_stumble_grenade_forward	7	mp_flinch_stand_a	native replacement	1061	-1	203
+12	pb_stumble_grenade_left	0	mp_flinch_stand_a	native replacement	1061	-1	203
+12	pb_stumble_grenade_left	1	mp_flinch_stand_a	native replacement	1061	-1	203
+12	pb_stumble_grenade_left	2	mp_flinch_stand_a	native replacement	1061	-1	203
+12	pb_stumble_grenade_left	3	mp_flinch_stand_a	native replacement	1061	-1	203
+12	pb_stumble_grenade_left	4	mp_flinch_stand_a	native replacement	1061	-1	203
+12	pb_stumble_grenade_left	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+12	pb_stumble_grenade_left	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+12	pb_stumble_grenade_left	7	mp_flinch_stand_a	native replacement	1061	-1	203
+13	pb_stumble_grenade_right	0	mp_flinch_stand_a	native replacement	1061	-1	203
+13	pb_stumble_grenade_right	1	mp_flinch_stand_a	native replacement	1061	-1	203
+13	pb_stumble_grenade_right	2	mp_flinch_stand_a	native replacement	1061	-1	203
+13	pb_stumble_grenade_right	3	mp_flinch_stand_a	native replacement	1061	-1	203
+13	pb_stumble_grenade_right	4	mp_flinch_stand_a	native replacement	1061	-1	203
+13	pb_stumble_grenade_right	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+13	pb_stumble_grenade_right	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+13	pb_stumble_grenade_right	7	mp_flinch_stand_a	native replacement	1061	-1	203
+14	pb_stumble_pistol_back	0	mp_flinch_stand_a	native replacement	1061	-1	203
+14	pb_stumble_pistol_back	1	mp_flinch_stand_a	native replacement	1061	-1	203
+14	pb_stumble_pistol_back	2	mp_flinch_stand_a	native replacement	1061	-1	203
+14	pb_stumble_pistol_back	3	mp_flinch_stand_a	native replacement	1061	-1	203
+14	pb_stumble_pistol_back	4	mp_flinch_stand_a	native replacement	1061	-1	203
+14	pb_stumble_pistol_back	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+14	pb_stumble_pistol_back	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+14	pb_stumble_pistol_back	7	mp_flinch_stand_a	native replacement	1061	-1	203
+15	pb_stumble_pistol_forward	0	mp_flinch_stand_a	native replacement	1061	-1	203
+15	pb_stumble_pistol_forward	1	mp_flinch_stand_a	native replacement	1061	-1	203
+15	pb_stumble_pistol_forward	2	mp_flinch_stand_a	native replacement	1061	-1	203
+15	pb_stumble_pistol_forward	3	mp_flinch_stand_a	native replacement	1061	-1	203
+15	pb_stumble_pistol_forward	4	mp_flinch_stand_a	native replacement	1061	-1	203
+15	pb_stumble_pistol_forward	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+15	pb_stumble_pistol_forward	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+15	pb_stumble_pistol_forward	7	mp_flinch_stand_a	native replacement	1061	-1	203
+16	pb_stumble_pistol_left	0	mp_flinch_stand_a	native replacement	1061	-1	203
+16	pb_stumble_pistol_left	1	mp_flinch_stand_a	native replacement	1061	-1	203
+16	pb_stumble_pistol_left	2	mp_flinch_stand_a	native replacement	1061	-1	203
+16	pb_stumble_pistol_left	3	mp_flinch_stand_a	native replacement	1061	-1	203
+16	pb_stumble_pistol_left	4	mp_flinch_stand_a	native replacement	1061	-1	203
+16	pb_stumble_pistol_left	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+16	pb_stumble_pistol_left	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+16	pb_stumble_pistol_left	7	mp_flinch_stand_a	native replacement	1061	-1	203
+17	pb_stumble_pistol_right	0	mp_flinch_stand_a	native replacement	1061	-1	203
+17	pb_stumble_pistol_right	1	mp_flinch_stand_a	native replacement	1061	-1	203
+17	pb_stumble_pistol_right	2	mp_flinch_stand_a	native replacement	1061	-1	203
+17	pb_stumble_pistol_right	3	mp_flinch_stand_a	native replacement	1061	-1	203
+17	pb_stumble_pistol_right	4	mp_flinch_stand_a	native replacement	1061	-1	203
+17	pb_stumble_pistol_right	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+17	pb_stumble_pistol_right	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+17	pb_stumble_pistol_right	7	mp_flinch_stand_a	native replacement	1061	-1	203
+18	pb_stumble_pistol_walk_back	0	mp_flinch_stand_a	native replacement	1061	-1	203
+18	pb_stumble_pistol_walk_back	1	mp_flinch_stand_a	native replacement	1061	-1	203
+18	pb_stumble_pistol_walk_back	2	mp_flinch_stand_a	native replacement	1061	-1	203
+18	pb_stumble_pistol_walk_back	3	mp_flinch_stand_a	native replacement	1061	-1	203
+18	pb_stumble_pistol_walk_back	4	mp_flinch_stand_a	native replacement	1061	-1	203
+18	pb_stumble_pistol_walk_back	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+18	pb_stumble_pistol_walk_back	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+18	pb_stumble_pistol_walk_back	7	mp_flinch_stand_a	native replacement	1061	-1	203
+19	pb_stumble_pistol_walk_forward	0	mp_flinch_stand_a	native replacement	1061	-1	203
+19	pb_stumble_pistol_walk_forward	1	mp_flinch_stand_a	native replacement	1061	-1	203
+19	pb_stumble_pistol_walk_forward	2	mp_flinch_stand_a	native replacement	1061	-1	203
+19	pb_stumble_pistol_walk_forward	3	mp_flinch_stand_a	native replacement	1061	-1	203
+19	pb_stumble_pistol_walk_forward	4	mp_flinch_stand_a	native replacement	1061	-1	203
+19	pb_stumble_pistol_walk_forward	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+19	pb_stumble_pistol_walk_forward	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+19	pb_stumble_pistol_walk_forward	7	mp_flinch_stand_a	native replacement	1061	-1	203
+20	pb_stumble_pistol_walk_left	0	mp_flinch_stand_a	native replacement	1061	-1	203
+20	pb_stumble_pistol_walk_left	1	mp_flinch_stand_a	native replacement	1061	-1	203
+20	pb_stumble_pistol_walk_left	2	mp_flinch_stand_a	native replacement	1061	-1	203
+20	pb_stumble_pistol_walk_left	3	mp_flinch_stand_a	native replacement	1061	-1	203
+20	pb_stumble_pistol_walk_left	4	mp_flinch_stand_a	native replacement	1061	-1	203
+20	pb_stumble_pistol_walk_left	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+20	pb_stumble_pistol_walk_left	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+20	pb_stumble_pistol_walk_left	7	mp_flinch_stand_a	native replacement	1061	-1	203
+21	pb_stumble_pistol_walk_right	0	mp_flinch_stand_a	native replacement	1061	-1	203
+21	pb_stumble_pistol_walk_right	1	mp_flinch_stand_a	native replacement	1061	-1	203
+21	pb_stumble_pistol_walk_right	2	mp_flinch_stand_a	native replacement	1061	-1	203
+21	pb_stumble_pistol_walk_right	3	mp_flinch_stand_a	native replacement	1061	-1	203
+21	pb_stumble_pistol_walk_right	4	mp_flinch_stand_a	native replacement	1061	-1	203
+21	pb_stumble_pistol_walk_right	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+21	pb_stumble_pistol_walk_right	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+21	pb_stumble_pistol_walk_right	7	mp_flinch_stand_a	native replacement	1061	-1	203
+22	pb_stumble_walk_right	0	mp_flinch_stand_a	native replacement	1061	-1	203
+22	pb_stumble_walk_right	1	mp_flinch_stand_a	native replacement	1061	-1	203
+22	pb_stumble_walk_right	2	mp_flinch_stand_a	native replacement	1061	-1	203
+22	pb_stumble_walk_right	3	mp_flinch_stand_a	native replacement	1061	-1	203
+22	pb_stumble_walk_right	4	mp_flinch_stand_a	native replacement	1061	-1	203
+22	pb_stumble_walk_right	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+22	pb_stumble_walk_right	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+22	pb_stumble_walk_right	7	mp_flinch_stand_a	native replacement	1061	-1	203
+23	pb_stumble_walk_left	0	mp_flinch_stand_a	native replacement	1061	-1	203
+23	pb_stumble_walk_left	1	mp_flinch_stand_a	native replacement	1061	-1	203
+23	pb_stumble_walk_left	2	mp_flinch_stand_a	native replacement	1061	-1	203
+23	pb_stumble_walk_left	3	mp_flinch_stand_a	native replacement	1061	-1	203
+23	pb_stumble_walk_left	4	mp_flinch_stand_a	native replacement	1061	-1	203
+23	pb_stumble_walk_left	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+23	pb_stumble_walk_left	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+23	pb_stumble_walk_left	7	mp_flinch_stand_a	native replacement	1061	-1	203
+24	pb_stumble_walk_back	0	mp_flinch_stand_a	native replacement	1061	-1	203
+24	pb_stumble_walk_back	1	mp_flinch_stand_a	native replacement	1061	-1	203
+24	pb_stumble_walk_back	2	mp_flinch_stand_a	native replacement	1061	-1	203
+24	pb_stumble_walk_back	3	mp_flinch_stand_a	native replacement	1061	-1	203
+24	pb_stumble_walk_back	4	mp_flinch_stand_a	native replacement	1061	-1	203
+24	pb_stumble_walk_back	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+24	pb_stumble_walk_back	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+24	pb_stumble_walk_back	7	mp_flinch_stand_a	native replacement	1061	-1	203
+25	pb_stumble_walk_forward	0	mp_flinch_stand_a	native replacement	1061	-1	203
+25	pb_stumble_walk_forward	1	mp_flinch_stand_a	native replacement	1061	-1	203
+25	pb_stumble_walk_forward	2	mp_flinch_stand_a	native replacement	1061	-1	203
+25	pb_stumble_walk_forward	3	mp_flinch_stand_a	native replacement	1061	-1	203
+25	pb_stumble_walk_forward	4	mp_flinch_stand_a	native replacement	1061	-1	203
+25	pb_stumble_walk_forward	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+25	pb_stumble_walk_forward	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+25	pb_stumble_walk_forward	7	mp_flinch_stand_a	native replacement	1061	-1	203
+26	pb_stumble_right	0	mp_flinch_stand_a	native replacement	1061	-1	203
+26	pb_stumble_right	1	mp_flinch_stand_a	native replacement	1061	-1	203
+26	pb_stumble_right	2	mp_flinch_stand_a	native replacement	1061	-1	203
+26	pb_stumble_right	3	mp_flinch_stand_a	native replacement	1061	-1	203
+26	pb_stumble_right	4	mp_flinch_stand_a	native replacement	1061	-1	203
+26	pb_stumble_right	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+26	pb_stumble_right	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+26	pb_stumble_right	7	mp_flinch_stand_a	native replacement	1061	-1	203
+27	pb_stumble_left	0	mp_flinch_stand_a	native replacement	1061	-1	203
+27	pb_stumble_left	1	mp_flinch_stand_a	native replacement	1061	-1	203
+27	pb_stumble_left	2	mp_flinch_stand_a	native replacement	1061	-1	203
+27	pb_stumble_left	3	mp_flinch_stand_a	native replacement	1061	-1	203
+27	pb_stumble_left	4	mp_flinch_stand_a	native replacement	1061	-1	203
+27	pb_stumble_left	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+27	pb_stumble_left	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+27	pb_stumble_left	7	mp_flinch_stand_a	native replacement	1061	-1	203
+28	pb_stumble_back	0	mp_flinch_stand_a	native replacement	1061	-1	203
+28	pb_stumble_back	1	mp_flinch_stand_a	native replacement	1061	-1	203
+28	pb_stumble_back	2	mp_flinch_stand_a	native replacement	1061	-1	203
+28	pb_stumble_back	3	mp_flinch_stand_a	native replacement	1061	-1	203
+28	pb_stumble_back	4	mp_flinch_stand_a	native replacement	1061	-1	203
+28	pb_stumble_back	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+28	pb_stumble_back	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+28	pb_stumble_back	7	mp_flinch_stand_a	native replacement	1061	-1	203
+29	pb_stumble_forward	0	mp_flinch_stand_a	native replacement	1061	-1	203
+29	pb_stumble_forward	1	mp_flinch_stand_a	native replacement	1061	-1	203
+29	pb_stumble_forward	2	mp_flinch_stand_a	native replacement	1061	-1	203
+29	pb_stumble_forward	3	mp_flinch_stand_a	native replacement	1061	-1	203
+29	pb_stumble_forward	4	mp_flinch_stand_a	native replacement	1061	-1	203
+29	pb_stumble_forward	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+29	pb_stumble_forward	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+29	pb_stumble_forward	7	mp_flinch_stand_a	native replacement	1061	-1	203
+30	pb_death_run_right	0	pb_death_run_right	exact	9	2	-1
+30	pb_death_run_right	1	pb_death_run_right	exact	9	2	-1
+30	pb_death_run_right	2	pb_death_run_right	exact	9	2	-1
+30	pb_death_run_right	3	pb_death_run_right	exact	9	2	-1
+30	pb_death_run_right	4	pb_death_run_right	exact	9	2	-1
+30	pb_death_run_right	5	pb_death_run_right	exact	9	2	-1
+30	pb_death_run_right	6	pb_death_run_right	exact	9	2	-1
+30	pb_death_run_right	7	pb_death_run_right	exact	9	2	-1
+31	pb_death_run_left	0	pb_death_run_left	exact	10	3	-1
+31	pb_death_run_left	1	pb_death_run_left	exact	10	3	-1
+31	pb_death_run_left	2	pb_death_run_left	exact	10	3	-1
+31	pb_death_run_left	3	pb_death_run_left	exact	10	3	-1
+31	pb_death_run_left	4	pb_death_run_left	exact	10	3	-1
+31	pb_death_run_left	5	pb_death_run_left	exact	10	3	-1
+31	pb_death_run_left	6	pb_death_run_left	exact	10	3	-1
+31	pb_death_run_left	7	pb_death_run_left	exact	10	3	-1
+32	pb_death_run_back	0	pb_death_run_back	exact	11	4	-1
+32	pb_death_run_back	1	pb_death_run_back	exact	11	4	-1
+32	pb_death_run_back	2	pb_death_run_back	exact	11	4	-1
+32	pb_death_run_back	3	pb_death_run_back	exact	11	4	-1
+32	pb_death_run_back	4	pb_death_run_back	exact	11	4	-1
+32	pb_death_run_back	5	pb_death_run_back	exact	11	4	-1
+32	pb_death_run_back	6	pb_death_run_back	exact	11	4	-1
+32	pb_death_run_back	7	pb_death_run_back	exact	11	4	-1
+33	pb_death_run_stumble	0	pb_death_run_stumble	exact	12	5	-1
+33	pb_death_run_stumble	1	pb_death_run_stumble	exact	12	5	-1
+33	pb_death_run_stumble	2	pb_death_run_stumble	exact	12	5	-1
+33	pb_death_run_stumble	3	pb_death_run_stumble	exact	12	5	-1
+33	pb_death_run_stumble	4	pb_death_run_stumble	exact	12	5	-1
+33	pb_death_run_stumble	5	pb_death_run_stumble	exact	12	5	-1
+33	pb_death_run_stumble	6	pb_death_run_stumble	exact	12	5	-1
+33	pb_death_run_stumble	7	pb_death_run_stumble	exact	12	5	-1
+34	pb_death_run_onfront	0	pb_death_run_onfront	exact	13	6	-1
+34	pb_death_run_onfront	1	pb_death_run_onfront	exact	13	6	-1
+34	pb_death_run_onfront	2	pb_death_run_onfront	exact	13	6	-1
+34	pb_death_run_onfront	3	pb_death_run_onfront	exact	13	6	-1
+34	pb_death_run_onfront	4	pb_death_run_onfront	exact	13	6	-1
+34	pb_death_run_onfront	5	pb_death_run_onfront	exact	13	6	-1
+34	pb_death_run_onfront	6	pb_death_run_onfront	exact	13	6	-1
+34	pb_death_run_onfront	7	pb_death_run_onfront	exact	13	6	-1
+35	pb_death_run_forward_crumple	0	pb_death_run_forward_crumple	exact	14	7	-1
+35	pb_death_run_forward_crumple	1	pb_death_run_forward_crumple	exact	14	7	-1
+35	pb_death_run_forward_crumple	2	pb_death_run_forward_crumple	exact	14	7	-1
+35	pb_death_run_forward_crumple	3	pb_death_run_forward_crumple	exact	14	7	-1
+35	pb_death_run_forward_crumple	4	pb_death_run_forward_crumple	exact	14	7	-1
+35	pb_death_run_forward_crumple	5	pb_death_run_forward_crumple	exact	14	7	-1
+35	pb_death_run_forward_crumple	6	pb_death_run_forward_crumple	exact	14	7	-1
+35	pb_death_run_forward_crumple	7	pb_death_run_forward_crumple	exact	14	7	-1
+36	pb_stand_death_headchest_topple	0	pb_stand_death_headchest_topple	exact	25	18	-1
+36	pb_stand_death_headchest_topple	1	pb_stand_death_headchest_topple	exact	25	18	-1
+36	pb_stand_death_headchest_topple	2	pb_stand_death_headchest_topple	exact	25	18	-1
+36	pb_stand_death_headchest_topple	3	pb_stand_death_headchest_topple	exact	25	18	-1
+36	pb_stand_death_headchest_topple	4	pb_stand_death_headchest_topple	exact	25	18	-1
+36	pb_stand_death_headchest_topple	5	pb_stand_death_headchest_topple	exact	25	18	-1
+36	pb_stand_death_headchest_topple	6	pb_stand_death_headchest_topple	exact	25	18	-1
+36	pb_stand_death_headchest_topple	7	pb_stand_death_headchest_topple	exact	25	18	-1
+37	pb_stand_death_frontspin	0	pb_stand_death_chest_spin	native replacement	23	16	-1
+37	pb_stand_death_frontspin	1	pb_stand_death_chest_spin	native replacement	23	16	-1
+37	pb_stand_death_frontspin	2	pb_stand_death_chest_spin	native replacement	23	16	-1
+37	pb_stand_death_frontspin	3	pb_stand_death_chest_spin	native replacement	23	16	-1
+37	pb_stand_death_frontspin	4	pb_stand_death_chest_spin	native replacement	23	16	-1
+37	pb_stand_death_frontspin	5	pb_stand_death_chest_spin	native replacement	23	16	-1
+37	pb_stand_death_frontspin	6	pb_stand_death_chest_spin	native replacement	23	16	-1
+37	pb_stand_death_frontspin	7	pb_stand_death_chest_spin	native replacement	23	16	-1
+38	pb_stand_death_nervedeath	0	pb_stand_death_nervedeath	exact	26	19	-1
+38	pb_stand_death_nervedeath	1	pb_stand_death_nervedeath	exact	26	19	-1
+38	pb_stand_death_nervedeath	2	pb_stand_death_nervedeath	exact	26	19	-1
+38	pb_stand_death_nervedeath	3	pb_stand_death_nervedeath	exact	26	19	-1
+38	pb_stand_death_nervedeath	4	pb_stand_death_nervedeath	exact	26	19	-1
+38	pb_stand_death_nervedeath	5	pb_stand_death_nervedeath	exact	26	19	-1
+38	pb_stand_death_nervedeath	6	pb_stand_death_nervedeath	exact	26	19	-1
+38	pb_stand_death_nervedeath	7	pb_stand_death_nervedeath	exact	26	19	-1
+39	pb_stand_death_neckdeath	0	pb_stand_death_neckdeath	exact	27	20	-1
+39	pb_stand_death_neckdeath	1	pb_stand_death_neckdeath	exact	27	20	-1
+39	pb_stand_death_neckdeath	2	pb_stand_death_neckdeath	exact	27	20	-1
+39	pb_stand_death_neckdeath	3	pb_stand_death_neckdeath	exact	27	20	-1
+39	pb_stand_death_neckdeath	4	pb_stand_death_neckdeath	exact	27	20	-1
+39	pb_stand_death_neckdeath	5	pb_stand_death_neckdeath	exact	27	20	-1
+39	pb_stand_death_neckdeath	6	pb_stand_death_neckdeath	exact	27	20	-1
+39	pb_stand_death_neckdeath	7	pb_stand_death_neckdeath	exact	27	20	-1
+40	pb_stand_death_neckdeath_thrash	0	pb_stand_death_neckdeath_thrash	exact	28	21	-1
+40	pb_stand_death_neckdeath_thrash	1	pb_stand_death_neckdeath_thrash	exact	28	21	-1
+40	pb_stand_death_neckdeath_thrash	2	pb_stand_death_neckdeath_thrash	exact	28	21	-1
+40	pb_stand_death_neckdeath_thrash	3	pb_stand_death_neckdeath_thrash	exact	28	21	-1
+40	pb_stand_death_neckdeath_thrash	4	pb_stand_death_neckdeath_thrash	exact	28	21	-1
+40	pb_stand_death_neckdeath_thrash	5	pb_stand_death_neckdeath_thrash	exact	28	21	-1
+40	pb_stand_death_neckdeath_thrash	6	pb_stand_death_neckdeath_thrash	exact	28	21	-1
+40	pb_stand_death_neckdeath_thrash	7	pb_stand_death_neckdeath_thrash	exact	28	21	-1
+41	pb_stand_death_head_collapse	0	pb_stand_death_head_collapse	exact	29	22	-1
+41	pb_stand_death_head_collapse	1	pb_stand_death_head_collapse	exact	29	22	-1
+41	pb_stand_death_head_collapse	2	pb_stand_death_head_collapse	exact	29	22	-1
+41	pb_stand_death_head_collapse	3	pb_stand_death_head_collapse	exact	29	22	-1
+41	pb_stand_death_head_collapse	4	pb_stand_death_head_collapse	exact	29	22	-1
+41	pb_stand_death_head_collapse	5	pb_stand_death_head_collapse	exact	29	22	-1
+41	pb_stand_death_head_collapse	6	pb_stand_death_head_collapse	exact	29	22	-1
+41	pb_stand_death_head_collapse	7	pb_stand_death_head_collapse	exact	29	22	-1
+42	pb_stand_death_lowerback	0	pb_stand_death_lowerback	exact	30	23	-1
+42	pb_stand_death_lowerback	1	pb_stand_death_lowerback	exact	30	23	-1
+42	pb_stand_death_lowerback	2	pb_stand_death_lowerback	exact	30	23	-1
+42	pb_stand_death_lowerback	3	pb_stand_death_lowerback	exact	30	23	-1
+42	pb_stand_death_lowerback	4	pb_stand_death_lowerback	exact	30	23	-1
+42	pb_stand_death_lowerback	5	pb_stand_death_lowerback	exact	30	23	-1
+42	pb_stand_death_lowerback	6	pb_stand_death_lowerback	exact	30	23	-1
+42	pb_stand_death_lowerback	7	pb_stand_death_lowerback	exact	30	23	-1
+43	pb_stand_death_legs	0	pb_stand_death_legs	exact	31	24	-1
+43	pb_stand_death_legs	1	pb_stand_death_legs	exact	31	24	-1
+43	pb_stand_death_legs	2	pb_stand_death_legs	exact	31	24	-1
+43	pb_stand_death_legs	3	pb_stand_death_legs	exact	31	24	-1
+43	pb_stand_death_legs	4	pb_stand_death_legs	exact	31	24	-1
+43	pb_stand_death_legs	5	pb_stand_death_legs	exact	31	24	-1
+43	pb_stand_death_legs	6	pb_stand_death_legs	exact	31	24	-1
+43	pb_stand_death_legs	7	pb_stand_death_legs	exact	31	24	-1
+44	pb_crouchrun_death_crumple	0	pb_crouchrun_death_crumple	exact	32	25	-1
+44	pb_crouchrun_death_crumple	1	pb_crouchrun_death_crumple	exact	32	25	-1
+44	pb_crouchrun_death_crumple	2	pb_crouchrun_death_crumple	exact	32	25	-1
+44	pb_crouchrun_death_crumple	3	pb_crouchrun_death_crumple	exact	32	25	-1
+44	pb_crouchrun_death_crumple	4	pb_crouchrun_death_crumple	exact	32	25	-1
+44	pb_crouchrun_death_crumple	5	pb_crouchrun_death_crumple	exact	32	25	-1
+44	pb_crouchrun_death_crumple	6	pb_crouchrun_death_crumple	exact	32	25	-1
+44	pb_crouchrun_death_crumple	7	pb_crouchrun_death_crumple	exact	32	25	-1
+45	pb_crouchrun_death_drop	0	pb_crouchrun_death_drop	exact	33	26	-1
+45	pb_crouchrun_death_drop	1	pb_crouchrun_death_drop	exact	33	26	-1
+45	pb_crouchrun_death_drop	2	pb_crouchrun_death_drop	exact	33	26	-1
+45	pb_crouchrun_death_drop	3	pb_crouchrun_death_drop	exact	33	26	-1
+45	pb_crouchrun_death_drop	4	pb_crouchrun_death_drop	exact	33	26	-1
+45	pb_crouchrun_death_drop	5	pb_crouchrun_death_drop	exact	33	26	-1
+45	pb_crouchrun_death_drop	6	pb_crouchrun_death_drop	exact	33	26	-1
+45	pb_crouchrun_death_drop	7	pb_crouchrun_death_drop	exact	33	26	-1
+46	pb_crouch_death_falltohands	0	pb_crouch_death_falltohands	exact	34	27	-1
+46	pb_crouch_death_falltohands	1	pb_crouch_death_falltohands	exact	34	27	-1
+46	pb_crouch_death_falltohands	2	pb_crouch_death_falltohands	exact	34	27	-1
+46	pb_crouch_death_falltohands	3	pb_crouch_death_falltohands	exact	34	27	-1
+46	pb_crouch_death_falltohands	4	pb_crouch_death_falltohands	exact	34	27	-1
+46	pb_crouch_death_falltohands	5	pb_crouch_death_falltohands	exact	34	27	-1
+46	pb_crouch_death_falltohands	6	pb_crouch_death_falltohands	exact	34	27	-1
+46	pb_crouch_death_falltohands	7	pb_crouch_death_falltohands	exact	34	27	-1
+47	pb_crouch_death_fetal	0	pb_crouch_death_fetal	exact	35	28	-1
+47	pb_crouch_death_fetal	1	pb_crouch_death_fetal	exact	35	28	-1
+47	pb_crouch_death_fetal	2	pb_crouch_death_fetal	exact	35	28	-1
+47	pb_crouch_death_fetal	3	pb_crouch_death_fetal	exact	35	28	-1
+47	pb_crouch_death_fetal	4	pb_crouch_death_fetal	exact	35	28	-1
+47	pb_crouch_death_fetal	5	pb_crouch_death_fetal	exact	35	28	-1
+47	pb_crouch_death_fetal	6	pb_crouch_death_fetal	exact	35	28	-1
+47	pb_crouch_death_fetal	7	pb_crouch_death_fetal	exact	35	28	-1
+48	pb_crouch_death_flip	0	pb_crouch_death_flip	exact	36	29	-1
+48	pb_crouch_death_flip	1	pb_crouch_death_flip	exact	36	29	-1
+48	pb_crouch_death_flip	2	pb_crouch_death_flip	exact	36	29	-1
+48	pb_crouch_death_flip	3	pb_crouch_death_flip	exact	36	29	-1
+48	pb_crouch_death_flip	4	pb_crouch_death_flip	exact	36	29	-1
+48	pb_crouch_death_flip	5	pb_crouch_death_flip	exact	36	29	-1
+48	pb_crouch_death_flip	6	pb_crouch_death_flip	exact	36	29	-1
+48	pb_crouch_death_flip	7	pb_crouch_death_flip	exact	36	29	-1
+49	pb_crouch_death_clutchchest	0	pb_crouch_death_clutchchest	exact	37	30	-1
+49	pb_crouch_death_clutchchest	1	pb_crouch_death_clutchchest	exact	37	30	-1
+49	pb_crouch_death_clutchchest	2	pb_crouch_death_clutchchest	exact	37	30	-1
+49	pb_crouch_death_clutchchest	3	pb_crouch_death_clutchchest	exact	37	30	-1
+49	pb_crouch_death_clutchchest	4	pb_crouch_death_clutchchest	exact	37	30	-1
+49	pb_crouch_death_clutchchest	5	pb_crouch_death_clutchchest	exact	37	30	-1
+49	pb_crouch_death_clutchchest	6	pb_crouch_death_clutchchest	exact	37	30	-1
+49	pb_crouch_death_clutchchest	7	pb_crouch_death_clutchchest	exact	37	30	-1
+50	pb_crouch_death_headshot_front	0	pb_crouch_death_headshot_front	exact	38	31	-1
+50	pb_crouch_death_headshot_front	1	pb_crouch_death_headshot_front	exact	38	31	-1
+50	pb_crouch_death_headshot_front	2	pb_crouch_death_headshot_front	exact	38	31	-1
+50	pb_crouch_death_headshot_front	3	pb_crouch_death_headshot_front	exact	38	31	-1
+50	pb_crouch_death_headshot_front	4	pb_crouch_death_headshot_front	exact	38	31	-1
+50	pb_crouch_death_headshot_front	5	pb_crouch_death_headshot_front	exact	38	31	-1
+50	pb_crouch_death_headshot_front	6	pb_crouch_death_headshot_front	exact	38	31	-1
+50	pb_crouch_death_headshot_front	7	pb_crouch_death_headshot_front	exact	38	31	-1
+51	pb_laststand_death	0	pb_laststand_death	exact	162	155	-1
+51	pb_laststand_death	1	pb_laststand_death	exact	162	155	-1
+51	pb_laststand_death	2	pb_laststand_death	exact	162	155	-1
+51	pb_laststand_death	3	pb_laststand_death	exact	162	155	-1
+51	pb_laststand_death	4	pb_laststand_death	exact	162	155	-1
+51	pb_laststand_death	5	pb_laststand_death	exact	162	155	-1
+51	pb_laststand_death	6	pb_laststand_death	exact	162	155	-1
+51	pb_laststand_death	7	pb_laststand_death	exact	162	155	-1
+52	pb_prone_death_quickdeath	0	h1_prone_death_quickdeath	native replacement	39	32	-1
+52	pb_prone_death_quickdeath	1	h1_prone_death_quickdeath	native replacement	39	32	-1
+52	pb_prone_death_quickdeath	2	h1_prone_death_quickdeath	native replacement	39	32	-1
+52	pb_prone_death_quickdeath	3	h1_prone_death_quickdeath	native replacement	39	32	-1
+52	pb_prone_death_quickdeath	4	h1_prone_death_quickdeath	native replacement	39	32	-1
+52	pb_prone_death_quickdeath	5	h1_prone_death_quickdeath	native replacement	39	32	-1
+52	pb_prone_death_quickdeath	6	h1_prone_death_quickdeath	native replacement	39	32	-1
+52	pb_prone_death_quickdeath	7	h1_prone_death_quickdeath	native replacement	39	32	-1
+53	crouchSAWgunner_aim	0	crouchSAWgunner_aim	exact	57	50	-1
+53	crouchSAWgunner_aim	1	crouchSAWgunner_aim	exact	57	50	-1
+53	crouchSAWgunner_aim	2	crouchSAWgunner_aim	exact	57	50	-1
+53	crouchSAWgunner_aim	3	crouchSAWgunner_aim	exact	57	50	-1
+53	crouchSAWgunner_aim	4	crouchSAWgunner_aim	exact	57	50	-1
+53	crouchSAWgunner_aim	5	crouchSAWgunner_aim	exact	57	50	-1
+53	crouchSAWgunner_aim	6	crouchSAWgunner_aim	exact	57	50	-1
+53	crouchSAWgunner_aim	7	crouchSAWgunner_aim	exact	57	50	-1
+54	proneSAWgunner_aim	0	proneSAWgunner_aim	exact	58	51	-1
+54	proneSAWgunner_aim	1	proneSAWgunner_aim	exact	58	51	-1
+54	proneSAWgunner_aim	2	proneSAWgunner_aim	exact	58	51	-1
+54	proneSAWgunner_aim	3	proneSAWgunner_aim	exact	58	51	-1
+54	proneSAWgunner_aim	4	proneSAWgunner_aim	exact	58	51	-1
+54	proneSAWgunner_aim	5	proneSAWgunner_aim	exact	58	51	-1
+54	proneSAWgunner_aim	6	proneSAWgunner_aim	exact	58	51	-1
+54	proneSAWgunner_aim	7	proneSAWgunner_aim	exact	58	51	-1
+55	standSAWgunner_aim	0	standSAWgunner_aim	exact	59	52	-1
+55	standSAWgunner_aim	1	standSAWgunner_aim	exact	59	52	-1
+55	standSAWgunner_aim	2	standSAWgunner_aim	exact	59	52	-1
+55	standSAWgunner_aim	3	standSAWgunner_aim	exact	59	52	-1
+55	standSAWgunner_aim	4	standSAWgunner_aim	exact	59	52	-1
+55	standSAWgunner_aim	5	standSAWgunner_aim	exact	59	52	-1
+55	standSAWgunner_aim	6	standSAWgunner_aim	exact	59	52	-1
+55	standSAWgunner_aim	7	standSAWgunner_aim	exact	59	52	-1
+56	mp_mantle_over_low	0	mp_mantle_over_low	exact	129	122	-1
+56	mp_mantle_over_low	1	mp_mantle_over_low	exact	129	122	-1
+56	mp_mantle_over_low	2	mp_mantle_over_low	exact	129	122	-1
+56	mp_mantle_over_low	3	mp_mantle_over_low	exact	129	122	-1
+56	mp_mantle_over_low	4	mp_mantle_over_low	exact	129	122	-1
+56	mp_mantle_over_low	5	mp_mantle_over_low	exact	129	122	-1
+56	mp_mantle_over_low	6	mp_mantle_over_low	exact	129	122	-1
+56	mp_mantle_over_low	7	mp_mantle_over_low	exact	129	122	-1
+57	mp_mantle_over_mid	0	mp_mantle_over_33	native replacement	130	123	-1
+57	mp_mantle_over_mid	1	mp_mantle_over_33	native replacement	130	123	-1
+57	mp_mantle_over_mid	2	mp_mantle_over_33	native replacement	130	123	-1
+57	mp_mantle_over_mid	3	mp_mantle_over_33	native replacement	130	123	-1
+57	mp_mantle_over_mid	4	mp_mantle_over_33	native replacement	130	123	-1
+57	mp_mantle_over_mid	5	mp_mantle_over_33	native replacement	130	123	-1
+57	mp_mantle_over_mid	6	mp_mantle_over_33	native replacement	130	123	-1
+57	mp_mantle_over_mid	7	mp_mantle_over_33	native replacement	130	123	-1
+58	mp_mantle_over_high	0	mp_mantle_over_57	native replacement	134	127	-1
+58	mp_mantle_over_high	1	mp_mantle_over_57	native replacement	134	127	-1
+58	mp_mantle_over_high	2	mp_mantle_over_57	native replacement	134	127	-1
+58	mp_mantle_over_high	3	mp_mantle_over_57	native replacement	134	127	-1
+58	mp_mantle_over_high	4	mp_mantle_over_57	native replacement	134	127	-1
+58	mp_mantle_over_high	5	mp_mantle_over_57	native replacement	134	127	-1
+58	mp_mantle_over_high	6	mp_mantle_over_57	native replacement	134	127	-1
+58	mp_mantle_over_high	7	mp_mantle_over_57	native replacement	134	127	-1
+59	mp_mantle_up_21	0	mp_mantle_up_21	exact	135	128	-1
+59	mp_mantle_up_21	1	mp_mantle_up_21	exact	135	128	-1
+59	mp_mantle_up_21	2	mp_mantle_up_21	exact	135	128	-1
+59	mp_mantle_up_21	3	mp_mantle_up_21	exact	135	128	-1
+59	mp_mantle_up_21	4	mp_mantle_up_21	exact	135	128	-1
+59	mp_mantle_up_21	5	mp_mantle_up_21	exact	135	128	-1
+59	mp_mantle_up_21	6	mp_mantle_up_21	exact	135	128	-1
+59	mp_mantle_up_21	7	mp_mantle_up_21	exact	135	128	-1
+60	mp_mantle_up_27	0	mp_mantle_up_27	exact	136	129	-1
+60	mp_mantle_up_27	1	mp_mantle_up_27	exact	136	129	-1
+60	mp_mantle_up_27	2	mp_mantle_up_27	exact	136	129	-1
+60	mp_mantle_up_27	3	mp_mantle_up_27	exact	136	129	-1
+60	mp_mantle_up_27	4	mp_mantle_up_27	exact	136	129	-1
+60	mp_mantle_up_27	5	mp_mantle_up_27	exact	136	129	-1
+60	mp_mantle_up_27	6	mp_mantle_up_27	exact	136	129	-1
+60	mp_mantle_up_27	7	mp_mantle_up_27	exact	136	129	-1
+61	mp_mantle_up_33	0	mp_mantle_up_33	exact	137	130	-1
+61	mp_mantle_up_33	1	mp_mantle_up_33	exact	137	130	-1
+61	mp_mantle_up_33	2	mp_mantle_up_33	exact	137	130	-1
+61	mp_mantle_up_33	3	mp_mantle_up_33	exact	137	130	-1
+61	mp_mantle_up_33	4	mp_mantle_up_33	exact	137	130	-1
+61	mp_mantle_up_33	5	mp_mantle_up_33	exact	137	130	-1
+61	mp_mantle_up_33	6	mp_mantle_up_33	exact	137	130	-1
+61	mp_mantle_up_33	7	mp_mantle_up_33	exact	137	130	-1
+62	mp_mantle_up_39	0	mp_mantle_up_39	exact	138	131	-1
+62	mp_mantle_up_39	1	mp_mantle_up_39	exact	138	131	-1
+62	mp_mantle_up_39	2	mp_mantle_up_39	exact	138	131	-1
+62	mp_mantle_up_39	3	mp_mantle_up_39	exact	138	131	-1
+62	mp_mantle_up_39	4	mp_mantle_up_39	exact	138	131	-1
+62	mp_mantle_up_39	5	mp_mantle_up_39	exact	138	131	-1
+62	mp_mantle_up_39	6	mp_mantle_up_39	exact	138	131	-1
+62	mp_mantle_up_39	7	mp_mantle_up_39	exact	138	131	-1
+63	mp_mantle_up_45	0	mp_mantle_up_45	exact	139	132	-1
+63	mp_mantle_up_45	1	mp_mantle_up_45	exact	139	132	-1
+63	mp_mantle_up_45	2	mp_mantle_up_45	exact	139	132	-1
+63	mp_mantle_up_45	3	mp_mantle_up_45	exact	139	132	-1
+63	mp_mantle_up_45	4	mp_mantle_up_45	exact	139	132	-1
+63	mp_mantle_up_45	5	mp_mantle_up_45	exact	139	132	-1
+63	mp_mantle_up_45	6	mp_mantle_up_45	exact	139	132	-1
+63	mp_mantle_up_45	7	mp_mantle_up_45	exact	139	132	-1
+64	mp_mantle_up_51	0	mp_mantle_up_51	exact	140	133	-1
+64	mp_mantle_up_51	1	mp_mantle_up_51	exact	140	133	-1
+64	mp_mantle_up_51	2	mp_mantle_up_51	exact	140	133	-1
+64	mp_mantle_up_51	3	mp_mantle_up_51	exact	140	133	-1
+64	mp_mantle_up_51	4	mp_mantle_up_51	exact	140	133	-1
+64	mp_mantle_up_51	5	mp_mantle_up_51	exact	140	133	-1
+64	mp_mantle_up_51	6	mp_mantle_up_51	exact	140	133	-1
+64	mp_mantle_up_51	7	mp_mantle_up_51	exact	140	133	-1
+65	mp_mantle_up_57	0	mp_mantle_up_57	exact	141	134	-1
+65	mp_mantle_up_57	1	mp_mantle_up_57	exact	141	134	-1
+65	mp_mantle_up_57	2	mp_mantle_up_57	exact	141	134	-1
+65	mp_mantle_up_57	3	mp_mantle_up_57	exact	141	134	-1
+65	mp_mantle_up_57	4	mp_mantle_up_57	exact	141	134	-1
+65	mp_mantle_up_57	5	mp_mantle_up_57	exact	141	134	-1
+65	mp_mantle_up_57	6	mp_mantle_up_57	exact	141	134	-1
+65	mp_mantle_up_57	7	mp_mantle_up_57	exact	141	134	-1
+66	pb_prone2crouchrun	0	mp_iw6_prone_2_crouch_f	native replacement	605	598	-1
+66	pb_prone2crouchrun	1	mp_iw6_prone_2_crouch_f	native replacement	605	598	-1
+66	pb_prone2crouchrun	2	mp_iw6_prone_2_crouch_f	native replacement	605	598	-1
+66	pb_prone2crouchrun	3	mp_iw6_prone_2_crouch_f	native replacement	605	598	-1
+66	pb_prone2crouchrun	4	mp_iw6_prone_2_crouch_f	native replacement	605	598	-1
+66	pb_prone2crouchrun	5	mp_pistol_prone_2_crouch_f	native replacement	597	590	-1
+66	pb_prone2crouchrun	6	mp_rpg_prone_2_crouch_f	native replacement	592	585	-1
+66	pb_prone2crouchrun	7	mp_iw6_prone_2_crouch_f	native replacement	605	598	-1
+67	pb_prone2crouch	0	mp_prone_2_crouch	native replacement	635	628	-1
+67	pb_prone2crouch	1	mp_prone_2_crouch	native replacement	635	628	-1
+67	pb_prone2crouch	2	mp_prone_2_crouch	native replacement	635	628	-1
+67	pb_prone2crouch	3	mp_prone_2_crouch	native replacement	635	628	-1
+67	pb_prone2crouch	4	mp_prone_2_crouch	native replacement	635	628	-1
+67	pb_prone2crouch	5	mp_pistol_prone_2_crouch	native replacement	631	624	-1
+67	pb_prone2crouch	6	mp_rpg_prone_2_crouch	native replacement	630	623	-1
+67	pb_prone2crouch	7	mp_prone_2_crouch	native replacement	635	628	-1
+68	pb_crouch2prone	0	mp_crouch_2_prone	native replacement	629	622	-1
+68	pb_crouch2prone	1	mp_crouch_2_prone	native replacement	629	622	-1
+68	pb_crouch2prone	2	mp_crouch_2_prone	native replacement	629	622	-1
+68	pb_crouch2prone	3	mp_crouch_2_prone	native replacement	629	622	-1
+68	pb_crouch2prone	4	mp_crouch_2_prone	native replacement	629	622	-1
+68	pb_crouch2prone	5	mp_pistol_crouch_2_prone	native replacement	625	618	-1
+68	pb_crouch2prone	6	mp_rpg_crouch_2_prone	native replacement	624	617	-1
+68	pb_crouch2prone	7	mp_hold_crouch_2_prone	native replacement	627	620	-1
+69	pb_prone_grenade_crawl_back	0	pb_prone_crawl_back_hold	native replacement	256	249	-1
+69	pb_prone_grenade_crawl_back	1	pb_prone_crawl_back_hold	native replacement	256	249	-1
+69	pb_prone_grenade_crawl_back	2	pb_prone_crawl_back_hold	native replacement	256	249	-1
+69	pb_prone_grenade_crawl_back	3	pb_prone_crawl_back_hold	native replacement	256	249	-1
+69	pb_prone_grenade_crawl_back	4	pb_prone_crawl_back_hold	native replacement	256	249	-1
+69	pb_prone_grenade_crawl_back	5	pb_prone_crawl_back_hold	native replacement	256	249	-1
+69	pb_prone_grenade_crawl_back	6	pb_prone_crawl_back_hold	native replacement	256	249	-1
+69	pb_prone_grenade_crawl_back	7	pb_prone_crawl_back_hold	native replacement	256	249	-1
+70	pb_prone_grenade_crawl_right	0	pb_prone_crawl_right_hold	native replacement	254	247	-1
+70	pb_prone_grenade_crawl_right	1	pb_prone_crawl_right_hold	native replacement	254	247	-1
+70	pb_prone_grenade_crawl_right	2	pb_prone_crawl_right_hold	native replacement	254	247	-1
+70	pb_prone_grenade_crawl_right	3	pb_prone_crawl_right_hold	native replacement	254	247	-1
+70	pb_prone_grenade_crawl_right	4	pb_prone_crawl_right_hold	native replacement	254	247	-1
+70	pb_prone_grenade_crawl_right	5	pb_prone_crawl_right_hold	native replacement	254	247	-1
+70	pb_prone_grenade_crawl_right	6	pb_prone_crawl_right_hold	native replacement	254	247	-1
+70	pb_prone_grenade_crawl_right	7	pb_prone_crawl_right_hold	native replacement	254	247	-1
+71	pb_prone_grenade_crawl_left	0	pb_prone_crawl_left_hold	native replacement	255	248	-1
+71	pb_prone_grenade_crawl_left	1	pb_prone_crawl_left_hold	native replacement	255	248	-1
+71	pb_prone_grenade_crawl_left	2	pb_prone_crawl_left_hold	native replacement	255	248	-1
+71	pb_prone_grenade_crawl_left	3	pb_prone_crawl_left_hold	native replacement	255	248	-1
+71	pb_prone_grenade_crawl_left	4	pb_prone_crawl_left_hold	native replacement	255	248	-1
+71	pb_prone_grenade_crawl_left	5	pb_prone_crawl_left_hold	native replacement	255	248	-1
+71	pb_prone_grenade_crawl_left	6	pb_prone_crawl_left_hold	native replacement	255	248	-1
+71	pb_prone_grenade_crawl_left	7	pb_prone_crawl_left_hold	native replacement	255	248	-1
+72	pb_prone_aim_grenade	0	pb_prone_hold	native replacement	764	756	-1
+72	pb_prone_aim_grenade	1	pb_prone_hold	native replacement	764	756	-1
+72	pb_prone_aim_grenade	2	pb_prone_hold	native replacement	764	756	-1
+72	pb_prone_aim_grenade	3	pb_prone_hold	native replacement	764	756	-1
+72	pb_prone_aim_grenade	4	pb_prone_hold	native replacement	764	756	-1
+72	pb_prone_aim_grenade	5	pb_prone_hold	native replacement	764	756	-1
+72	pb_prone_aim_grenade	6	pb_prone_hold	native replacement	764	756	-1
+72	pb_prone_aim_grenade	7	pb_prone_hold	native replacement	764	756	-1
+73	pb_prone_aim_pistol	0	mp_pistol_prone_idle	native replacement	777	769	-1
+73	pb_prone_aim_pistol	1	mp_pistol_prone_idle	native replacement	777	769	-1
+73	pb_prone_aim_pistol	2	mp_pistol_prone_idle	native replacement	777	769	-1
+73	pb_prone_aim_pistol	3	mp_pistol_prone_idle	native replacement	777	769	-1
+73	pb_prone_aim_pistol	4	mp_pistol_prone_idle	native replacement	777	769	-1
+73	pb_prone_aim_pistol	5	mp_pistol_prone_idle	native replacement	777	769	-1
+73	pb_prone_aim_pistol	6	mp_pistol_prone_idle	native replacement	777	769	-1
+73	pb_prone_aim_pistol	7	mp_pistol_prone_idle	native replacement	777	769	-1
+74	pb_prone_aim	0	mp_prone_idle_iw6	native replacement	790	782	-1
+74	pb_prone_aim	1	pb_prone_aim_sniper	native replacement	760	752	-1
+74	pb_prone_aim	2	mp_prone_idle_iw6	native replacement	790	782	-1
+74	pb_prone_aim	3	mp_prone_idle_iw6	native replacement	790	782	-1
+74	pb_prone_aim	4	mp_prone_idle_iw6	native replacement	790	782	-1
+74	pb_prone_aim	5	mp_prone_idle_iw6	native replacement	790	782	-1
+74	pb_prone_aim	6	mp_prone_idle_iw6	native replacement	790	782	-1
+74	pb_prone_aim	7	mp_prone_idle_iw6	native replacement	790	782	-1
+75	pb_prone_crawl_back	0	pb_prone_crawl_back	exact	258	251	-1
+75	pb_prone_crawl_back	1	pb_prone_crawl_back	exact	258	251	-1
+75	pb_prone_crawl_back	2	pb_prone_crawl_back	exact	258	251	-1
+75	pb_prone_crawl_back	3	pb_prone_crawl_back	exact	258	251	-1
+75	pb_prone_crawl_back	4	pb_prone_crawl_back	exact	258	251	-1
+75	pb_prone_crawl_back	5	pb_prone_crawl_back	exact	258	251	-1
+75	pb_prone_crawl_back	6	pb_prone_crawl_back	exact	258	251	-1
+75	pb_prone_crawl_back	7	pb_prone_crawl_back	exact	258	251	-1
+76	pb_prone_crawl_right	0	pb_prone_crawl_right	exact	259	252	-1
+76	pb_prone_crawl_right	1	pb_prone_crawl_right	exact	259	252	-1
+76	pb_prone_crawl_right	2	pb_prone_crawl_right	exact	259	252	-1
+76	pb_prone_crawl_right	3	pb_prone_crawl_right	exact	259	252	-1
+76	pb_prone_crawl_right	4	pb_prone_crawl_right	exact	259	252	-1
+76	pb_prone_crawl_right	5	pb_prone_crawl_right	exact	259	252	-1
+76	pb_prone_crawl_right	6	pb_prone_crawl_right	exact	259	252	-1
+76	pb_prone_crawl_right	7	pb_prone_crawl_right	exact	259	252	-1
+77	pb_prone_crawl_left	0	pb_prone_crawl_left	exact	260	253	-1
+77	pb_prone_crawl_left	1	pb_prone_crawl_left	exact	260	253	-1
+77	pb_prone_crawl_left	2	pb_prone_crawl_left	exact	260	253	-1
+77	pb_prone_crawl_left	3	pb_prone_crawl_left	exact	260	253	-1
+77	pb_prone_crawl_left	4	pb_prone_crawl_left	exact	260	253	-1
+77	pb_prone_crawl_left	5	pb_prone_crawl_left	exact	260	253	-1
+77	pb_prone_crawl_left	6	pb_prone_crawl_left	exact	260	253	-1
+77	pb_prone_crawl_left	7	pb_prone_crawl_left	exact	260	253	-1
+78	pb_prone_grenade_crawl	0	pb_prone_crawl_hold	native replacement	257	250	-1
+78	pb_prone_grenade_crawl	1	pb_prone_crawl_hold	native replacement	257	250	-1
+78	pb_prone_grenade_crawl	2	pb_prone_crawl_hold	native replacement	257	250	-1
+78	pb_prone_grenade_crawl	3	pb_prone_crawl_hold	native replacement	257	250	-1
+78	pb_prone_grenade_crawl	4	pb_prone_crawl_hold	native replacement	257	250	-1
+78	pb_prone_grenade_crawl	5	pb_prone_crawl_hold	native replacement	257	250	-1
+78	pb_prone_grenade_crawl	6	pb_prone_crawl_hold	native replacement	257	250	-1
+78	pb_prone_grenade_crawl	7	pb_prone_crawl_hold	native replacement	257	250	-1
+79	pb_prone_crawl	0	pb_prone_crawl	exact	261	254	-1
+79	pb_prone_crawl	1	pb_prone_crawl	exact	261	254	-1
+79	pb_prone_crawl	2	pb_prone_crawl	exact	261	254	-1
+79	pb_prone_crawl	3	pb_prone_crawl	exact	261	254	-1
+79	pb_prone_crawl	4	pb_prone_crawl	exact	261	254	-1
+79	pb_prone_crawl	5	pb_prone_crawl	exact	261	254	-1
+79	pb_prone_crawl	6	pb_prone_crawl	exact	261	254	-1
+79	pb_prone_crawl	7	pb_prone_crawl	exact	261	254	-1
+80	pb_climbup	0	pb_climbup	exact	163	156	-1
+80	pb_climbup	1	pb_climbup	exact	163	156	-1
+80	pb_climbup	2	pb_climbup	exact	163	156	-1
+80	pb_climbup	3	pb_climbup	exact	163	156	-1
+80	pb_climbup	4	pb_climbup	exact	163	156	-1
+80	pb_climbup	5	pb_climbup	exact	163	156	-1
+80	pb_climbup	6	pb_climbup	exact	163	156	-1
+80	pb_climbup	7	pb_climbup	exact	163	156	-1
+81	pb_climbdown	0	pb_climbdown	exact	164	157	-1
+81	pb_climbdown	1	pb_climbdown	exact	164	157	-1
+81	pb_climbdown	2	pb_climbdown	exact	164	157	-1
+81	pb_climbdown	3	pb_climbdown	exact	164	157	-1
+81	pb_climbdown	4	pb_climbdown	exact	164	157	-1
+81	pb_climbdown	5	pb_climbdown	exact	164	157	-1
+81	pb_climbdown	6	pb_climbdown	exact	164	157	-1
+81	pb_climbdown	7	pb_climbdown	exact	164	157	-1
+82	pb_prone_crawl_right_hold	0	pb_prone_crawl_right_hold	exact	254	247	-1
+82	pb_prone_crawl_right_hold	1	pb_prone_crawl_right_hold	exact	254	247	-1
+82	pb_prone_crawl_right_hold	2	pb_prone_crawl_right_hold	exact	254	247	-1
+82	pb_prone_crawl_right_hold	3	pb_prone_crawl_right_hold	exact	254	247	-1
+82	pb_prone_crawl_right_hold	4	pb_prone_crawl_right_hold	exact	254	247	-1
+82	pb_prone_crawl_right_hold	5	pb_prone_crawl_right_hold	exact	254	247	-1
+82	pb_prone_crawl_right_hold	6	pb_prone_crawl_right_hold	exact	254	247	-1
+82	pb_prone_crawl_right_hold	7	pb_prone_crawl_right_hold	exact	254	247	-1
+83	pb_prone_crawl_left_hold	0	pb_prone_crawl_left_hold	exact	255	248	-1
+83	pb_prone_crawl_left_hold	1	pb_prone_crawl_left_hold	exact	255	248	-1
+83	pb_prone_crawl_left_hold	2	pb_prone_crawl_left_hold	exact	255	248	-1
+83	pb_prone_crawl_left_hold	3	pb_prone_crawl_left_hold	exact	255	248	-1
+83	pb_prone_crawl_left_hold	4	pb_prone_crawl_left_hold	exact	255	248	-1
+83	pb_prone_crawl_left_hold	5	pb_prone_crawl_left_hold	exact	255	248	-1
+83	pb_prone_crawl_left_hold	6	pb_prone_crawl_left_hold	exact	255	248	-1
+83	pb_prone_crawl_left_hold	7	pb_prone_crawl_left_hold	exact	255	248	-1
+84	pb_prone_crawl_back_hold	0	pb_prone_crawl_back_hold	exact	256	249	-1
+84	pb_prone_crawl_back_hold	1	pb_prone_crawl_back_hold	exact	256	249	-1
+84	pb_prone_crawl_back_hold	2	pb_prone_crawl_back_hold	exact	256	249	-1
+84	pb_prone_crawl_back_hold	3	pb_prone_crawl_back_hold	exact	256	249	-1
+84	pb_prone_crawl_back_hold	4	pb_prone_crawl_back_hold	exact	256	249	-1
+84	pb_prone_crawl_back_hold	5	pb_prone_crawl_back_hold	exact	256	249	-1
+84	pb_prone_crawl_back_hold	6	pb_prone_crawl_back_hold	exact	256	249	-1
+84	pb_prone_crawl_back_hold	7	pb_prone_crawl_back_hold	exact	256	249	-1
+85	pb_prone_crawl_hold	0	pb_prone_crawl_hold	exact	257	250	-1
+85	pb_prone_crawl_hold	1	pb_prone_crawl_hold	exact	257	250	-1
+85	pb_prone_crawl_hold	2	pb_prone_crawl_hold	exact	257	250	-1
+85	pb_prone_crawl_hold	3	pb_prone_crawl_hold	exact	257	250	-1
+85	pb_prone_crawl_hold	4	pb_prone_crawl_hold	exact	257	250	-1
+85	pb_prone_crawl_hold	5	pb_prone_crawl_hold	exact	257	250	-1
+85	pb_prone_crawl_hold	6	pb_prone_crawl_hold	exact	257	250	-1
+85	pb_prone_crawl_hold	7	pb_prone_crawl_hold	exact	257	250	-1
+86	pb_crouch_walk_back_rpg	0	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+86	pb_crouch_walk_back_rpg	1	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+86	pb_crouch_walk_back_rpg	2	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+86	pb_crouch_walk_back_rpg	3	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+86	pb_crouch_walk_back_rpg	4	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+86	pb_crouch_walk_back_rpg	5	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+86	pb_crouch_walk_back_rpg	6	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+86	pb_crouch_walk_back_rpg	7	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+87	pb_crouch_walk_forward_rpg	0	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+87	pb_crouch_walk_forward_rpg	1	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+87	pb_crouch_walk_forward_rpg	2	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+87	pb_crouch_walk_forward_rpg	3	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+87	pb_crouch_walk_forward_rpg	4	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+87	pb_crouch_walk_forward_rpg	5	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+87	pb_crouch_walk_forward_rpg	6	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+87	pb_crouch_walk_forward_rpg	7	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+88	pb_crouch_walk_left_rpg	0	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+88	pb_crouch_walk_left_rpg	1	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+88	pb_crouch_walk_left_rpg	2	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+88	pb_crouch_walk_left_rpg	3	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+88	pb_crouch_walk_left_rpg	4	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+88	pb_crouch_walk_left_rpg	5	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+88	pb_crouch_walk_left_rpg	6	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+88	pb_crouch_walk_left_rpg	7	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+89	pb_crouch_walk_right_rpg	0	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+89	pb_crouch_walk_right_rpg	1	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+89	pb_crouch_walk_right_rpg	2	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+89	pb_crouch_walk_right_rpg	3	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+89	pb_crouch_walk_right_rpg	4	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+89	pb_crouch_walk_right_rpg	5	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+89	pb_crouch_walk_right_rpg	6	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+89	pb_crouch_walk_right_rpg	7	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+90	pb_crouch_run_right_rpg	0	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+90	pb_crouch_run_right_rpg	1	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+90	pb_crouch_run_right_rpg	2	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+90	pb_crouch_run_right_rpg	3	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+90	pb_crouch_run_right_rpg	4	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+90	pb_crouch_run_right_rpg	5	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+90	pb_crouch_run_right_rpg	6	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+90	pb_crouch_run_right_rpg	7	mp_rpg_crouch_walk_r	native replacement	266	259	-1
+91	pb_crouch_run_left_rpg	0	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+91	pb_crouch_run_left_rpg	1	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+91	pb_crouch_run_left_rpg	2	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+91	pb_crouch_run_left_rpg	3	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+91	pb_crouch_run_left_rpg	4	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+91	pb_crouch_run_left_rpg	5	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+91	pb_crouch_run_left_rpg	6	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+91	pb_crouch_run_left_rpg	7	mp_rpg_crouch_walk_l	native replacement	267	260	-1
+92	pb_crouch_run_forward_rpg	0	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+92	pb_crouch_run_forward_rpg	1	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+92	pb_crouch_run_forward_rpg	2	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+92	pb_crouch_run_forward_rpg	3	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+92	pb_crouch_run_forward_rpg	4	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+92	pb_crouch_run_forward_rpg	5	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+92	pb_crouch_run_forward_rpg	6	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+92	pb_crouch_run_forward_rpg	7	mp_rpg_crouch_walk_f	native replacement	269	262	-1
+93	pb_crouch_run_back_rpg	0	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+93	pb_crouch_run_back_rpg	1	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+93	pb_crouch_run_back_rpg	2	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+93	pb_crouch_run_back_rpg	3	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+93	pb_crouch_run_back_rpg	4	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+93	pb_crouch_run_back_rpg	5	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+93	pb_crouch_run_back_rpg	6	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+93	pb_crouch_run_back_rpg	7	mp_rpg_crouch_walk_b	native replacement	268	261	-1
+94	pb_crouch_hold_run_right	0	mp_crouch_hold_run_r	native replacement	282	275	-1
+94	pb_crouch_hold_run_right	1	mp_crouch_hold_run_r	native replacement	282	275	-1
+94	pb_crouch_hold_run_right	2	mp_crouch_hold_run_r	native replacement	282	275	-1
+94	pb_crouch_hold_run_right	3	mp_crouch_hold_run_r	native replacement	282	275	-1
+94	pb_crouch_hold_run_right	4	mp_crouch_hold_run_r	native replacement	282	275	-1
+94	pb_crouch_hold_run_right	5	mp_crouch_hold_run_r	native replacement	282	275	-1
+94	pb_crouch_hold_run_right	6	mp_crouch_hold_run_r	native replacement	282	275	-1
+94	pb_crouch_hold_run_right	7	mp_crouch_hold_run_r	native replacement	282	275	-1
+95	pb_crouch_hold_run_left	0	mp_crouch_hold_run_l	native replacement	283	276	-1
+95	pb_crouch_hold_run_left	1	mp_crouch_hold_run_l	native replacement	283	276	-1
+95	pb_crouch_hold_run_left	2	mp_crouch_hold_run_l	native replacement	283	276	-1
+95	pb_crouch_hold_run_left	3	mp_crouch_hold_run_l	native replacement	283	276	-1
+95	pb_crouch_hold_run_left	4	mp_crouch_hold_run_l	native replacement	283	276	-1
+95	pb_crouch_hold_run_left	5	mp_crouch_hold_run_l	native replacement	283	276	-1
+95	pb_crouch_hold_run_left	6	mp_crouch_hold_run_l	native replacement	283	276	-1
+95	pb_crouch_hold_run_left	7	mp_crouch_hold_run_l	native replacement	283	276	-1
+96	pb_crouch_hold_run_back	0	mp_crouch_hold_run_b	native replacement	284	277	-1
+96	pb_crouch_hold_run_back	1	mp_crouch_hold_run_b	native replacement	284	277	-1
+96	pb_crouch_hold_run_back	2	mp_crouch_hold_run_b	native replacement	284	277	-1
+96	pb_crouch_hold_run_back	3	mp_crouch_hold_run_b	native replacement	284	277	-1
+96	pb_crouch_hold_run_back	4	mp_crouch_hold_run_b	native replacement	284	277	-1
+96	pb_crouch_hold_run_back	5	mp_crouch_hold_run_b	native replacement	284	277	-1
+96	pb_crouch_hold_run_back	6	mp_crouch_hold_run_b	native replacement	284	277	-1
+96	pb_crouch_hold_run_back	7	mp_crouch_hold_run_b	native replacement	284	277	-1
+97	pb_crouch_hold_run	0	mp_crouch_hold_run	native replacement	285	278	-1
+97	pb_crouch_hold_run	1	mp_crouch_hold_run	native replacement	285	278	-1
+97	pb_crouch_hold_run	2	mp_crouch_hold_run	native replacement	285	278	-1
+97	pb_crouch_hold_run	3	mp_crouch_hold_run	native replacement	285	278	-1
+97	pb_crouch_hold_run	4	mp_crouch_hold_run	native replacement	285	278	-1
+97	pb_crouch_hold_run	5	mp_crouch_hold_run	native replacement	285	278	-1
+97	pb_crouch_hold_run	6	mp_crouch_hold_run	native replacement	285	278	-1
+97	pb_crouch_hold_run	7	mp_crouch_hold_run	native replacement	285	278	-1
+98	pb_hold_run_left	0	mp_hold_run_l	native replacement	306	299	-1
+98	pb_hold_run_left	1	mp_hold_run_l	native replacement	306	299	-1
+98	pb_hold_run_left	2	mp_hold_run_l	native replacement	306	299	-1
+98	pb_hold_run_left	3	mp_hold_run_l	native replacement	306	299	-1
+98	pb_hold_run_left	4	mp_hold_run_l	native replacement	306	299	-1
+98	pb_hold_run_left	5	mp_hold_run_l	native replacement	306	299	-1
+98	pb_hold_run_left	6	mp_hold_run_l	native replacement	306	299	-1
+98	pb_hold_run_left	7	mp_hold_run_l	native replacement	306	299	-1
+99	pb_hold_run_right	0	mp_hold_run_r	native replacement	307	300	-1
+99	pb_hold_run_right	1	mp_hold_run_r	native replacement	307	300	-1
+99	pb_hold_run_right	2	mp_hold_run_r	native replacement	307	300	-1
+99	pb_hold_run_right	3	mp_hold_run_r	native replacement	307	300	-1
+99	pb_hold_run_right	4	mp_hold_run_r	native replacement	307	300	-1
+99	pb_hold_run_right	5	mp_hold_run_r	native replacement	307	300	-1
+99	pb_hold_run_right	6	mp_hold_run_r	native replacement	307	300	-1
+99	pb_hold_run_right	7	mp_hold_run_r	native replacement	307	300	-1
+100	pb_hold_run_back	0	mp_hold_run_b	native replacement	308	301	-1
+100	pb_hold_run_back	1	mp_hold_run_b	native replacement	308	301	-1
+100	pb_hold_run_back	2	mp_hold_run_b	native replacement	308	301	-1
+100	pb_hold_run_back	3	mp_hold_run_b	native replacement	308	301	-1
+100	pb_hold_run_back	4	mp_hold_run_b	native replacement	308	301	-1
+100	pb_hold_run_back	5	mp_hold_run_b	native replacement	308	301	-1
+100	pb_hold_run_back	6	mp_hold_run_b	native replacement	308	301	-1
+100	pb_hold_run_back	7	mp_hold_run_b	native replacement	308	301	-1
+101	pb_hold_run	0	mp_hold_run	native replacement	309	302	-1
+101	pb_hold_run	1	mp_hold_run	native replacement	309	302	-1
+101	pb_hold_run	2	mp_hold_run	native replacement	309	302	-1
+101	pb_hold_run	3	mp_hold_run	native replacement	309	302	-1
+101	pb_hold_run	4	mp_hold_run	native replacement	309	302	-1
+101	pb_hold_run	5	mp_hold_run	native replacement	309	302	-1
+101	pb_hold_run	6	mp_hold_run	native replacement	309	302	-1
+101	pb_hold_run	7	mp_hold_run	native replacement	309	302	-1
+102	pb_combatwalk_right_loop_pistol	0	mp_pistol_stand_walk_r	native replacement	341	334	-1
+102	pb_combatwalk_right_loop_pistol	1	mp_pistol_stand_walk_r	native replacement	341	334	-1
+102	pb_combatwalk_right_loop_pistol	2	mp_pistol_stand_walk_r	native replacement	341	334	-1
+102	pb_combatwalk_right_loop_pistol	3	mp_pistol_stand_walk_r	native replacement	341	334	-1
+102	pb_combatwalk_right_loop_pistol	4	mp_pistol_stand_walk_r	native replacement	341	334	-1
+102	pb_combatwalk_right_loop_pistol	5	mp_pistol_stand_walk_r	native replacement	341	334	-1
+102	pb_combatwalk_right_loop_pistol	6	mp_pistol_stand_walk_r	native replacement	341	334	-1
+102	pb_combatwalk_right_loop_pistol	7	mp_pistol_stand_walk_r	native replacement	341	334	-1
+103	pb_combatwalk_left_loop_pistol	0	mp_pistol_stand_walk_l	native replacement	342	335	-1
+103	pb_combatwalk_left_loop_pistol	1	mp_pistol_stand_walk_l	native replacement	342	335	-1
+103	pb_combatwalk_left_loop_pistol	2	mp_pistol_stand_walk_l	native replacement	342	335	-1
+103	pb_combatwalk_left_loop_pistol	3	mp_pistol_stand_walk_l	native replacement	342	335	-1
+103	pb_combatwalk_left_loop_pistol	4	mp_pistol_stand_walk_l	native replacement	342	335	-1
+103	pb_combatwalk_left_loop_pistol	5	mp_pistol_stand_walk_l	native replacement	342	335	-1
+103	pb_combatwalk_left_loop_pistol	6	mp_pistol_stand_walk_l	native replacement	342	335	-1
+103	pb_combatwalk_left_loop_pistol	7	mp_pistol_stand_walk_l	native replacement	342	335	-1
+104	pb_combatwalk_back_loop_pistol	0	mp_pistol_stand_walk_b	native replacement	343	336	-1
+104	pb_combatwalk_back_loop_pistol	1	mp_pistol_stand_walk_b	native replacement	343	336	-1
+104	pb_combatwalk_back_loop_pistol	2	mp_pistol_stand_walk_b	native replacement	343	336	-1
+104	pb_combatwalk_back_loop_pistol	3	mp_pistol_stand_walk_b	native replacement	343	336	-1
+104	pb_combatwalk_back_loop_pistol	4	mp_pistol_stand_walk_b	native replacement	343	336	-1
+104	pb_combatwalk_back_loop_pistol	5	mp_pistol_stand_walk_b	native replacement	343	336	-1
+104	pb_combatwalk_back_loop_pistol	6	mp_pistol_stand_walk_b	native replacement	343	336	-1
+104	pb_combatwalk_back_loop_pistol	7	mp_pistol_stand_walk_b	native replacement	343	336	-1
+105	pb_combatwalk_forward_loop_pistol	0	mp_pistol_stand_walk_f	native replacement	344	337	-1
+105	pb_combatwalk_forward_loop_pistol	1	mp_pistol_stand_walk_f	native replacement	344	337	-1
+105	pb_combatwalk_forward_loop_pistol	2	mp_pistol_stand_walk_f	native replacement	344	337	-1
+105	pb_combatwalk_forward_loop_pistol	3	mp_pistol_stand_walk_f	native replacement	344	337	-1
+105	pb_combatwalk_forward_loop_pistol	4	mp_pistol_stand_walk_f	native replacement	344	337	-1
+105	pb_combatwalk_forward_loop_pistol	5	mp_pistol_stand_walk_f	native replacement	344	337	-1
+105	pb_combatwalk_forward_loop_pistol	6	mp_pistol_stand_walk_f	native replacement	344	337	-1
+105	pb_combatwalk_forward_loop_pistol	7	mp_pistol_stand_walk_f	native replacement	344	337	-1
+106	pb_stand_shoot_walk_forward_unarmed	0	mp_hold_run	native replacement	309	302	-1
+106	pb_stand_shoot_walk_forward_unarmed	1	mp_hold_run	native replacement	309	302	-1
+106	pb_stand_shoot_walk_forward_unarmed	2	mp_hold_run	native replacement	309	302	-1
+106	pb_stand_shoot_walk_forward_unarmed	3	mp_hold_run	native replacement	309	302	-1
+106	pb_stand_shoot_walk_forward_unarmed	4	mp_hold_run	native replacement	309	302	-1
+106	pb_stand_shoot_walk_forward_unarmed	5	mp_hold_run	native replacement	309	302	-1
+106	pb_stand_shoot_walk_forward_unarmed	6	mp_hold_run	native replacement	309	302	-1
+106	pb_stand_shoot_walk_forward_unarmed	7	mp_hold_run	native replacement	309	302	-1
+107	pb_stand_shoot_walk_right	0	pb_stand_shoot_walk_right	exact	345	338	-1
+107	pb_stand_shoot_walk_right	1	pb_stand_shoot_walk_right	exact	345	338	-1
+107	pb_stand_shoot_walk_right	2	pb_stand_shoot_walk_right	exact	345	338	-1
+107	pb_stand_shoot_walk_right	3	pb_stand_shoot_walk_right	exact	345	338	-1
+107	pb_stand_shoot_walk_right	4	pb_stand_shoot_walk_right	exact	345	338	-1
+107	pb_stand_shoot_walk_right	5	pb_stand_shoot_walk_right	exact	345	338	-1
+107	pb_stand_shoot_walk_right	6	pb_stand_shoot_walk_right	exact	345	338	-1
+107	pb_stand_shoot_walk_right	7	pb_stand_shoot_walk_right	exact	345	338	-1
+108	pb_stand_shoot_walk_left	0	pb_stand_shoot_walk_left	exact	346	339	-1
+108	pb_stand_shoot_walk_left	1	pb_stand_shoot_walk_left	exact	346	339	-1
+108	pb_stand_shoot_walk_left	2	pb_stand_shoot_walk_left	exact	346	339	-1
+108	pb_stand_shoot_walk_left	3	pb_stand_shoot_walk_left	exact	346	339	-1
+108	pb_stand_shoot_walk_left	4	pb_stand_shoot_walk_left	exact	346	339	-1
+108	pb_stand_shoot_walk_left	5	pb_stand_shoot_walk_left	exact	346	339	-1
+108	pb_stand_shoot_walk_left	6	pb_stand_shoot_walk_left	exact	346	339	-1
+108	pb_stand_shoot_walk_left	7	pb_stand_shoot_walk_left	exact	346	339	-1
+109	pb_stand_shoot_walk_back	0	pb_stand_shoot_walk_back	exact	347	340	-1
+109	pb_stand_shoot_walk_back	1	pb_stand_shoot_walk_back	exact	347	340	-1
+109	pb_stand_shoot_walk_back	2	pb_stand_shoot_walk_back	exact	347	340	-1
+109	pb_stand_shoot_walk_back	3	pb_stand_shoot_walk_back	exact	347	340	-1
+109	pb_stand_shoot_walk_back	4	pb_stand_shoot_walk_back	exact	347	340	-1
+109	pb_stand_shoot_walk_back	5	pb_stand_shoot_walk_back	exact	347	340	-1
+109	pb_stand_shoot_walk_back	6	pb_stand_shoot_walk_back	exact	347	340	-1
+109	pb_stand_shoot_walk_back	7	pb_stand_shoot_walk_back	exact	347	340	-1
+110	pb_stand_shoot_walk_forward	0	pb_stand_shoot_walk_forward	exact	348	341	-1
+110	pb_stand_shoot_walk_forward	1	pb_stand_shoot_walk_forward	exact	348	341	-1
+110	pb_stand_shoot_walk_forward	2	pb_stand_shoot_walk_forward	exact	348	341	-1
+110	pb_stand_shoot_walk_forward	3	pb_stand_shoot_walk_forward	exact	348	341	-1
+110	pb_stand_shoot_walk_forward	4	pb_stand_shoot_walk_forward	exact	348	341	-1
+110	pb_stand_shoot_walk_forward	5	pb_stand_shoot_walk_forward	exact	348	341	-1
+110	pb_stand_shoot_walk_forward	6	pb_stand_shoot_walk_forward	exact	348	341	-1
+110	pb_stand_shoot_walk_forward	7	pb_stand_shoot_walk_forward	exact	348	341	-1
+111	pb_stand_grenade_throw	0	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+111	pb_stand_grenade_throw	1	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+111	pb_stand_grenade_throw	2	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+111	pb_stand_grenade_throw	3	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+111	pb_stand_grenade_throw	4	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+111	pb_stand_grenade_throw	5	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+111	pb_stand_grenade_throw	6	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+111	pb_stand_grenade_throw	7	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+112	pb_crouch_grenade_throw	0	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+112	pb_crouch_grenade_throw	1	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+112	pb_crouch_grenade_throw	2	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+112	pb_crouch_grenade_throw	3	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+112	pb_crouch_grenade_throw	4	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+112	pb_crouch_grenade_throw	5	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+112	pb_crouch_grenade_throw	6	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+112	pb_crouch_grenade_throw	7	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+113	pb_crouch_walk_forward_unarmed	0	mp_crouch_hold_run	native replacement	285	278	-1
+113	pb_crouch_walk_forward_unarmed	1	mp_crouch_hold_run	native replacement	285	278	-1
+113	pb_crouch_walk_forward_unarmed	2	mp_crouch_hold_run	native replacement	285	278	-1
+113	pb_crouch_walk_forward_unarmed	3	mp_crouch_hold_run	native replacement	285	278	-1
+113	pb_crouch_walk_forward_unarmed	4	mp_crouch_hold_run	native replacement	285	278	-1
+113	pb_crouch_walk_forward_unarmed	5	mp_crouch_hold_run	native replacement	285	278	-1
+113	pb_crouch_walk_forward_unarmed	6	mp_crouch_hold_run	native replacement	285	278	-1
+113	pb_crouch_walk_forward_unarmed	7	mp_crouch_hold_run	native replacement	285	278	-1
+114	pb_crouch_shoot_run_right	0	mp_crouch_r	native replacement	286	279	-1
+114	pb_crouch_shoot_run_right	1	mp_crouch_r	native replacement	286	279	-1
+114	pb_crouch_shoot_run_right	2	mp_crouch_r	native replacement	286	279	-1
+114	pb_crouch_shoot_run_right	3	mp_crouch_r	native replacement	286	279	-1
+114	pb_crouch_shoot_run_right	4	mp_crouch_r	native replacement	286	279	-1
+114	pb_crouch_shoot_run_right	5	mp_crouch_r	native replacement	286	279	-1
+114	pb_crouch_shoot_run_right	6	mp_crouch_r	native replacement	286	279	-1
+114	pb_crouch_shoot_run_right	7	mp_crouch_r	native replacement	286	279	-1
+115	pb_crouch_shoot_run_left	0	mp_crouch_l	native replacement	287	280	-1
+115	pb_crouch_shoot_run_left	1	mp_crouch_l	native replacement	287	280	-1
+115	pb_crouch_shoot_run_left	2	mp_crouch_l	native replacement	287	280	-1
+115	pb_crouch_shoot_run_left	3	mp_crouch_l	native replacement	287	280	-1
+115	pb_crouch_shoot_run_left	4	mp_crouch_l	native replacement	287	280	-1
+115	pb_crouch_shoot_run_left	5	mp_crouch_l	native replacement	287	280	-1
+115	pb_crouch_shoot_run_left	6	mp_crouch_l	native replacement	287	280	-1
+115	pb_crouch_shoot_run_left	7	mp_crouch_l	native replacement	287	280	-1
+116	pb_crouch_shoot_run_back	0	mp_crouch_b	native replacement	288	281	-1
+116	pb_crouch_shoot_run_back	1	mp_crouch_b	native replacement	288	281	-1
+116	pb_crouch_shoot_run_back	2	mp_crouch_b	native replacement	288	281	-1
+116	pb_crouch_shoot_run_back	3	mp_crouch_b	native replacement	288	281	-1
+116	pb_crouch_shoot_run_back	4	mp_crouch_b	native replacement	288	281	-1
+116	pb_crouch_shoot_run_back	5	mp_crouch_b	native replacement	288	281	-1
+116	pb_crouch_shoot_run_back	6	mp_crouch_b	native replacement	288	281	-1
+116	pb_crouch_shoot_run_back	7	mp_crouch_b	native replacement	288	281	-1
+117	pb_crouch_shoot_run_forward	0	mp_crouch_f	native replacement	289	282	-1
+117	pb_crouch_shoot_run_forward	1	mp_crouch_f	native replacement	289	282	-1
+117	pb_crouch_shoot_run_forward	2	mp_crouch_f	native replacement	289	282	-1
+117	pb_crouch_shoot_run_forward	3	mp_crouch_f	native replacement	289	282	-1
+117	pb_crouch_shoot_run_forward	4	mp_crouch_f	native replacement	289	282	-1
+117	pb_crouch_shoot_run_forward	5	mp_crouch_f	native replacement	289	282	-1
+117	pb_crouch_shoot_run_forward	6	mp_crouch_f	native replacement	289	282	-1
+117	pb_crouch_shoot_run_forward	7	mp_crouch_f	native replacement	289	282	-1
+118	pb_crouch_run_right_grenade	0	mp_crouch_hold_run_r	native replacement	282	275	-1
+118	pb_crouch_run_right_grenade	1	mp_crouch_hold_run_r	native replacement	282	275	-1
+118	pb_crouch_run_right_grenade	2	mp_crouch_hold_run_r	native replacement	282	275	-1
+118	pb_crouch_run_right_grenade	3	mp_crouch_hold_run_r	native replacement	282	275	-1
+118	pb_crouch_run_right_grenade	4	mp_crouch_hold_run_r	native replacement	282	275	-1
+118	pb_crouch_run_right_grenade	5	mp_crouch_hold_run_r	native replacement	282	275	-1
+118	pb_crouch_run_right_grenade	6	mp_crouch_hold_run_r	native replacement	282	275	-1
+118	pb_crouch_run_right_grenade	7	mp_crouch_hold_run_r	native replacement	282	275	-1
+119	pb_crouch_run_left_grenade	0	mp_crouch_hold_run_l	native replacement	283	276	-1
+119	pb_crouch_run_left_grenade	1	mp_crouch_hold_run_l	native replacement	283	276	-1
+119	pb_crouch_run_left_grenade	2	mp_crouch_hold_run_l	native replacement	283	276	-1
+119	pb_crouch_run_left_grenade	3	mp_crouch_hold_run_l	native replacement	283	276	-1
+119	pb_crouch_run_left_grenade	4	mp_crouch_hold_run_l	native replacement	283	276	-1
+119	pb_crouch_run_left_grenade	5	mp_crouch_hold_run_l	native replacement	283	276	-1
+119	pb_crouch_run_left_grenade	6	mp_crouch_hold_run_l	native replacement	283	276	-1
+119	pb_crouch_run_left_grenade	7	mp_crouch_hold_run_l	native replacement	283	276	-1
+120	pb_crouch_run_back_grenade	0	mp_crouch_hold_run_b	native replacement	284	277	-1
+120	pb_crouch_run_back_grenade	1	mp_crouch_hold_run_b	native replacement	284	277	-1
+120	pb_crouch_run_back_grenade	2	mp_crouch_hold_run_b	native replacement	284	277	-1
+120	pb_crouch_run_back_grenade	3	mp_crouch_hold_run_b	native replacement	284	277	-1
+120	pb_crouch_run_back_grenade	4	mp_crouch_hold_run_b	native replacement	284	277	-1
+120	pb_crouch_run_back_grenade	5	mp_crouch_hold_run_b	native replacement	284	277	-1
+120	pb_crouch_run_back_grenade	6	mp_crouch_hold_run_b	native replacement	284	277	-1
+120	pb_crouch_run_back_grenade	7	mp_crouch_hold_run_b	native replacement	284	277	-1
+121	pb_crouch_walk_right_pistol	0	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+121	pb_crouch_walk_right_pistol	1	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+121	pb_crouch_walk_right_pistol	2	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+121	pb_crouch_walk_right_pistol	3	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+121	pb_crouch_walk_right_pistol	4	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+121	pb_crouch_walk_right_pistol	5	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+121	pb_crouch_walk_right_pistol	6	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+121	pb_crouch_walk_right_pistol	7	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+122	pb_crouch_walk_left_pistol	0	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+122	pb_crouch_walk_left_pistol	1	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+122	pb_crouch_walk_left_pistol	2	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+122	pb_crouch_walk_left_pistol	3	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+122	pb_crouch_walk_left_pistol	4	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+122	pb_crouch_walk_left_pistol	5	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+122	pb_crouch_walk_left_pistol	6	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+122	pb_crouch_walk_left_pistol	7	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+123	pb_crouch_walk_back_pistol	0	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+123	pb_crouch_walk_back_pistol	1	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+123	pb_crouch_walk_back_pistol	2	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+123	pb_crouch_walk_back_pistol	3	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+123	pb_crouch_walk_back_pistol	4	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+123	pb_crouch_walk_back_pistol	5	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+123	pb_crouch_walk_back_pistol	6	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+123	pb_crouch_walk_back_pistol	7	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+124	pb_crouch_walk_forward_pistol	0	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+124	pb_crouch_walk_forward_pistol	1	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+124	pb_crouch_walk_forward_pistol	2	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+124	pb_crouch_walk_forward_pistol	3	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+124	pb_crouch_walk_forward_pistol	4	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+124	pb_crouch_walk_forward_pistol	5	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+124	pb_crouch_walk_forward_pistol	6	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+124	pb_crouch_walk_forward_pistol	7	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+125	pb_crouch_run_right_pistol	0	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+125	pb_crouch_run_right_pistol	1	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+125	pb_crouch_run_right_pistol	2	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+125	pb_crouch_run_right_pistol	3	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+125	pb_crouch_run_right_pistol	4	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+125	pb_crouch_run_right_pistol	5	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+125	pb_crouch_run_right_pistol	6	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+125	pb_crouch_run_right_pistol	7	mp_pistol_crouch_walk_r	native replacement	274	267	-1
+126	pb_crouch_run_left_pistol	0	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+126	pb_crouch_run_left_pistol	1	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+126	pb_crouch_run_left_pistol	2	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+126	pb_crouch_run_left_pistol	3	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+126	pb_crouch_run_left_pistol	4	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+126	pb_crouch_run_left_pistol	5	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+126	pb_crouch_run_left_pistol	6	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+126	pb_crouch_run_left_pistol	7	mp_pistol_crouch_walk_l	native replacement	275	268	-1
+127	pb_crouch_run_back_pistol	0	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+127	pb_crouch_run_back_pistol	1	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+127	pb_crouch_run_back_pistol	2	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+127	pb_crouch_run_back_pistol	3	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+127	pb_crouch_run_back_pistol	4	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+127	pb_crouch_run_back_pistol	5	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+127	pb_crouch_run_back_pistol	6	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+127	pb_crouch_run_back_pistol	7	mp_pistol_crouch_walk_b	native replacement	276	269	-1
+128	pb_crouch_run_forward_grenade	0	mp_crouch_hold_run	native replacement	285	278	-1
+128	pb_crouch_run_forward_grenade	1	mp_crouch_hold_run	native replacement	285	278	-1
+128	pb_crouch_run_forward_grenade	2	mp_crouch_hold_run	native replacement	285	278	-1
+128	pb_crouch_run_forward_grenade	3	mp_crouch_hold_run	native replacement	285	278	-1
+128	pb_crouch_run_forward_grenade	4	mp_crouch_hold_run	native replacement	285	278	-1
+128	pb_crouch_run_forward_grenade	5	mp_crouch_hold_run	native replacement	285	278	-1
+128	pb_crouch_run_forward_grenade	6	mp_crouch_hold_run	native replacement	285	278	-1
+128	pb_crouch_run_forward_grenade	7	mp_crouch_hold_run	native replacement	285	278	-1
+129	pb_crouch_run_forward_pistol	0	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+129	pb_crouch_run_forward_pistol	1	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+129	pb_crouch_run_forward_pistol	2	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+129	pb_crouch_run_forward_pistol	3	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+129	pb_crouch_run_forward_pistol	4	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+129	pb_crouch_run_forward_pistol	5	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+129	pb_crouch_run_forward_pistol	6	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+129	pb_crouch_run_forward_pistol	7	mp_pistol_crouch_walk_f	native replacement	277	270	-1
+130	pb_crouch_run_right	0	mp_crouch_r	native replacement	286	279	-1
+130	pb_crouch_run_right	1	mp_crouch_r	native replacement	286	279	-1
+130	pb_crouch_run_right	2	mp_crouch_r	native replacement	286	279	-1
+130	pb_crouch_run_right	3	mp_crouch_r	native replacement	286	279	-1
+130	pb_crouch_run_right	4	mp_crouch_r	native replacement	286	279	-1
+130	pb_crouch_run_right	5	mp_crouch_r	native replacement	286	279	-1
+130	pb_crouch_run_right	6	mp_crouch_r	native replacement	286	279	-1
+130	pb_crouch_run_right	7	mp_crouch_r	native replacement	286	279	-1
+131	pb_crouch_run_left	0	mp_crouch_l	native replacement	287	280	-1
+131	pb_crouch_run_left	1	mp_crouch_l	native replacement	287	280	-1
+131	pb_crouch_run_left	2	mp_crouch_l	native replacement	287	280	-1
+131	pb_crouch_run_left	3	mp_crouch_l	native replacement	287	280	-1
+131	pb_crouch_run_left	4	mp_crouch_l	native replacement	287	280	-1
+131	pb_crouch_run_left	5	mp_crouch_l	native replacement	287	280	-1
+131	pb_crouch_run_left	6	mp_crouch_l	native replacement	287	280	-1
+131	pb_crouch_run_left	7	mp_crouch_l	native replacement	287	280	-1
+132	pb_crouch_run_back	0	mp_crouch_b	native replacement	288	281	-1
+132	pb_crouch_run_back	1	mp_crouch_b	native replacement	288	281	-1
+132	pb_crouch_run_back	2	mp_crouch_b	native replacement	288	281	-1
+132	pb_crouch_run_back	3	mp_crouch_b	native replacement	288	281	-1
+132	pb_crouch_run_back	4	mp_crouch_b	native replacement	288	281	-1
+132	pb_crouch_run_back	5	mp_crouch_b	native replacement	288	281	-1
+132	pb_crouch_run_back	6	mp_crouch_b	native replacement	288	281	-1
+132	pb_crouch_run_back	7	mp_crouch_b	native replacement	288	281	-1
+133	pb_crouch_run_forward	0	mp_crouch_f	native replacement	289	282	-1
+133	pb_crouch_run_forward	1	mp_crouch_f	native replacement	289	282	-1
+133	pb_crouch_run_forward	2	mp_crouch_f	native replacement	289	282	-1
+133	pb_crouch_run_forward	3	mp_crouch_f	native replacement	289	282	-1
+133	pb_crouch_run_forward	4	mp_crouch_f	native replacement	289	282	-1
+133	pb_crouch_run_forward	5	mp_crouch_f	native replacement	289	282	-1
+133	pb_crouch_run_forward	6	mp_crouch_f	native replacement	289	282	-1
+133	pb_crouch_run_forward	7	mp_crouch_f	native replacement	289	282	-1
+134	pb_walk_right_rpg_ads	0	mp_rpg_walk_r_ads	native replacement	337	330	-1
+134	pb_walk_right_rpg_ads	1	mp_rpg_walk_r_ads	native replacement	337	330	-1
+134	pb_walk_right_rpg_ads	2	mp_rpg_walk_r_ads	native replacement	337	330	-1
+134	pb_walk_right_rpg_ads	3	mp_rpg_walk_r_ads	native replacement	337	330	-1
+134	pb_walk_right_rpg_ads	4	mp_rpg_walk_r_ads	native replacement	337	330	-1
+134	pb_walk_right_rpg_ads	5	mp_rpg_walk_r_ads	native replacement	337	330	-1
+134	pb_walk_right_rpg_ads	6	mp_rpg_walk_r_ads	native replacement	337	330	-1
+134	pb_walk_right_rpg_ads	7	mp_rpg_walk_r_ads	native replacement	337	330	-1
+135	pb_walk_left_rpg_ads	0	mp_rpg_walk_l_ads	native replacement	338	331	-1
+135	pb_walk_left_rpg_ads	1	mp_rpg_walk_l_ads	native replacement	338	331	-1
+135	pb_walk_left_rpg_ads	2	mp_rpg_walk_l_ads	native replacement	338	331	-1
+135	pb_walk_left_rpg_ads	3	mp_rpg_walk_l_ads	native replacement	338	331	-1
+135	pb_walk_left_rpg_ads	4	mp_rpg_walk_l_ads	native replacement	338	331	-1
+135	pb_walk_left_rpg_ads	5	mp_rpg_walk_l_ads	native replacement	338	331	-1
+135	pb_walk_left_rpg_ads	6	mp_rpg_walk_l_ads	native replacement	338	331	-1
+135	pb_walk_left_rpg_ads	7	mp_rpg_walk_l_ads	native replacement	338	331	-1
+136	pb_walk_back_rpg_ads	0	mp_rpg_walk_b_ads	native replacement	340	333	-1
+136	pb_walk_back_rpg_ads	1	mp_rpg_walk_b_ads	native replacement	340	333	-1
+136	pb_walk_back_rpg_ads	2	mp_rpg_walk_b_ads	native replacement	340	333	-1
+136	pb_walk_back_rpg_ads	3	mp_rpg_walk_b_ads	native replacement	340	333	-1
+136	pb_walk_back_rpg_ads	4	mp_rpg_walk_b_ads	native replacement	340	333	-1
+136	pb_walk_back_rpg_ads	5	mp_rpg_walk_b_ads	native replacement	340	333	-1
+136	pb_walk_back_rpg_ads	6	mp_rpg_walk_b_ads	native replacement	340	333	-1
+136	pb_walk_back_rpg_ads	7	mp_rpg_walk_b_ads	native replacement	340	333	-1
+137	pb_walk_forward_rpg_ads	0	mp_rpg_walk_f_ads	native replacement	339	332	-1
+137	pb_walk_forward_rpg_ads	1	mp_rpg_walk_f_ads	native replacement	339	332	-1
+137	pb_walk_forward_rpg_ads	2	mp_rpg_walk_f_ads	native replacement	339	332	-1
+137	pb_walk_forward_rpg_ads	3	mp_rpg_walk_f_ads	native replacement	339	332	-1
+137	pb_walk_forward_rpg_ads	4	mp_rpg_walk_f_ads	native replacement	339	332	-1
+137	pb_walk_forward_rpg_ads	5	mp_rpg_walk_f_ads	native replacement	339	332	-1
+137	pb_walk_forward_rpg_ads	6	mp_rpg_walk_f_ads	native replacement	339	332	-1
+137	pb_walk_forward_rpg_ads	7	mp_rpg_walk_f_ads	native replacement	339	332	-1
+138	pb_combatrun_right_rpg	0	mp_rpg_run_r	native replacement	294	287	-1
+138	pb_combatrun_right_rpg	1	mp_rpg_run_r	native replacement	294	287	-1
+138	pb_combatrun_right_rpg	2	mp_rpg_run_r	native replacement	294	287	-1
+138	pb_combatrun_right_rpg	3	mp_rpg_run_r	native replacement	294	287	-1
+138	pb_combatrun_right_rpg	4	mp_rpg_run_r	native replacement	294	287	-1
+138	pb_combatrun_right_rpg	5	mp_rpg_run_r	native replacement	294	287	-1
+138	pb_combatrun_right_rpg	6	mp_rpg_run_r	native replacement	294	287	-1
+138	pb_combatrun_right_rpg	7	mp_rpg_run_r	native replacement	294	287	-1
+139	pb_combatrun_left_rpg	0	mp_rpg_run_l	native replacement	295	288	-1
+139	pb_combatrun_left_rpg	1	mp_rpg_run_l	native replacement	295	288	-1
+139	pb_combatrun_left_rpg	2	mp_rpg_run_l	native replacement	295	288	-1
+139	pb_combatrun_left_rpg	3	mp_rpg_run_l	native replacement	295	288	-1
+139	pb_combatrun_left_rpg	4	mp_rpg_run_l	native replacement	295	288	-1
+139	pb_combatrun_left_rpg	5	mp_rpg_run_l	native replacement	295	288	-1
+139	pb_combatrun_left_rpg	6	mp_rpg_run_l	native replacement	295	288	-1
+139	pb_combatrun_left_rpg	7	mp_rpg_run_l	native replacement	295	288	-1
+140	pb_combatrun_back_rpg	0	mp_rpg_run_b	native replacement	296	289	-1
+140	pb_combatrun_back_rpg	1	mp_rpg_run_b	native replacement	296	289	-1
+140	pb_combatrun_back_rpg	2	mp_rpg_run_b	native replacement	296	289	-1
+140	pb_combatrun_back_rpg	3	mp_rpg_run_b	native replacement	296	289	-1
+140	pb_combatrun_back_rpg	4	mp_rpg_run_b	native replacement	296	289	-1
+140	pb_combatrun_back_rpg	5	mp_rpg_run_b	native replacement	296	289	-1
+140	pb_combatrun_back_rpg	6	mp_rpg_run_b	native replacement	296	289	-1
+140	pb_combatrun_back_rpg	7	mp_rpg_run_b	native replacement	296	289	-1
+141	pb_combatrun_forward_rpg	0	mp_rpg_run_f	native replacement	297	290	-1
+141	pb_combatrun_forward_rpg	1	mp_rpg_run_f	native replacement	297	290	-1
+141	pb_combatrun_forward_rpg	2	mp_rpg_run_f	native replacement	297	290	-1
+141	pb_combatrun_forward_rpg	3	mp_rpg_run_f	native replacement	297	290	-1
+141	pb_combatrun_forward_rpg	4	mp_rpg_run_f	native replacement	297	290	-1
+141	pb_combatrun_forward_rpg	5	mp_rpg_run_f	native replacement	297	290	-1
+141	pb_combatrun_forward_rpg	6	mp_rpg_run_f	native replacement	297	290	-1
+141	pb_combatrun_forward_rpg	7	mp_rpg_run_f	native replacement	297	290	-1
+142	pb_combatrun_back_loop_grenade	0	mp_hold_run_b	native replacement	308	301	-1
+142	pb_combatrun_back_loop_grenade	1	mp_hold_run_b	native replacement	308	301	-1
+142	pb_combatrun_back_loop_grenade	2	mp_hold_run_b	native replacement	308	301	-1
+142	pb_combatrun_back_loop_grenade	3	mp_hold_run_b	native replacement	308	301	-1
+142	pb_combatrun_back_loop_grenade	4	mp_hold_run_b	native replacement	308	301	-1
+142	pb_combatrun_back_loop_grenade	5	mp_hold_run_b	native replacement	308	301	-1
+142	pb_combatrun_back_loop_grenade	6	mp_hold_run_b	native replacement	308	301	-1
+142	pb_combatrun_back_loop_grenade	7	mp_hold_run_b	native replacement	308	301	-1
+143	pb_combatrun_right_loop_grenade	0	mp_hold_run_r	native replacement	307	300	-1
+143	pb_combatrun_right_loop_grenade	1	mp_hold_run_r	native replacement	307	300	-1
+143	pb_combatrun_right_loop_grenade	2	mp_hold_run_r	native replacement	307	300	-1
+143	pb_combatrun_right_loop_grenade	3	mp_hold_run_r	native replacement	307	300	-1
+143	pb_combatrun_right_loop_grenade	4	mp_hold_run_r	native replacement	307	300	-1
+143	pb_combatrun_right_loop_grenade	5	mp_hold_run_r	native replacement	307	300	-1
+143	pb_combatrun_right_loop_grenade	6	mp_hold_run_r	native replacement	307	300	-1
+143	pb_combatrun_right_loop_grenade	7	mp_hold_run_r	native replacement	307	300	-1
+144	pb_combatrun_left_loop_grenade	0	mp_hold_run_l	native replacement	306	299	-1
+144	pb_combatrun_left_loop_grenade	1	mp_hold_run_l	native replacement	306	299	-1
+144	pb_combatrun_left_loop_grenade	2	mp_hold_run_l	native replacement	306	299	-1
+144	pb_combatrun_left_loop_grenade	3	mp_hold_run_l	native replacement	306	299	-1
+144	pb_combatrun_left_loop_grenade	4	mp_hold_run_l	native replacement	306	299	-1
+144	pb_combatrun_left_loop_grenade	5	mp_hold_run_l	native replacement	306	299	-1
+144	pb_combatrun_left_loop_grenade	6	mp_hold_run_l	native replacement	306	299	-1
+144	pb_combatrun_left_loop_grenade	7	mp_hold_run_l	native replacement	306	299	-1
+145	pb_combatrun_forward_loop_stickgrenade	0	mp_hold_run	native replacement	309	302	-1
+145	pb_combatrun_forward_loop_stickgrenade	1	mp_hold_run	native replacement	309	302	-1
+145	pb_combatrun_forward_loop_stickgrenade	2	mp_hold_run	native replacement	309	302	-1
+145	pb_combatrun_forward_loop_stickgrenade	3	mp_hold_run	native replacement	309	302	-1
+145	pb_combatrun_forward_loop_stickgrenade	4	mp_hold_run	native replacement	309	302	-1
+145	pb_combatrun_forward_loop_stickgrenade	5	mp_hold_run	native replacement	309	302	-1
+145	pb_combatrun_forward_loop_stickgrenade	6	mp_hold_run	native replacement	309	302	-1
+145	pb_combatrun_forward_loop_stickgrenade	7	mp_hold_run	native replacement	309	302	-1
+146	pb_combatrun_right_loop_pistol	0	mp_pistol_stand_run_r	native replacement	298	291	-1
+146	pb_combatrun_right_loop_pistol	1	mp_pistol_stand_run_r	native replacement	298	291	-1
+146	pb_combatrun_right_loop_pistol	2	mp_pistol_stand_run_r	native replacement	298	291	-1
+146	pb_combatrun_right_loop_pistol	3	mp_pistol_stand_run_r	native replacement	298	291	-1
+146	pb_combatrun_right_loop_pistol	4	mp_pistol_stand_run_r	native replacement	298	291	-1
+146	pb_combatrun_right_loop_pistol	5	mp_pistol_stand_run_r	native replacement	298	291	-1
+146	pb_combatrun_right_loop_pistol	6	mp_pistol_stand_run_r	native replacement	298	291	-1
+146	pb_combatrun_right_loop_pistol	7	mp_pistol_stand_run_r	native replacement	298	291	-1
+147	pb_combatrun_left_loop_pistol	0	mp_pistol_stand_run_l	native replacement	299	292	-1
+147	pb_combatrun_left_loop_pistol	1	mp_pistol_stand_run_l	native replacement	299	292	-1
+147	pb_combatrun_left_loop_pistol	2	mp_pistol_stand_run_l	native replacement	299	292	-1
+147	pb_combatrun_left_loop_pistol	3	mp_pistol_stand_run_l	native replacement	299	292	-1
+147	pb_combatrun_left_loop_pistol	4	mp_pistol_stand_run_l	native replacement	299	292	-1
+147	pb_combatrun_left_loop_pistol	5	mp_pistol_stand_run_l	native replacement	299	292	-1
+147	pb_combatrun_left_loop_pistol	6	mp_pistol_stand_run_l	native replacement	299	292	-1
+147	pb_combatrun_left_loop_pistol	7	mp_pistol_stand_run_l	native replacement	299	292	-1
+148	pb_combatrun_back_loop_pistol	0	mp_pistol_stand_run_b	native replacement	300	293	-1
+148	pb_combatrun_back_loop_pistol	1	mp_pistol_stand_run_b	native replacement	300	293	-1
+148	pb_combatrun_back_loop_pistol	2	mp_pistol_stand_run_b	native replacement	300	293	-1
+148	pb_combatrun_back_loop_pistol	3	mp_pistol_stand_run_b	native replacement	300	293	-1
+148	pb_combatrun_back_loop_pistol	4	mp_pistol_stand_run_b	native replacement	300	293	-1
+148	pb_combatrun_back_loop_pistol	5	mp_pistol_stand_run_b	native replacement	300	293	-1
+148	pb_combatrun_back_loop_pistol	6	mp_pistol_stand_run_b	native replacement	300	293	-1
+148	pb_combatrun_back_loop_pistol	7	mp_pistol_stand_run_b	native replacement	300	293	-1
+149	pb_combatrun_right_loop	0	pb_combatrun_right_loop_assault	native replacement	319	312	-1
+149	pb_combatrun_right_loop	1	pb_combatrun_right_loop_sniper	native replacement	315	308	-1
+149	pb_combatrun_right_loop	2	pb_combatrun_right_loop_lmg	native replacement	326	319	-1
+149	pb_combatrun_right_loop	3	pb_combatrun_right_loop_smg	native replacement	322	315	-1
+149	pb_combatrun_right_loop	4	pb_combatrun_right_loop_shotgun	native replacement	311	304	-1
+149	pb_combatrun_right_loop	5	mp_pistol_stand_run_r	native replacement	298	291	-1
+149	pb_combatrun_right_loop	6	mp_rpg_run_r	native replacement	294	287	-1
+149	pb_combatrun_right_loop	7	mp_hold_run_r	native replacement	307	300	-1
+150	pb_combatrun_left_loop	0	pb_combatrun_left_loop_assault	native replacement	320	313	-1
+150	pb_combatrun_left_loop	1	pb_combatrun_left_loop_sniper	native replacement	316	309	-1
+150	pb_combatrun_left_loop	2	pb_combatrun_left_loop_lmg	native replacement	327	320	-1
+150	pb_combatrun_left_loop	3	pb_combatrun_left_loop_smg	native replacement	323	316	-1
+150	pb_combatrun_left_loop	4	pb_combatrun_left_loop_shotgun	native replacement	312	305	-1
+150	pb_combatrun_left_loop	5	mp_pistol_stand_run_l	native replacement	299	292	-1
+150	pb_combatrun_left_loop	6	mp_rpg_run_l	native replacement	295	288	-1
+150	pb_combatrun_left_loop	7	mp_hold_run_l	native replacement	306	299	-1
+151	pb_combatrun_back_loop	0	pb_combatrun_back_loop_assault	native replacement	318	311	-1
+151	pb_combatrun_back_loop	1	pb_combatrun_back_loop_sniper	native replacement	314	307	-1
+151	pb_combatrun_back_loop	2	pb_combatrun_back_loop_lmg	native replacement	325	318	-1
+151	pb_combatrun_back_loop	3	pb_combatrun_back_loop_smg	native replacement	321	314	-1
+151	pb_combatrun_back_loop	4	pb_combatrun_back_loop_shotgun	native replacement	310	303	-1
+151	pb_combatrun_back_loop	5	mp_pistol_stand_run_b	native replacement	300	293	-1
+151	pb_combatrun_back_loop	6	mp_rpg_run_b	native replacement	296	289	-1
+151	pb_combatrun_back_loop	7	mp_hold_run_b	native replacement	308	301	-1
+152	pb_combatrun_forward_loop	0	mp_run_assault_aim_5	native replacement	788	780	-1
+152	pb_combatrun_forward_loop	1	pb_combatrun_forward_loop_sniper	native replacement	317	310	-1
+152	pb_combatrun_forward_loop	2	pb_combatrun_forward_loop_lmg	native replacement	328	321	-1
+152	pb_combatrun_forward_loop	3	pb_combatrun_forward_loop_smg	native replacement	324	317	-1
+152	pb_combatrun_forward_loop	4	pb_combatrun_forward_loop_shotgun	native replacement	313	306	-1
+152	pb_combatrun_forward_loop	5	mp_pistol_stand_run_f	native replacement	301	294	-1
+152	pb_combatrun_forward_loop	6	mp_rpg_run_f	native replacement	297	290	-1
+152	pb_combatrun_forward_loop	7	mp_hold_run	native replacement	309	302	-1
+153	pb_standjump_land_pistol	0	standjump_land_pistol	native replacement	200	193	-1
+153	pb_standjump_land_pistol	1	standjump_land_pistol	native replacement	200	193	-1
+153	pb_standjump_land_pistol	2	standjump_land_pistol	native replacement	200	193	-1
+153	pb_standjump_land_pistol	3	standjump_land_pistol	native replacement	200	193	-1
+153	pb_standjump_land_pistol	4	standjump_land_pistol	native replacement	200	193	-1
+153	pb_standjump_land_pistol	5	standjump_land_pistol	native replacement	200	193	-1
+153	pb_standjump_land_pistol	6	standjump_land_pistol	native replacement	200	193	-1
+153	pb_standjump_land_pistol	7	standjump_land_pistol	native replacement	200	193	-1
+154	pb_standjump_land	0	pb_standjump_land	exact	206	199	-1
+154	pb_standjump_land	1	pb_standjump_land	exact	206	199	-1
+154	pb_standjump_land	2	pb_standjump_land	exact	206	199	-1
+154	pb_standjump_land	3	pb_standjump_land	exact	206	199	-1
+154	pb_standjump_land	4	pb_standjump_land	exact	206	199	-1
+154	pb_standjump_land	5	pb_standjump_land	exact	206	199	-1
+154	pb_standjump_land	6	pb_standjump_land	exact	206	199	-1
+154	pb_standjump_land	7	pb_standjump_land	exact	206	199	-1
+155	pb_standjump_takeoff	0	pb_standjump_takeoff	exact	218	211	-1
+155	pb_standjump_takeoff	1	pb_standjump_takeoff	exact	218	211	-1
+155	pb_standjump_takeoff	2	pb_standjump_takeoff	exact	218	211	-1
+155	pb_standjump_takeoff	3	pb_standjump_takeoff	exact	218	211	-1
+155	pb_standjump_takeoff	4	pb_standjump_takeoff	exact	218	211	-1
+155	pb_standjump_takeoff	5	pb_standjump_takeoff	exact	218	211	-1
+155	pb_standjump_takeoff	6	pb_standjump_takeoff	exact	218	211	-1
+155	pb_standjump_takeoff	7	pb_standjump_takeoff	exact	218	211	-1
+156	pb_runjump_land	0	pb_runjump_land	exact	207	200	-1
+156	pb_runjump_land	1	pb_runjump_land	exact	207	200	-1
+156	pb_runjump_land	2	pb_runjump_land	exact	207	200	-1
+156	pb_runjump_land	3	pb_runjump_land	exact	207	200	-1
+156	pb_runjump_land	4	pb_runjump_land	exact	207	200	-1
+156	pb_runjump_land	5	pb_runjump_land	exact	207	200	-1
+156	pb_runjump_land	6	pb_runjump_land	exact	207	200	-1
+156	pb_runjump_land	7	pb_runjump_land	exact	207	200	-1
+157	pb_runjump_takeoff	0	pb_runjump_takeoff	exact	219	212	-1
+157	pb_runjump_takeoff	1	pb_runjump_takeoff	exact	219	212	-1
+157	pb_runjump_takeoff	2	pb_runjump_takeoff	exact	219	212	-1
+157	pb_runjump_takeoff	3	pb_runjump_takeoff	exact	219	212	-1
+157	pb_runjump_takeoff	4	pb_runjump_takeoff	exact	219	212	-1
+157	pb_runjump_takeoff	5	pb_runjump_takeoff	exact	219	212	-1
+157	pb_runjump_takeoff	6	pb_runjump_takeoff	exact	219	212	-1
+157	pb_runjump_takeoff	7	pb_runjump_takeoff	exact	219	212	-1
+158	pb_sprint_hold	0	pb_sprint_hold	exact	237	230	-1
+158	pb_sprint_hold	1	pb_sprint_hold	exact	237	230	-1
+158	pb_sprint_hold	2	pb_sprint_hold	exact	237	230	-1
+158	pb_sprint_hold	3	pb_sprint_hold	exact	237	230	-1
+158	pb_sprint_hold	4	pb_sprint_hold	exact	237	230	-1
+158	pb_sprint_hold	5	pb_sprint_hold	exact	237	230	-1
+158	pb_sprint_hold	6	pb_sprint_hold	exact	237	230	-1
+158	pb_sprint_hold	7	pb_sprint_hold	exact	237	230	-1
+159	pb_sprint_pistol	0	mp_pistol_sprint	native replacement	239	232	-1
+159	pb_sprint_pistol	1	mp_pistol_sprint	native replacement	239	232	-1
+159	pb_sprint_pistol	2	mp_pistol_sprint	native replacement	239	232	-1
+159	pb_sprint_pistol	3	mp_pistol_sprint	native replacement	239	232	-1
+159	pb_sprint_pistol	4	mp_pistol_sprint	native replacement	239	232	-1
+159	pb_sprint_pistol	5	mp_pistol_sprint	native replacement	239	232	-1
+159	pb_sprint_pistol	6	mp_pistol_sprint	native replacement	239	232	-1
+159	pb_sprint_pistol	7	mp_pistol_sprint	native replacement	239	232	-1
+160	pb_sprint_rpg	0	mp_rpg_sprint	native replacement	238	231	-1
+160	pb_sprint_rpg	1	mp_rpg_sprint	native replacement	238	231	-1
+160	pb_sprint_rpg	2	mp_rpg_sprint	native replacement	238	231	-1
+160	pb_sprint_rpg	3	mp_rpg_sprint	native replacement	238	231	-1
+160	pb_sprint_rpg	4	mp_rpg_sprint	native replacement	238	231	-1
+160	pb_sprint_rpg	5	mp_rpg_sprint	native replacement	238	231	-1
+160	pb_sprint_rpg	6	mp_rpg_sprint	native replacement	238	231	-1
+160	pb_sprint_rpg	7	mp_rpg_sprint	native replacement	238	231	-1
+161	pb_sprint	0	pb_sprint_assault	native replacement	234	227	-1
+161	pb_sprint	1	pb_sprint_sniper	native replacement	233	226	-1
+161	pb_sprint	2	pb_sprint_lmg	native replacement	236	229	-1
+161	pb_sprint	3	pb_sprint_smg	native replacement	235	228	-1
+161	pb_sprint	4	pb_sprint_shotgun	native replacement	232	225	-1
+161	pb_sprint	5	mp_pistol_sprint	native replacement	239	232	-1
+161	pb_sprint	6	mp_rpg_sprint	native replacement	238	231	-1
+161	pb_sprint	7	pb_sprint_hold	native replacement	237	230	-1
+162	pb_pistol_run_fast	0	mp_pistol_stand_run_f	native replacement	301	294	-1
+162	pb_pistol_run_fast	1	mp_pistol_stand_run_f	native replacement	301	294	-1
+162	pb_pistol_run_fast	2	mp_pistol_stand_run_f	native replacement	301	294	-1
+162	pb_pistol_run_fast	3	mp_pistol_stand_run_f	native replacement	301	294	-1
+162	pb_pistol_run_fast	4	mp_pistol_stand_run_f	native replacement	301	294	-1
+162	pb_pistol_run_fast	5	mp_pistol_stand_run_f	native replacement	301	294	-1
+162	pb_pistol_run_fast	6	mp_pistol_stand_run_f	native replacement	301	294	-1
+162	pb_pistol_run_fast	7	mp_pistol_stand_run_f	native replacement	301	294	-1
+163	pb_prone_aim_rpg	0	mp_rpg_prone_idle	native replacement	771	763	-1
+163	pb_prone_aim_rpg	1	mp_rpg_prone_idle	native replacement	771	763	-1
+163	pb_prone_aim_rpg	2	mp_rpg_prone_idle	native replacement	771	763	-1
+163	pb_prone_aim_rpg	3	mp_rpg_prone_idle	native replacement	771	763	-1
+163	pb_prone_aim_rpg	4	mp_rpg_prone_idle	native replacement	771	763	-1
+163	pb_prone_aim_rpg	5	mp_rpg_prone_idle	native replacement	771	763	-1
+163	pb_prone_aim_rpg	6	mp_rpg_prone_idle	native replacement	771	763	-1
+163	pb_prone_aim_rpg	7	mp_rpg_prone_idle	native replacement	771	763	-1
+164	pb_stand_ads_rpg	0	mp_rpg_idle	native replacement	775	767	-1
+164	pb_stand_ads_rpg	1	mp_rpg_idle	native replacement	775	767	-1
+164	pb_stand_ads_rpg	2	mp_rpg_idle	native replacement	775	767	-1
+164	pb_stand_ads_rpg	3	mp_rpg_idle	native replacement	775	767	-1
+164	pb_stand_ads_rpg	4	mp_rpg_idle	native replacement	775	767	-1
+164	pb_stand_ads_rpg	5	mp_rpg_idle	native replacement	775	767	-1
+164	pb_stand_ads_rpg	6	mp_rpg_idle	native replacement	775	767	-1
+164	pb_stand_ads_rpg	7	mp_rpg_idle	native replacement	775	767	-1
+165	pb_crouch_ads_rpg	0	mp_rpg_crouch_idle	native replacement	772	764	-1
+165	pb_crouch_ads_rpg	1	mp_rpg_crouch_idle	native replacement	772	764	-1
+165	pb_crouch_ads_rpg	2	mp_rpg_crouch_idle	native replacement	772	764	-1
+165	pb_crouch_ads_rpg	3	mp_rpg_crouch_idle	native replacement	772	764	-1
+165	pb_crouch_ads_rpg	4	mp_rpg_crouch_idle	native replacement	772	764	-1
+165	pb_crouch_ads_rpg	5	mp_rpg_crouch_idle	native replacement	772	764	-1
+165	pb_crouch_ads_rpg	6	mp_rpg_crouch_idle	native replacement	772	764	-1
+165	pb_crouch_ads_rpg	7	mp_rpg_crouch_idle	native replacement	772	764	-1
+166	pb_crouch_alert_rpg	0	mp_rpg_crouch_idle	native replacement	772	764	-1
+166	pb_crouch_alert_rpg	1	mp_rpg_crouch_idle	native replacement	772	764	-1
+166	pb_crouch_alert_rpg	2	mp_rpg_crouch_idle	native replacement	772	764	-1
+166	pb_crouch_alert_rpg	3	mp_rpg_crouch_idle	native replacement	772	764	-1
+166	pb_crouch_alert_rpg	4	mp_rpg_crouch_idle	native replacement	772	764	-1
+166	pb_crouch_alert_rpg	5	mp_rpg_crouch_idle	native replacement	772	764	-1
+166	pb_crouch_alert_rpg	6	mp_rpg_crouch_idle	native replacement	772	764	-1
+166	pb_crouch_alert_rpg	7	mp_rpg_crouch_idle	native replacement	772	764	-1
+167	pb_crouch_hold_idle	0	mp_crouch_hold_idle	native replacement	768	760	-1
+167	pb_crouch_hold_idle	1	mp_crouch_hold_idle	native replacement	768	760	-1
+167	pb_crouch_hold_idle	2	mp_crouch_hold_idle	native replacement	768	760	-1
+167	pb_crouch_hold_idle	3	mp_crouch_hold_idle	native replacement	768	760	-1
+167	pb_crouch_hold_idle	4	mp_crouch_hold_idle	native replacement	768	760	-1
+167	pb_crouch_hold_idle	5	mp_crouch_hold_idle	native replacement	768	760	-1
+167	pb_crouch_hold_idle	6	mp_crouch_hold_idle	native replacement	768	760	-1
+167	pb_crouch_hold_idle	7	mp_crouch_hold_idle	native replacement	768	760	-1
+168	pb_hold_idle	0	mp_hold_idle	native replacement	769	761	-1
+168	pb_hold_idle	1	mp_hold_idle	native replacement	769	761	-1
+168	pb_hold_idle	2	mp_hold_idle	native replacement	769	761	-1
+168	pb_hold_idle	3	mp_hold_idle	native replacement	769	761	-1
+168	pb_hold_idle	4	mp_hold_idle	native replacement	769	761	-1
+168	pb_hold_idle	5	mp_hold_idle	native replacement	769	761	-1
+168	pb_hold_idle	6	mp_hold_idle	native replacement	769	761	-1
+168	pb_hold_idle	7	mp_hold_idle	native replacement	769	761	-1
+169	pb_laststand_idle	0	pb_laststand_idle	exact	161	154	-1
+169	pb_laststand_idle	1	pb_laststand_idle	exact	161	154	-1
+169	pb_laststand_idle	2	pb_laststand_idle	exact	161	154	-1
+169	pb_laststand_idle	3	pb_laststand_idle	exact	161	154	-1
+169	pb_laststand_idle	4	pb_laststand_idle	exact	161	154	-1
+169	pb_laststand_idle	5	pb_laststand_idle	exact	161	154	-1
+169	pb_laststand_idle	6	pb_laststand_idle	exact	161	154	-1
+169	pb_laststand_idle	7	pb_laststand_idle	exact	161	154	-1
+170	pb_crouch_bombplant	0	mp_srchdstry_crouch_bomb_idle	native replacement	766	758	-1
+170	pb_crouch_bombplant	1	mp_srchdstry_crouch_bomb_idle	native replacement	766	758	-1
+170	pb_crouch_bombplant	2	mp_srchdstry_crouch_bomb_idle	native replacement	766	758	-1
+170	pb_crouch_bombplant	3	mp_srchdstry_crouch_bomb_idle	native replacement	766	758	-1
+170	pb_crouch_bombplant	4	mp_srchdstry_crouch_bomb_idle	native replacement	766	758	-1
+170	pb_crouch_bombplant	5	mp_srchdstry_crouch_bomb_idle	native replacement	766	758	-1
+170	pb_crouch_bombplant	6	mp_srchdstry_crouch_bomb_idle	native replacement	766	758	-1
+170	pb_crouch_bombplant	7	mp_srchdstry_crouch_bomb_idle	native replacement	766	758	-1
+171	pb_stand_bombplant	0	mp_srchdstry_stand_bomb_idle	native replacement	767	759	-1
+171	pb_stand_bombplant	1	mp_srchdstry_stand_bomb_idle	native replacement	767	759	-1
+171	pb_stand_bombplant	2	mp_srchdstry_stand_bomb_idle	native replacement	767	759	-1
+171	pb_stand_bombplant	3	mp_srchdstry_stand_bomb_idle	native replacement	767	759	-1
+171	pb_stand_bombplant	4	mp_srchdstry_stand_bomb_idle	native replacement	767	759	-1
+171	pb_stand_bombplant	5	mp_srchdstry_stand_bomb_idle	native replacement	767	759	-1
+171	pb_stand_bombplant	6	mp_srchdstry_stand_bomb_idle	native replacement	767	759	-1
+171	pb_stand_bombplant	7	mp_srchdstry_stand_bomb_idle	native replacement	767	759	-1
+172	pb_prone_bombplant	0	mp_srchdstry_prone_bomb_idle	native replacement	765	757	-1
+172	pb_prone_bombplant	1	mp_srchdstry_prone_bomb_idle	native replacement	765	757	-1
+172	pb_prone_bombplant	2	mp_srchdstry_prone_bomb_idle	native replacement	765	757	-1
+172	pb_prone_bombplant	3	mp_srchdstry_prone_bomb_idle	native replacement	765	757	-1
+172	pb_prone_bombplant	4	mp_srchdstry_prone_bomb_idle	native replacement	765	757	-1
+172	pb_prone_bombplant	5	mp_srchdstry_prone_bomb_idle	native replacement	765	757	-1
+172	pb_prone_bombplant	6	mp_srchdstry_prone_bomb_idle	native replacement	765	757	-1
+172	pb_prone_bombplant	7	mp_srchdstry_prone_bomb_idle	native replacement	765	757	-1
+173	pb_chicken_dance_crouch	0	mp_crouch_idle	native replacement	792	784	-1
+173	pb_chicken_dance_crouch	1	mp_crouch_idle	native replacement	792	784	-1
+173	pb_chicken_dance_crouch	2	mp_crouch_idle	native replacement	792	784	-1
+173	pb_chicken_dance_crouch	3	mp_crouch_idle	native replacement	792	784	-1
+173	pb_chicken_dance_crouch	4	mp_crouch_idle	native replacement	792	784	-1
+173	pb_chicken_dance_crouch	5	mp_pistol_crouch_idle	native replacement	779	771	-1
+173	pb_chicken_dance_crouch	6	mp_rpg_crouch_idle	native replacement	772	764	-1
+173	pb_chicken_dance_crouch	7	mp_crouch_hold_idle	native replacement	768	760	-1
+174	pb_prone_hold	0	pb_prone_hold	exact	764	756	-1
+174	pb_prone_hold	1	pb_prone_hold	exact	764	756	-1
+174	pb_prone_hold	2	pb_prone_hold	exact	764	756	-1
+174	pb_prone_hold	3	pb_prone_hold	exact	764	756	-1
+174	pb_prone_hold	4	pb_prone_hold	exact	764	756	-1
+174	pb_prone_hold	5	pb_prone_hold	exact	764	756	-1
+174	pb_prone_hold	6	pb_prone_hold	exact	764	756	-1
+174	pb_prone_hold	7	pb_prone_hold	exact	764	756	-1
+175	pb_crouch_ads_pistol	0	mp_pistol_crouch_idle	native replacement	779	771	-1
+175	pb_crouch_ads_pistol	1	mp_pistol_crouch_idle	native replacement	779	771	-1
+175	pb_crouch_ads_pistol	2	mp_pistol_crouch_idle	native replacement	779	771	-1
+175	pb_crouch_ads_pistol	3	mp_pistol_crouch_idle	native replacement	779	771	-1
+175	pb_crouch_ads_pistol	4	mp_pistol_crouch_idle	native replacement	779	771	-1
+175	pb_crouch_ads_pistol	5	mp_pistol_crouch_idle	native replacement	779	771	-1
+175	pb_crouch_ads_pistol	6	mp_pistol_crouch_idle	native replacement	779	771	-1
+175	pb_crouch_ads_pistol	7	mp_pistol_crouch_idle	native replacement	779	771	-1
+176	pb_crouch_alert_pistol	0	mp_pistol_crouch_idle	native replacement	779	771	-1
+176	pb_crouch_alert_pistol	1	mp_pistol_crouch_idle	native replacement	779	771	-1
+176	pb_crouch_alert_pistol	2	mp_pistol_crouch_idle	native replacement	779	771	-1
+176	pb_crouch_alert_pistol	3	mp_pistol_crouch_idle	native replacement	779	771	-1
+176	pb_crouch_alert_pistol	4	mp_pistol_crouch_idle	native replacement	779	771	-1
+176	pb_crouch_alert_pistol	5	mp_pistol_crouch_idle	native replacement	779	771	-1
+176	pb_crouch_alert_pistol	6	mp_pistol_crouch_idle	native replacement	779	771	-1
+176	pb_crouch_alert_pistol	7	mp_pistol_crouch_idle	native replacement	779	771	-1
+177	pb_crouch_ads	0	mp_crouch_idle_ads	native replacement	791	783	-1
+177	pb_crouch_ads	1	mp_crouch_idle_ads	native replacement	791	783	-1
+177	pb_crouch_ads	2	mp_crouch_idle_ads	native replacement	791	783	-1
+177	pb_crouch_ads	3	mp_crouch_idle_ads	native replacement	791	783	-1
+177	pb_crouch_ads	4	mp_crouch_idle_ads	native replacement	791	783	-1
+177	pb_crouch_ads	5	mp_crouch_idle_ads	native replacement	791	783	-1
+177	pb_crouch_ads	6	mp_crouch_idle_ads	native replacement	791	783	-1
+177	pb_crouch_ads	7	mp_crouch_idle_ads	native replacement	791	783	-1
+178	pb_crouch_alert	0	mp_crouch_idle	native replacement	792	784	-1
+178	pb_crouch_alert	1	mp_crouch_idle	native replacement	792	784	-1
+178	pb_crouch_alert	2	mp_crouch_idle	native replacement	792	784	-1
+178	pb_crouch_alert	3	mp_crouch_idle	native replacement	792	784	-1
+178	pb_crouch_alert	4	mp_crouch_idle	native replacement	792	784	-1
+178	pb_crouch_alert	5	mp_crouch_idle	native replacement	792	784	-1
+178	pb_crouch_alert	6	mp_crouch_idle	native replacement	792	784	-1
+178	pb_crouch_alert	7	mp_crouch_idle	native replacement	792	784	-1
+179	pb_crouch_grenade_pullpin	0	h1_mp_crouch_hold_grenade_pull	native replacement	999	-1	141
+179	pb_crouch_grenade_pullpin	1	h1_mp_crouch_hold_grenade_pull	native replacement	999	-1	141
+179	pb_crouch_grenade_pullpin	2	h1_mp_crouch_hold_grenade_pull	native replacement	999	-1	141
+179	pb_crouch_grenade_pullpin	3	h1_mp_crouch_hold_grenade_pull	native replacement	999	-1	141
+179	pb_crouch_grenade_pullpin	4	h1_mp_crouch_hold_grenade_pull	native replacement	999	-1	141
+179	pb_crouch_grenade_pullpin	5	h1_mp_crouch_hold_grenade_pull	native replacement	999	-1	141
+179	pb_crouch_grenade_pullpin	6	h1_mp_crouch_hold_grenade_pull	native replacement	999	-1	141
+179	pb_crouch_grenade_pullpin	7	h1_mp_crouch_hold_grenade_pull	native replacement	999	-1	141
+180	pb_stand__shoot_ads_pistol	0	pt_stand_shoot_pistol	native replacement	1152	-1	294
+180	pb_stand__shoot_ads_pistol	1	pt_stand_shoot_pistol	native replacement	1152	-1	294
+180	pb_stand__shoot_ads_pistol	2	pt_stand_shoot_pistol	native replacement	1152	-1	294
+180	pb_stand__shoot_ads_pistol	3	pt_stand_shoot_pistol	native replacement	1152	-1	294
+180	pb_stand__shoot_ads_pistol	4	pt_stand_shoot_pistol	native replacement	1152	-1	294
+180	pb_stand__shoot_ads_pistol	5	pt_stand_shoot_pistol	native replacement	1152	-1	294
+180	pb_stand__shoot_ads_pistol	6	pt_stand_shoot_pistol	native replacement	1152	-1	294
+180	pb_stand__shoot_ads_pistol	7	pt_stand_shoot_pistol	native replacement	1152	-1	294
+181	pb_stand_ads_pistol	0	mp_pistol_stand_idle	native replacement	780	772	-1
+181	pb_stand_ads_pistol	1	mp_pistol_stand_idle	native replacement	780	772	-1
+181	pb_stand_ads_pistol	2	mp_pistol_stand_idle	native replacement	780	772	-1
+181	pb_stand_ads_pistol	3	mp_pistol_stand_idle	native replacement	780	772	-1
+181	pb_stand_ads_pistol	4	mp_pistol_stand_idle	native replacement	780	772	-1
+181	pb_stand_ads_pistol	5	mp_pistol_stand_idle	native replacement	780	772	-1
+181	pb_stand_ads_pistol	6	mp_pistol_stand_idle	native replacement	780	772	-1
+181	pb_stand_ads_pistol	7	mp_pistol_stand_idle	native replacement	780	772	-1
+182	pb_stand_alert_pistol	0	mp_pistol_stand_idle	native replacement	780	772	-1
+182	pb_stand_alert_pistol	1	mp_pistol_stand_idle	native replacement	780	772	-1
+182	pb_stand_alert_pistol	2	mp_pistol_stand_idle	native replacement	780	772	-1
+182	pb_stand_alert_pistol	3	mp_pistol_stand_idle	native replacement	780	772	-1
+182	pb_stand_alert_pistol	4	mp_pistol_stand_idle	native replacement	780	772	-1
+182	pb_stand_alert_pistol	5	mp_pistol_stand_idle	native replacement	780	772	-1
+182	pb_stand_alert_pistol	6	mp_pistol_stand_idle	native replacement	780	772	-1
+182	pb_stand_alert_pistol	7	mp_pistol_stand_idle	native replacement	780	772	-1
+183	pb_stand_grenade_pullpin	0	h1_mp_hold_grenade_pull	native replacement	1000	-1	142
+183	pb_stand_grenade_pullpin	1	h1_mp_hold_grenade_pull	native replacement	1000	-1	142
+183	pb_stand_grenade_pullpin	2	h1_mp_hold_grenade_pull	native replacement	1000	-1	142
+183	pb_stand_grenade_pullpin	3	h1_mp_hold_grenade_pull	native replacement	1000	-1	142
+183	pb_stand_grenade_pullpin	4	h1_mp_hold_grenade_pull	native replacement	1000	-1	142
+183	pb_stand_grenade_pullpin	5	h1_mp_hold_grenade_pull	native replacement	1000	-1	142
+183	pb_stand_grenade_pullpin	6	h1_mp_hold_grenade_pull	native replacement	1000	-1	142
+183	pb_stand_grenade_pullpin	7	h1_mp_hold_grenade_pull	native replacement	1000	-1	142
+184	pb_stand_ads	0	mp_stand_ads_aim_5	native replacement	789	781	-1
+184	pb_stand_ads	1	mp_stand_ads_aim_5	native replacement	789	781	-1
+184	pb_stand_ads	2	mp_stand_ads_aim_5	native replacement	789	781	-1
+184	pb_stand_ads	3	mp_stand_ads_aim_5	native replacement	789	781	-1
+184	pb_stand_ads	4	mp_stand_ads_aim_5	native replacement	789	781	-1
+184	pb_stand_ads	5	mp_stand_ads_aim_5	native replacement	789	781	-1
+184	pb_stand_ads	6	mp_stand_ads_aim_5	native replacement	789	781	-1
+184	pb_stand_ads	7	mp_stand_ads_aim_5	native replacement	789	781	-1
+185	pb_stand_alert	0	mp_stand_idle	native replacement	793	785	-1
+185	pb_stand_alert	1	mp_stand_idle	native replacement	793	785	-1
+185	pb_stand_alert	2	mp_stand_idle	native replacement	793	785	-1
+185	pb_stand_alert	3	mp_stand_idle	native replacement	793	785	-1
+185	pb_stand_alert	4	mp_stand_idle	native replacement	793	785	-1
+185	pb_stand_alert	5	mp_stand_idle	native replacement	793	785	-1
+185	pb_stand_alert	6	mp_stand_idle	native replacement	793	785	-1
+185	pb_stand_alert	7	mp_stand_idle	native replacement	793	785	-1
+186	pb_stand_alert_rpg	0	mp_rpg_idle	native replacement	775	767	-1
+186	pb_stand_alert_rpg	1	mp_rpg_idle	native replacement	775	767	-1
+186	pb_stand_alert_rpg	2	mp_rpg_idle	native replacement	775	767	-1
+186	pb_stand_alert_rpg	3	mp_rpg_idle	native replacement	775	767	-1
+186	pb_stand_alert_rpg	4	mp_rpg_idle	native replacement	775	767	-1
+186	pb_stand_alert_rpg	5	mp_rpg_idle	native replacement	775	767	-1
+186	pb_stand_alert_rpg	6	mp_rpg_idle	native replacement	775	767	-1
+186	pb_stand_alert_rpg	7	mp_rpg_idle	native replacement	775	767	-1
+253	pt_flinch_grenade_back	0	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+253	pt_flinch_grenade_back	1	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+253	pt_flinch_grenade_back	2	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+253	pt_flinch_grenade_back	3	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+253	pt_flinch_grenade_back	4	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+253	pt_flinch_grenade_back	5	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+253	pt_flinch_grenade_back	6	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+253	pt_flinch_grenade_back	7	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+254	pt_flinch_grenade_forward	0	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+254	pt_flinch_grenade_forward	1	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+254	pt_flinch_grenade_forward	2	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+254	pt_flinch_grenade_forward	3	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+254	pt_flinch_grenade_forward	4	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+254	pt_flinch_grenade_forward	5	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+254	pt_flinch_grenade_forward	6	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+254	pt_flinch_grenade_forward	7	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+255	pt_flinch_grenade_left	0	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+255	pt_flinch_grenade_left	1	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+255	pt_flinch_grenade_left	2	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+255	pt_flinch_grenade_left	3	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+255	pt_flinch_grenade_left	4	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+255	pt_flinch_grenade_left	5	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+255	pt_flinch_grenade_left	6	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+255	pt_flinch_grenade_left	7	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+256	pt_flinch_grenade_right	0	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+256	pt_flinch_grenade_right	1	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+256	pt_flinch_grenade_right	2	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+256	pt_flinch_grenade_right	3	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+256	pt_flinch_grenade_right	4	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+256	pt_flinch_grenade_right	5	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+256	pt_flinch_grenade_right	6	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+256	pt_flinch_grenade_right	7	h1_mp_hold_flinch_a	native replacement	1045	-1	187
+257	pt_flinch_pistol_right	0	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+257	pt_flinch_pistol_right	1	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+257	pt_flinch_pistol_right	2	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+257	pt_flinch_pistol_right	3	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+257	pt_flinch_pistol_right	4	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+257	pt_flinch_pistol_right	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+257	pt_flinch_pistol_right	6	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+257	pt_flinch_pistol_right	7	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+258	pt_flinch_pistol_back	0	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+258	pt_flinch_pistol_back	1	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+258	pt_flinch_pistol_back	2	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+258	pt_flinch_pistol_back	3	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+258	pt_flinch_pistol_back	4	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+258	pt_flinch_pistol_back	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+258	pt_flinch_pistol_back	6	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+258	pt_flinch_pistol_back	7	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+259	pt_flinch_pistol_forward	0	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+259	pt_flinch_pistol_forward	1	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+259	pt_flinch_pistol_forward	2	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+259	pt_flinch_pistol_forward	3	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+259	pt_flinch_pistol_forward	4	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+259	pt_flinch_pistol_forward	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+259	pt_flinch_pistol_forward	6	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+259	pt_flinch_pistol_forward	7	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+260	pt_flinch_pistol_left	0	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+260	pt_flinch_pistol_left	1	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+260	pt_flinch_pistol_left	2	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+260	pt_flinch_pistol_left	3	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+260	pt_flinch_pistol_left	4	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+260	pt_flinch_pistol_left	5	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+260	pt_flinch_pistol_left	6	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+260	pt_flinch_pistol_left	7	mp_flinch_pistol_stand_a	native replacement	1047	-1	189
+261	pt_flinch_right	0	mp_flinch_stand_a	native replacement	1061	-1	203
+261	pt_flinch_right	1	mp_flinch_stand_a	native replacement	1061	-1	203
+261	pt_flinch_right	2	mp_flinch_stand_a	native replacement	1061	-1	203
+261	pt_flinch_right	3	mp_flinch_stand_a	native replacement	1061	-1	203
+261	pt_flinch_right	4	mp_flinch_stand_a	native replacement	1061	-1	203
+261	pt_flinch_right	5	mp_flinch_stand_a	native replacement	1061	-1	203
+261	pt_flinch_right	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+261	pt_flinch_right	7	mp_flinch_stand_a	native replacement	1061	-1	203
+262	pt_flinch_left	0	mp_flinch_stand_a	native replacement	1061	-1	203
+262	pt_flinch_left	1	mp_flinch_stand_a	native replacement	1061	-1	203
+262	pt_flinch_left	2	mp_flinch_stand_a	native replacement	1061	-1	203
+262	pt_flinch_left	3	mp_flinch_stand_a	native replacement	1061	-1	203
+262	pt_flinch_left	4	mp_flinch_stand_a	native replacement	1061	-1	203
+262	pt_flinch_left	5	mp_flinch_stand_a	native replacement	1061	-1	203
+262	pt_flinch_left	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+262	pt_flinch_left	7	mp_flinch_stand_a	native replacement	1061	-1	203
+263	pt_flinch_back	0	mp_flinch_stand_a	native replacement	1061	-1	203
+263	pt_flinch_back	1	mp_flinch_stand_a	native replacement	1061	-1	203
+263	pt_flinch_back	2	mp_flinch_stand_a	native replacement	1061	-1	203
+263	pt_flinch_back	3	mp_flinch_stand_a	native replacement	1061	-1	203
+263	pt_flinch_back	4	mp_flinch_stand_a	native replacement	1061	-1	203
+263	pt_flinch_back	5	mp_flinch_stand_a	native replacement	1061	-1	203
+263	pt_flinch_back	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+263	pt_flinch_back	7	mp_flinch_stand_a	native replacement	1061	-1	203
+264	pt_flinch_forward	0	mp_flinch_stand_a	native replacement	1061	-1	203
+264	pt_flinch_forward	1	mp_flinch_stand_a	native replacement	1061	-1	203
+264	pt_flinch_forward	2	mp_flinch_stand_a	native replacement	1061	-1	203
+264	pt_flinch_forward	3	mp_flinch_stand_a	native replacement	1061	-1	203
+264	pt_flinch_forward	4	mp_flinch_stand_a	native replacement	1061	-1	203
+264	pt_flinch_forward	5	mp_flinch_stand_a	native replacement	1061	-1	203
+264	pt_flinch_forward	6	mp_rpg_stand_flinch_a	native replacement	1020	-1	162
+264	pt_flinch_forward	7	mp_flinch_stand_a	native replacement	1061	-1	203
+265	pb_stand_shellshock	0	pb_stand_shellshock	exact	872	-1	14
+265	pb_stand_shellshock	1	pb_stand_shellshock	exact	872	-1	14
+265	pb_stand_shellshock	2	pb_stand_shellshock	exact	872	-1	14
+265	pb_stand_shellshock	3	pb_stand_shellshock	exact	872	-1	14
+265	pb_stand_shellshock	4	pb_stand_shellshock	exact	872	-1	14
+265	pb_stand_shellshock	5	pb_stand_shellshock	exact	872	-1	14
+265	pb_stand_shellshock	6	pb_stand_shellshock	exact	872	-1	14
+265	pb_stand_shellshock	7	pb_stand_shellshock	exact	872	-1	14
+266	pt_prone_pullout_pose	0	mp_prone_weapon_switch_iw6	native replacement	959	-1	101
+266	pt_prone_pullout_pose	1	mp_prone_weapon_switch_iw6	native replacement	959	-1	101
+266	pt_prone_pullout_pose	2	mp_prone_weapon_switch_iw6	native replacement	959	-1	101
+266	pt_prone_pullout_pose	3	mp_prone_weapon_switch_iw6	native replacement	959	-1	101
+266	pt_prone_pullout_pose	4	mp_prone_weapon_switch_iw6	native replacement	959	-1	101
+266	pt_prone_pullout_pose	5	mp_prone_weapon_swap_lg2pistol	native replacement	948	-1	90
+266	pt_prone_pullout_pose	6	mp_prone_weapon_switch_iw6	native replacement	959	-1	101
+266	pt_prone_pullout_pose	7	mp_prone_weapon_switch_iw6	native replacement	959	-1	101
+267	pt_stand_pullout_pose	0	pt_stand_core_pullout	native replacement	938	-1	80
+267	pt_stand_pullout_pose	1	pt_stand_core_pullout	native replacement	938	-1	80
+267	pt_stand_pullout_pose	2	pt_stand_core_pullout	native replacement	938	-1	80
+267	pt_stand_pullout_pose	3	pt_stand_core_pullout	native replacement	938	-1	80
+267	pt_stand_pullout_pose	4	pt_stand_core_pullout	native replacement	938	-1	80
+267	pt_stand_pullout_pose	5	mp_stand_weapon_swap_lg2pistol	native replacement	944	-1	86
+267	pt_stand_pullout_pose	6	pt_stand_core_pullout	native replacement	938	-1	80
+267	pt_stand_pullout_pose	7	pt_stand_core_pullout	native replacement	938	-1	80
+268	pt_crouch_pullout_pose	0	mp_crouch_weapon_swap_iw6	native replacement	960	-1	102
+268	pt_crouch_pullout_pose	1	mp_crouch_weapon_swap_iw6	native replacement	960	-1	102
+268	pt_crouch_pullout_pose	2	mp_crouch_weapon_swap_iw6	native replacement	960	-1	102
+268	pt_crouch_pullout_pose	3	mp_crouch_weapon_swap_iw6	native replacement	960	-1	102
+268	pt_crouch_pullout_pose	4	mp_crouch_weapon_swap_iw6	native replacement	960	-1	102
+268	pt_crouch_pullout_pose	5	mp_crouch_weapon_swap_lg2pistol	native replacement	946	-1	88
+268	pt_crouch_pullout_pose	6	mp_crouch_weapon_swap_iw6	native replacement	960	-1	102
+268	pt_crouch_pullout_pose	7	mp_crouch_weapon_swap_iw6	native replacement	960	-1	102
+269	pt_melee_prone_pistol	0	pt_melee_prone_pistol	exact	1124	-1	266
+269	pt_melee_prone_pistol	1	pt_melee_prone_pistol	exact	1124	-1	266
+269	pt_melee_prone_pistol	2	pt_melee_prone_pistol	exact	1124	-1	266
+269	pt_melee_prone_pistol	3	pt_melee_prone_pistol	exact	1124	-1	266
+269	pt_melee_prone_pistol	4	pt_melee_prone_pistol	exact	1124	-1	266
+269	pt_melee_prone_pistol	5	pt_melee_prone_pistol	exact	1124	-1	266
+269	pt_melee_prone_pistol	6	pt_melee_prone_pistol	exact	1124	-1	266
+269	pt_melee_prone_pistol	7	pt_melee_prone_pistol	exact	1124	-1	266
+270	pt_melee_prone	0	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+270	pt_melee_prone	1	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+270	pt_melee_prone	2	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+270	pt_melee_prone	3	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+270	pt_melee_prone	4	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+270	pt_melee_prone	5	h1_mp_pistol_stand_melee_swipe	native replacement	1100	-1	242
+270	pt_melee_prone	6	h1_mp_rpg_stand_melee_swipe	native replacement	1097	-1	239
+270	pt_melee_prone	7	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+271	pt_melee_pistol_2	0	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+271	pt_melee_pistol_2	1	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+271	pt_melee_pistol_2	2	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+271	pt_melee_pistol_2	3	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+271	pt_melee_pistol_2	4	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+271	pt_melee_pistol_2	5	h1_mp_pistol_stand_melee_swipe	native replacement	1100	-1	242
+271	pt_melee_pistol_2	6	h1_mp_rpg_stand_melee_swipe	native replacement	1097	-1	239
+271	pt_melee_pistol_2	7	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+272	pt_melee_pistol_1	0	pt_melee_pistol_1	exact	1125	-1	267
+272	pt_melee_pistol_1	1	pt_melee_pistol_1	exact	1125	-1	267
+272	pt_melee_pistol_1	2	pt_melee_pistol_1	exact	1125	-1	267
+272	pt_melee_pistol_1	3	pt_melee_pistol_1	exact	1125	-1	267
+272	pt_melee_pistol_1	4	pt_melee_pistol_1	exact	1125	-1	267
+272	pt_melee_pistol_1	5	pt_melee_pistol_1	exact	1125	-1	267
+272	pt_melee_pistol_1	6	pt_melee_pistol_1	exact	1125	-1	267
+272	pt_melee_pistol_1	7	pt_melee_pistol_1	exact	1125	-1	267
+273	pt_melee_crouch_right2left	0	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+273	pt_melee_crouch_right2left	1	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+273	pt_melee_crouch_right2left	2	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+273	pt_melee_crouch_right2left	3	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+273	pt_melee_crouch_right2left	4	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+273	pt_melee_crouch_right2left	5	h1_mp_pistol_crouch_melee_swipe	native replacement	1099	-1	241
+273	pt_melee_crouch_right2left	6	h1_mp_rpg_crouch_melee_swipe	native replacement	1096	-1	238
+273	pt_melee_crouch_right2left	7	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+274	pt_melee_crouch_left2right	0	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+274	pt_melee_crouch_left2right	1	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+274	pt_melee_crouch_left2right	2	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+274	pt_melee_crouch_left2right	3	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+274	pt_melee_crouch_left2right	4	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+274	pt_melee_crouch_left2right	5	h1_mp_pistol_crouch_melee_swipe	native replacement	1099	-1	241
+274	pt_melee_crouch_left2right	6	h1_mp_rpg_crouch_melee_swipe	native replacement	1096	-1	238
+274	pt_melee_crouch_left2right	7	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+275	pt_melee_crouch_left2left	0	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+275	pt_melee_crouch_left2left	1	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+275	pt_melee_crouch_left2left	2	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+275	pt_melee_crouch_left2left	3	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+275	pt_melee_crouch_left2left	4	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+275	pt_melee_crouch_left2left	5	h1_mp_pistol_crouch_melee_swipe	native replacement	1099	-1	241
+275	pt_melee_crouch_left2left	6	h1_mp_rpg_crouch_melee_swipe	native replacement	1096	-1	238
+275	pt_melee_crouch_left2left	7	h1_mp_assault_crouch_melee_swipe	native replacement	1102	-1	244
+276	pt_melee_left2right	0	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+276	pt_melee_left2right	1	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+276	pt_melee_left2right	2	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+276	pt_melee_left2right	3	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+276	pt_melee_left2right	4	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+276	pt_melee_left2right	5	h1_mp_pistol_stand_melee_swipe	native replacement	1100	-1	242
+276	pt_melee_left2right	6	h1_mp_rpg_stand_melee_swipe	native replacement	1097	-1	239
+276	pt_melee_left2right	7	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+277	pt_melee_left2left_1	0	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+277	pt_melee_left2left_1	1	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+277	pt_melee_left2left_1	2	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+277	pt_melee_left2left_1	3	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+277	pt_melee_left2left_1	4	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+277	pt_melee_left2left_1	5	h1_mp_pistol_stand_melee_swipe	native replacement	1100	-1	242
+277	pt_melee_left2left_1	6	h1_mp_rpg_stand_melee_swipe	native replacement	1097	-1	239
+277	pt_melee_left2left_1	7	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+278	pt_melee_right2left	0	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+278	pt_melee_right2left	1	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+278	pt_melee_right2left	2	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+278	pt_melee_right2left	3	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+278	pt_melee_right2left	4	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+278	pt_melee_right2left	5	h1_mp_pistol_stand_melee_swipe	native replacement	1100	-1	242
+278	pt_melee_right2left	6	h1_mp_rpg_stand_melee_swipe	native replacement	1097	-1	239
+278	pt_melee_right2left	7	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+279	pt_melee_right2right_2	0	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+279	pt_melee_right2right_2	1	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+279	pt_melee_right2right_2	2	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+279	pt_melee_right2right_2	3	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+279	pt_melee_right2right_2	4	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+279	pt_melee_right2right_2	5	h1_mp_pistol_stand_melee_swipe	native replacement	1100	-1	242
+279	pt_melee_right2right_2	6	h1_mp_rpg_stand_melee_swipe	native replacement	1097	-1	239
+279	pt_melee_right2right_2	7	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+280	pt_melee_right2right_1	0	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+280	pt_melee_right2right_1	1	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+280	pt_melee_right2right_1	2	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+280	pt_melee_right2right_1	3	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+280	pt_melee_right2right_1	4	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+280	pt_melee_right2right_1	5	h1_mp_pistol_stand_melee_swipe	native replacement	1100	-1	242
+280	pt_melee_right2right_1	6	h1_mp_rpg_stand_melee_swipe	native replacement	1097	-1	239
+280	pt_melee_right2right_1	7	h1_mp_assault_stand_melee_swipe	native replacement	1103	-1	245
+281	pt_prone_shoot_auto	0	pt_prone_shoot_auto	exact	1142	-1	284
+281	pt_prone_shoot_auto	1	pt_prone_shoot_auto	exact	1142	-1	284
+281	pt_prone_shoot_auto	2	pt_prone_shoot_auto	exact	1142	-1	284
+281	pt_prone_shoot_auto	3	pt_prone_shoot_auto	exact	1142	-1	284
+281	pt_prone_shoot_auto	4	pt_prone_shoot_auto	exact	1142	-1	284
+281	pt_prone_shoot_auto	5	pt_prone_shoot_auto	exact	1142	-1	284
+281	pt_prone_shoot_auto	6	pt_prone_shoot_auto	exact	1142	-1	284
+281	pt_prone_shoot_auto	7	pt_prone_shoot_auto	exact	1142	-1	284
+282	pt_prone_shoot_pistol	0	pt_prone_shoot_pistol	exact	1143	-1	285
+282	pt_prone_shoot_pistol	1	pt_prone_shoot_pistol	exact	1143	-1	285
+282	pt_prone_shoot_pistol	2	pt_prone_shoot_pistol	exact	1143	-1	285
+282	pt_prone_shoot_pistol	3	pt_prone_shoot_pistol	exact	1143	-1	285
+282	pt_prone_shoot_pistol	4	pt_prone_shoot_pistol	exact	1143	-1	285
+282	pt_prone_shoot_pistol	5	pt_prone_shoot_pistol	exact	1143	-1	285
+282	pt_prone_shoot_pistol	6	pt_prone_shoot_pistol	exact	1143	-1	285
+282	pt_prone_shoot_pistol	7	pt_prone_shoot_pistol	exact	1143	-1	285
+283	pt_reload_crouchwalk_pistol	0	mp_pistol_crouch_reload	native replacement	1131	-1	273
+283	pt_reload_crouchwalk_pistol	1	mp_pistol_crouch_reload	native replacement	1131	-1	273
+283	pt_reload_crouchwalk_pistol	2	mp_pistol_crouch_reload	native replacement	1131	-1	273
+283	pt_reload_crouchwalk_pistol	3	mp_pistol_crouch_reload	native replacement	1131	-1	273
+283	pt_reload_crouchwalk_pistol	4	mp_pistol_crouch_reload	native replacement	1131	-1	273
+283	pt_reload_crouchwalk_pistol	5	mp_pistol_crouch_reload	native replacement	1131	-1	273
+283	pt_reload_crouchwalk_pistol	6	mp_pistol_crouch_reload	native replacement	1131	-1	273
+283	pt_reload_crouchwalk_pistol	7	mp_pistol_crouch_reload	native replacement	1131	-1	273
+284	pt_reload_crouchwalk	0	pt_reload_crouchwalk	exact	1126	-1	268
+284	pt_reload_crouchwalk	1	pt_reload_crouchwalk	exact	1126	-1	268
+284	pt_reload_crouchwalk	2	pt_reload_crouchwalk	exact	1126	-1	268
+284	pt_reload_crouchwalk	3	pt_reload_crouchwalk	exact	1126	-1	268
+284	pt_reload_crouchwalk	4	pt_reload_crouchwalk	exact	1126	-1	268
+284	pt_reload_crouchwalk	5	pt_reload_crouchwalk	exact	1126	-1	268
+284	pt_reload_crouchwalk	6	pt_reload_crouchwalk	exact	1126	-1	268
+284	pt_reload_crouchwalk	7	pt_reload_crouchwalk	exact	1126	-1	268
+285	pt_reload_prone_rpg	0	mp_prone_reload_iw6	native replacement	1136	-1	278
+285	pt_reload_prone_rpg	1	mp_prone_reload_iw6	native replacement	1136	-1	278
+285	pt_reload_prone_rpg	2	mp_prone_reload_iw6	native replacement	1136	-1	278
+285	pt_reload_prone_rpg	3	mp_prone_reload_iw6	native replacement	1136	-1	278
+285	pt_reload_prone_rpg	4	mp_prone_reload_iw6	native replacement	1136	-1	278
+285	pt_reload_prone_rpg	5	mp_pistol_prone_reload	native replacement	1130	-1	272
+285	pt_reload_prone_rpg	6	mp_rpg_prone_reload	native replacement	1129	-1	271
+285	pt_reload_prone_rpg	7	mp_prone_reload_iw6	native replacement	1136	-1	278
+286	pt_laststand_reload	0	pt_laststand_reload	exact	1006	-1	148
+286	pt_laststand_reload	1	pt_laststand_reload	exact	1006	-1	148
+286	pt_laststand_reload	2	pt_laststand_reload	exact	1006	-1	148
+286	pt_laststand_reload	3	pt_laststand_reload	exact	1006	-1	148
+286	pt_laststand_reload	4	pt_laststand_reload	exact	1006	-1	148
+286	pt_laststand_reload	5	pt_laststand_reload	exact	1006	-1	148
+286	pt_laststand_reload	6	pt_laststand_reload	exact	1006	-1	148
+286	pt_laststand_reload	7	pt_laststand_reload	exact	1006	-1	148
+287	pt_reload_prone_auto	0	mp_prone_reload_iw6	native replacement	1136	-1	278
+287	pt_reload_prone_auto	1	mp_prone_reload_iw6	native replacement	1136	-1	278
+287	pt_reload_prone_auto	2	mp_prone_reload_iw6	native replacement	1136	-1	278
+287	pt_reload_prone_auto	3	mp_prone_reload_iw6	native replacement	1136	-1	278
+287	pt_reload_prone_auto	4	mp_prone_reload_iw6	native replacement	1136	-1	278
+287	pt_reload_prone_auto	5	mp_pistol_prone_reload	native replacement	1130	-1	272
+287	pt_reload_prone_auto	6	mp_rpg_prone_reload	native replacement	1129	-1	271
+287	pt_reload_prone_auto	7	mp_prone_reload_iw6	native replacement	1136	-1	278
+288	pt_reload_stand_auto_mp40	0	mp_stand_reload	native replacement	1138	-1	280
+288	pt_reload_stand_auto_mp40	1	mp_stand_reload	native replacement	1138	-1	280
+288	pt_reload_stand_auto_mp40	2	mp_stand_reload	native replacement	1138	-1	280
+288	pt_reload_stand_auto_mp40	3	mp_stand_reload	native replacement	1138	-1	280
+288	pt_reload_stand_auto_mp40	4	mp_stand_reload	native replacement	1138	-1	280
+288	pt_reload_stand_auto_mp40	5	mp_pistol_stand_reload	native replacement	1132	-1	274
+288	pt_reload_stand_auto_mp40	6	mp_rpg_reload	native replacement	1127	-1	269
+288	pt_reload_stand_auto_mp40	7	mp_stand_reload	native replacement	1138	-1	280
+289	pt_reload_stand_auto	0	mp_stand_reload	native replacement	1138	-1	280
+289	pt_reload_stand_auto	1	mp_stand_reload	native replacement	1138	-1	280
+289	pt_reload_stand_auto	2	mp_stand_reload	native replacement	1138	-1	280
+289	pt_reload_stand_auto	3	mp_stand_reload	native replacement	1138	-1	280
+289	pt_reload_stand_auto	4	mp_stand_reload	native replacement	1138	-1	280
+289	pt_reload_stand_auto	5	mp_pistol_stand_reload	native replacement	1132	-1	274
+289	pt_reload_stand_auto	6	mp_rpg_reload	native replacement	1127	-1	269
+289	pt_reload_stand_auto	7	mp_stand_reload	native replacement	1138	-1	280
+290	pt_reload_stand_rifle	0	mp_stand_reload	native replacement	1138	-1	280
+290	pt_reload_stand_rifle	1	mp_stand_reload	native replacement	1138	-1	280
+290	pt_reload_stand_rifle	2	mp_stand_reload	native replacement	1138	-1	280
+290	pt_reload_stand_rifle	3	mp_stand_reload	native replacement	1138	-1	280
+290	pt_reload_stand_rifle	4	mp_stand_reload	native replacement	1138	-1	280
+290	pt_reload_stand_rifle	5	mp_pistol_stand_reload	native replacement	1132	-1	274
+290	pt_reload_stand_rifle	6	mp_rpg_reload	native replacement	1127	-1	269
+290	pt_reload_stand_rifle	7	mp_stand_reload	native replacement	1138	-1	280
+291	pt_reload_crouch_rifle	0	mp_crouch_reload	native replacement	1137	-1	279
+291	pt_reload_crouch_rifle	1	mp_crouch_reload	native replacement	1137	-1	279
+291	pt_reload_crouch_rifle	2	mp_crouch_reload	native replacement	1137	-1	279
+291	pt_reload_crouch_rifle	3	mp_crouch_reload	native replacement	1137	-1	279
+291	pt_reload_crouch_rifle	4	mp_crouch_reload	native replacement	1137	-1	279
+291	pt_reload_crouch_rifle	5	mp_pistol_crouch_reload	native replacement	1131	-1	273
+291	pt_reload_crouch_rifle	6	mp_rpg_crouch_reload	native replacement	1128	-1	270
+291	pt_reload_crouch_rifle	7	mp_crouch_reload	native replacement	1137	-1	279
+292	pt_reload_prone_pistol	0	mp_prone_reload_iw6	native replacement	1136	-1	278
+292	pt_reload_prone_pistol	1	mp_prone_reload_iw6	native replacement	1136	-1	278
+292	pt_reload_prone_pistol	2	mp_prone_reload_iw6	native replacement	1136	-1	278
+292	pt_reload_prone_pistol	3	mp_prone_reload_iw6	native replacement	1136	-1	278
+292	pt_reload_prone_pistol	4	mp_prone_reload_iw6	native replacement	1136	-1	278
+292	pt_reload_prone_pistol	5	mp_pistol_prone_reload	native replacement	1130	-1	272
+292	pt_reload_prone_pistol	6	mp_rpg_prone_reload	native replacement	1129	-1	271
+292	pt_reload_prone_pistol	7	mp_prone_reload_iw6	native replacement	1136	-1	278
+293	pt_reload_stand_pistol	0	mp_stand_reload	native replacement	1138	-1	280
+293	pt_reload_stand_pistol	1	mp_stand_reload	native replacement	1138	-1	280
+293	pt_reload_stand_pistol	2	mp_stand_reload	native replacement	1138	-1	280
+293	pt_reload_stand_pistol	3	mp_stand_reload	native replacement	1138	-1	280
+293	pt_reload_stand_pistol	4	mp_stand_reload	native replacement	1138	-1	280
+293	pt_reload_stand_pistol	5	mp_pistol_stand_reload	native replacement	1132	-1	274
+293	pt_reload_stand_pistol	6	mp_rpg_reload	native replacement	1127	-1	269
+293	pt_reload_stand_pistol	7	mp_stand_reload	native replacement	1138	-1	280
+294	pt_reload_crouch_pistol	0	mp_crouch_reload	native replacement	1137	-1	279
+294	pt_reload_crouch_pistol	1	mp_crouch_reload	native replacement	1137	-1	279
+294	pt_reload_crouch_pistol	2	mp_crouch_reload	native replacement	1137	-1	279
+294	pt_reload_crouch_pistol	3	mp_crouch_reload	native replacement	1137	-1	279
+294	pt_reload_crouch_pistol	4	mp_crouch_reload	native replacement	1137	-1	279
+294	pt_reload_crouch_pistol	5	mp_pistol_crouch_reload	native replacement	1131	-1	273
+294	pt_reload_crouch_pistol	6	mp_rpg_crouch_reload	native replacement	1128	-1	270
+294	pt_reload_crouch_pistol	7	mp_crouch_reload	native replacement	1137	-1	279
+295	pt_reload_stand_rpg	0	mp_stand_reload	native replacement	1138	-1	280
+295	pt_reload_stand_rpg	1	mp_stand_reload	native replacement	1138	-1	280
+295	pt_reload_stand_rpg	2	mp_stand_reload	native replacement	1138	-1	280
+295	pt_reload_stand_rpg	3	mp_stand_reload	native replacement	1138	-1	280
+295	pt_reload_stand_rpg	4	mp_stand_reload	native replacement	1138	-1	280
+295	pt_reload_stand_rpg	5	mp_pistol_stand_reload	native replacement	1132	-1	274
+295	pt_reload_stand_rpg	6	mp_rpg_reload	native replacement	1127	-1	269
+295	pt_reload_stand_rpg	7	mp_stand_reload	native replacement	1138	-1	280
+296	pt_hold_prone_throw	0	pt_hold_prone_throw	exact	1139	-1	281
+296	pt_hold_prone_throw	1	pt_hold_prone_throw	exact	1139	-1	281
+296	pt_hold_prone_throw	2	pt_hold_prone_throw	exact	1139	-1	281
+296	pt_hold_prone_throw	3	pt_hold_prone_throw	exact	1139	-1	281
+296	pt_hold_prone_throw	4	pt_hold_prone_throw	exact	1139	-1	281
+296	pt_hold_prone_throw	5	pt_hold_prone_throw	exact	1139	-1	281
+296	pt_hold_prone_throw	6	pt_hold_prone_throw	exact	1139	-1	281
+296	pt_hold_prone_throw	7	pt_hold_prone_throw	exact	1139	-1	281
+297	pt_hold_throw	0	pt_hold_throw	exact	1150	-1	292
+297	pt_hold_throw	1	pt_hold_throw	exact	1150	-1	292
+297	pt_hold_throw	2	pt_hold_throw	exact	1150	-1	292
+297	pt_hold_throw	3	pt_hold_throw	exact	1150	-1	292
+297	pt_hold_throw	4	pt_hold_throw	exact	1150	-1	292
+297	pt_hold_throw	5	pt_hold_throw	exact	1150	-1	292
+297	pt_hold_throw	6	pt_hold_throw	exact	1150	-1	292
+297	pt_hold_throw	7	pt_hold_throw	exact	1150	-1	292
+298	pt_stand_shoot_shotgun	0	pt_stand_shoot	native replacement	1157	-1	299
+298	pt_stand_shoot_shotgun	1	pt_stand_shoot	native replacement	1157	-1	299
+298	pt_stand_shoot_shotgun	2	pt_stand_shoot	native replacement	1157	-1	299
+298	pt_stand_shoot_shotgun	3	pt_stand_shoot	native replacement	1157	-1	299
+298	pt_stand_shoot_shotgun	4	pt_stand_shoot	native replacement	1157	-1	299
+298	pt_stand_shoot_shotgun	5	pt_stand_shoot	native replacement	1157	-1	299
+298	pt_stand_shoot_shotgun	6	pt_stand_shoot	native replacement	1157	-1	299
+298	pt_stand_shoot_shotgun	7	pt_stand_shoot	native replacement	1157	-1	299
+299	pt_prone_shoot_rpg	0	pt_prone_shoot_rpg	exact	1140	-1	282
+299	pt_prone_shoot_rpg	1	pt_prone_shoot_rpg	exact	1140	-1	282
+299	pt_prone_shoot_rpg	2	pt_prone_shoot_rpg	exact	1140	-1	282
+299	pt_prone_shoot_rpg	3	pt_prone_shoot_rpg	exact	1140	-1	282
+299	pt_prone_shoot_rpg	4	pt_prone_shoot_rpg	exact	1140	-1	282
+299	pt_prone_shoot_rpg	5	pt_prone_shoot_rpg	exact	1140	-1	282
+299	pt_prone_shoot_rpg	6	pt_prone_shoot_rpg	exact	1140	-1	282
+299	pt_prone_shoot_rpg	7	pt_prone_shoot_rpg	exact	1140	-1	282
+300	pt_laststand_fire	0	pt_laststand_fire	exact	1009	-1	151
+300	pt_laststand_fire	1	pt_laststand_fire	exact	1009	-1	151
+300	pt_laststand_fire	2	pt_laststand_fire	exact	1009	-1	151
+300	pt_laststand_fire	3	pt_laststand_fire	exact	1009	-1	151
+300	pt_laststand_fire	4	pt_laststand_fire	exact	1009	-1	151
+300	pt_laststand_fire	5	pt_laststand_fire	exact	1009	-1	151
+300	pt_laststand_fire	6	pt_laststand_fire	exact	1009	-1	151
+300	pt_laststand_fire	7	pt_laststand_fire	exact	1009	-1	151
+301	pt_rifle_fire	0	pt_rifle_fire	exact	1151	-1	293
+301	pt_rifle_fire	1	pt_rifle_fire	exact	1151	-1	293
+301	pt_rifle_fire	2	pt_rifle_fire	exact	1151	-1	293
+301	pt_rifle_fire	3	pt_rifle_fire	exact	1151	-1	293
+301	pt_rifle_fire	4	pt_rifle_fire	exact	1151	-1	293
+301	pt_rifle_fire	5	pt_rifle_fire	exact	1151	-1	293
+301	pt_rifle_fire	6	pt_rifle_fire	exact	1151	-1	293
+301	pt_rifle_fire	7	pt_rifle_fire	exact	1151	-1	293
+302	pt_rifle_fire_ads	0	pt_stand_shoot_ads	native replacement	1155	-1	297
+302	pt_rifle_fire_ads	1	pt_stand_shoot_ads	native replacement	1155	-1	297
+302	pt_rifle_fire_ads	2	pt_stand_shoot_ads	native replacement	1155	-1	297
+302	pt_rifle_fire_ads	3	pt_stand_shoot_ads	native replacement	1155	-1	297
+302	pt_rifle_fire_ads	4	pt_stand_shoot_ads	native replacement	1155	-1	297
+302	pt_rifle_fire_ads	5	pt_stand_shoot_ads	native replacement	1155	-1	297
+302	pt_rifle_fire_ads	6	pt_stand_shoot_ads	native replacement	1155	-1	297
+302	pt_rifle_fire_ads	7	pt_stand_shoot_ads	native replacement	1155	-1	297
+303	pt_prone_grenade_throw	0	h1_mp_prone_hold_grenade_throw	native replacement	975	-1	117
+303	pt_prone_grenade_throw	1	h1_mp_prone_hold_grenade_throw	native replacement	975	-1	117
+303	pt_prone_grenade_throw	2	h1_mp_prone_hold_grenade_throw	native replacement	975	-1	117
+303	pt_prone_grenade_throw	3	h1_mp_prone_hold_grenade_throw	native replacement	975	-1	117
+303	pt_prone_grenade_throw	4	h1_mp_prone_hold_grenade_throw	native replacement	975	-1	117
+303	pt_prone_grenade_throw	5	h1_mp_prone_hold_grenade_throw	native replacement	975	-1	117
+303	pt_prone_grenade_throw	6	h1_mp_prone_hold_grenade_throw	native replacement	975	-1	117
+303	pt_prone_grenade_throw	7	h1_mp_prone_hold_grenade_throw	native replacement	975	-1	117
+304	pt_crouch_grenade_throw	0	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+304	pt_crouch_grenade_throw	1	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+304	pt_crouch_grenade_throw	2	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+304	pt_crouch_grenade_throw	3	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+304	pt_crouch_grenade_throw	4	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+304	pt_crouch_grenade_throw	5	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+304	pt_crouch_grenade_throw	6	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+304	pt_crouch_grenade_throw	7	h1_mp_crouch_hold_grenade_throw	native replacement	976	-1	118
+305	pt_stand_grenade_throw	0	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+305	pt_stand_grenade_throw	1	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+305	pt_stand_grenade_throw	2	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+305	pt_stand_grenade_throw	3	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+305	pt_stand_grenade_throw	4	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+305	pt_stand_grenade_throw	5	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+305	pt_stand_grenade_throw	6	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+305	pt_stand_grenade_throw	7	h1_mp_hold_grenade_throw	native replacement	977	-1	119
+306	pt_crouch_shoot_ads_pistol	0	pt_crouch_shoot_pistol	native replacement	1146	-1	288
+306	pt_crouch_shoot_ads_pistol	1	pt_crouch_shoot_pistol	native replacement	1146	-1	288
+306	pt_crouch_shoot_ads_pistol	2	pt_crouch_shoot_pistol	native replacement	1146	-1	288
+306	pt_crouch_shoot_ads_pistol	3	pt_crouch_shoot_pistol	native replacement	1146	-1	288
+306	pt_crouch_shoot_ads_pistol	4	pt_crouch_shoot_pistol	native replacement	1146	-1	288
+306	pt_crouch_shoot_ads_pistol	5	pt_crouch_shoot_pistol	native replacement	1146	-1	288
+306	pt_crouch_shoot_ads_pistol	6	pt_crouch_shoot_pistol	native replacement	1146	-1	288
+306	pt_crouch_shoot_ads_pistol	7	pt_crouch_shoot_pistol	native replacement	1146	-1	288
+307	pt_crouch_shoot_pistol	0	pt_crouch_shoot_pistol	exact	1146	-1	288
+307	pt_crouch_shoot_pistol	1	pt_crouch_shoot_pistol	exact	1146	-1	288
+307	pt_crouch_shoot_pistol	2	pt_crouch_shoot_pistol	exact	1146	-1	288
+307	pt_crouch_shoot_pistol	3	pt_crouch_shoot_pistol	exact	1146	-1	288
+307	pt_crouch_shoot_pistol	4	pt_crouch_shoot_pistol	exact	1146	-1	288
+307	pt_crouch_shoot_pistol	5	pt_crouch_shoot_pistol	exact	1146	-1	288
+307	pt_crouch_shoot_pistol	6	pt_crouch_shoot_pistol	exact	1146	-1	288
+307	pt_crouch_shoot_pistol	7	pt_crouch_shoot_pistol	exact	1146	-1	288
+308	pt_stand_shoot_pistol	0	pt_stand_shoot_pistol	exact	1152	-1	294
+308	pt_stand_shoot_pistol	1	pt_stand_shoot_pistol	exact	1152	-1	294
+308	pt_stand_shoot_pistol	2	pt_stand_shoot_pistol	exact	1152	-1	294
+308	pt_stand_shoot_pistol	3	pt_stand_shoot_pistol	exact	1152	-1	294
+308	pt_stand_shoot_pistol	4	pt_stand_shoot_pistol	exact	1152	-1	294
+308	pt_stand_shoot_pistol	5	pt_stand_shoot_pistol	exact	1152	-1	294
+308	pt_stand_shoot_pistol	6	pt_stand_shoot_pistol	exact	1152	-1	294
+308	pt_stand_shoot_pistol	7	pt_stand_shoot_pistol	exact	1152	-1	294
+309	pt_crouch_shoot_auto_ads	0	pt_crouch_shoot_auto	native replacement	1148	-1	290
+309	pt_crouch_shoot_auto_ads	1	pt_crouch_shoot_auto	native replacement	1148	-1	290
+309	pt_crouch_shoot_auto_ads	2	pt_crouch_shoot_auto	native replacement	1148	-1	290
+309	pt_crouch_shoot_auto_ads	3	pt_crouch_shoot_auto	native replacement	1148	-1	290
+309	pt_crouch_shoot_auto_ads	4	pt_crouch_shoot_auto	native replacement	1148	-1	290
+309	pt_crouch_shoot_auto_ads	5	pt_crouch_shoot_auto	native replacement	1148	-1	290
+309	pt_crouch_shoot_auto_ads	6	pt_crouch_shoot_auto	native replacement	1148	-1	290
+309	pt_crouch_shoot_auto_ads	7	pt_crouch_shoot_auto	native replacement	1148	-1	290
+310	pt_crouch_shoot_ads	0	pt_crouch_shoot	native replacement	1149	-1	291
+310	pt_crouch_shoot_ads	1	pt_crouch_shoot	native replacement	1149	-1	291
+310	pt_crouch_shoot_ads	2	pt_crouch_shoot	native replacement	1149	-1	291
+310	pt_crouch_shoot_ads	3	pt_crouch_shoot	native replacement	1149	-1	291
+310	pt_crouch_shoot_ads	4	pt_crouch_shoot	native replacement	1149	-1	291
+310	pt_crouch_shoot_ads	5	pt_crouch_shoot	native replacement	1149	-1	291
+310	pt_crouch_shoot_ads	6	pt_crouch_shoot	native replacement	1149	-1	291
+310	pt_crouch_shoot_ads	7	pt_crouch_shoot	native replacement	1149	-1	291
+311	pt_crouch_shoot_auto	0	pt_crouch_shoot_auto	exact	1148	-1	290
+311	pt_crouch_shoot_auto	1	pt_crouch_shoot_auto	exact	1148	-1	290
+311	pt_crouch_shoot_auto	2	pt_crouch_shoot_auto	exact	1148	-1	290
+311	pt_crouch_shoot_auto	3	pt_crouch_shoot_auto	exact	1148	-1	290
+311	pt_crouch_shoot_auto	4	pt_crouch_shoot_auto	exact	1148	-1	290
+311	pt_crouch_shoot_auto	5	pt_crouch_shoot_auto	exact	1148	-1	290
+311	pt_crouch_shoot_auto	6	pt_crouch_shoot_auto	exact	1148	-1	290
+311	pt_crouch_shoot_auto	7	pt_crouch_shoot_auto	exact	1148	-1	290
+312	pt_crouch_shoot	0	pt_crouch_shoot	exact	1149	-1	291
+312	pt_crouch_shoot	1	pt_crouch_shoot	exact	1149	-1	291
+312	pt_crouch_shoot	2	pt_crouch_shoot	exact	1149	-1	291
+312	pt_crouch_shoot	3	pt_crouch_shoot	exact	1149	-1	291
+312	pt_crouch_shoot	4	pt_crouch_shoot	exact	1149	-1	291
+312	pt_crouch_shoot	5	pt_crouch_shoot	exact	1149	-1	291
+312	pt_crouch_shoot	6	pt_crouch_shoot	exact	1149	-1	291
+312	pt_crouch_shoot	7	pt_crouch_shoot	exact	1149	-1	291
+313	pt_stand_shoot_auto_ads	0	pt_stand_shoot_auto_ads	exact	1154	-1	296
+313	pt_stand_shoot_auto_ads	1	pt_stand_shoot_auto_ads	exact	1154	-1	296
+313	pt_stand_shoot_auto_ads	2	pt_stand_shoot_auto_ads	exact	1154	-1	296
+313	pt_stand_shoot_auto_ads	3	pt_stand_shoot_auto_ads	exact	1154	-1	296
+313	pt_stand_shoot_auto_ads	4	pt_stand_shoot_auto_ads	exact	1154	-1	296
+313	pt_stand_shoot_auto_ads	5	pt_stand_shoot_auto_ads	exact	1154	-1	296
+313	pt_stand_shoot_auto_ads	6	pt_stand_shoot_auto_ads	exact	1154	-1	296
+313	pt_stand_shoot_auto_ads	7	pt_stand_shoot_auto_ads	exact	1154	-1	296
+314	pt_stand_shoot_ads	0	pt_stand_shoot_ads	exact	1155	-1	297
+314	pt_stand_shoot_ads	1	pt_stand_shoot_ads	exact	1155	-1	297
+314	pt_stand_shoot_ads	2	pt_stand_shoot_ads	exact	1155	-1	297
+314	pt_stand_shoot_ads	3	pt_stand_shoot_ads	exact	1155	-1	297
+314	pt_stand_shoot_ads	4	pt_stand_shoot_ads	exact	1155	-1	297
+314	pt_stand_shoot_ads	5	pt_stand_shoot_ads	exact	1155	-1	297
+314	pt_stand_shoot_ads	6	pt_stand_shoot_ads	exact	1155	-1	297
+314	pt_stand_shoot_ads	7	pt_stand_shoot_ads	exact	1155	-1	297
+315	pt_stand_shoot_auto	0	pt_stand_shoot_auto	exact	1156	-1	298
+315	pt_stand_shoot_auto	1	pt_stand_shoot_auto	exact	1156	-1	298
+315	pt_stand_shoot_auto	2	pt_stand_shoot_auto	exact	1156	-1	298
+315	pt_stand_shoot_auto	3	pt_stand_shoot_auto	exact	1156	-1	298
+315	pt_stand_shoot_auto	4	pt_stand_shoot_auto	exact	1156	-1	298
+315	pt_stand_shoot_auto	5	pt_stand_shoot_auto	exact	1156	-1	298
+315	pt_stand_shoot_auto	6	pt_stand_shoot_auto	exact	1156	-1	298
+315	pt_stand_shoot_auto	7	pt_stand_shoot_auto	exact	1156	-1	298
+316	pt_stand_shoot	0	pt_stand_shoot	exact	1157	-1	299
+316	pt_stand_shoot	1	pt_stand_shoot	exact	1157	-1	299
+316	pt_stand_shoot	2	pt_stand_shoot	exact	1157	-1	299
+316	pt_stand_shoot	3	pt_stand_shoot	exact	1157	-1	299
+316	pt_stand_shoot	4	pt_stand_shoot	exact	1157	-1	299
+316	pt_stand_shoot	5	pt_stand_shoot	exact	1157	-1	299
+316	pt_stand_shoot	6	pt_stand_shoot	exact	1157	-1	299
+316	pt_stand_shoot	7	pt_stand_shoot	exact	1157	-1	299
+317	pt_stand_shoot_rpg	0	pt_stand_shoot_rpg	exact	1158	-1	300
+317	pt_stand_shoot_rpg	1	pt_stand_shoot_rpg	exact	1158	-1	300
+317	pt_stand_shoot_rpg	2	pt_stand_shoot_rpg	exact	1158	-1	300
+317	pt_stand_shoot_rpg	3	pt_stand_shoot_rpg	exact	1158	-1	300
+317	pt_stand_shoot_rpg	4	pt_stand_shoot_rpg	exact	1158	-1	300
+317	pt_stand_shoot_rpg	5	pt_stand_shoot_rpg	exact	1158	-1	300
+317	pt_stand_shoot_rpg	6	pt_stand_shoot_rpg	exact	1158	-1	300
+317	pt_stand_shoot_rpg	7	pt_stand_shoot_rpg	exact	1158	-1	300

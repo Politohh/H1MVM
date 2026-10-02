@@ -25,6 +25,7 @@ namespace // demo class
     std::uint64_t converted_packets_blocked{};
     std::chrono::steady_clock::time_point converted_trace_time{};
     game::dvar_t* cod4_playback_hud{};
+    bool converted_hud_refresh_pending{};
 
     void trace_converted(const char* stage)
     {
@@ -461,11 +462,13 @@ namespace // demo class
         converted_trace.close();
         converted_trace.open("demos/converted-playback-last.log", std::ios::trunc);
         converted_draws = converted_packets_blocked = 0;
+        converted_hud_refresh_pending = true;
         converted_trace_time = {};
         trace_converted("bootstrap begin");
         cod4_camera::set_model_bindings(model_bindings, animation_bindings);
         cod4_camera::bootstrap_demo(*mapname, initial);
         trace_converted("bootstrap complete");
+        cod4_camera::validate_model_budget({model_names.begin(), model_names.end()});
         for (const auto& name : model_names)
         {
             if (name.empty() || name.size() > 128) throw std::runtime_error("Invalid converted demo model name");
@@ -657,12 +660,15 @@ namespace // demo class
 namespace // hooks
 {
 	utils::hook::detour CG_UpdateOmnvars_hook;
+    utils::hook::detour LUI_PlayerstateClientChanged_hook;
 	utils::hook::detour CG_VisionSetStartLerp_To_hook;
 	utils::hook::detour CG_DrawActiveFrame_hook;
 	utils::hook::detour CL_GetPredictedPlayerInformationForServerTime_hook;
 	utils::hook::detour CL_GetPredictedVehicleForServerTime_hook;
 	utils::hook::detour CG_CalcViewValues_hook;
     utils::hook::detour CG_EntityEvent_hook;
+    utils::hook::detour CG_PlayBoltedFX_hook;
+    utils::hook::detour CG_Vehicle_hook;
     utils::hook::detour BG_PlayerAnimation_hook;
     utils::hook::detour CG_PlaySound_hook;
     thread_local bool suppress_grenade_sound{};
@@ -670,6 +676,26 @@ namespace // hooks
     utils::hook::detour CG_ShouldCullImpactFX_hook;
     thread_local unsigned bullet_effect_entity{};
     thread_local bool unbound_flesh_impact{};
+
+    void replay_vehicle(const int local_client_num, std::uint8_t* entity)
+    {
+        if ((demo.is_converted() || cod4_camera::active()) && entity && entity[0x146] == 12)
+        {
+            try
+            {
+                // CG_VehiclePose reads cg_vehicleDefs through the runtime
+                // vehicle record. Register before it can dereference a null
+                // slot, including old conversions and replay restarts/seeks.
+                cod4_camera::prepare_helicopter_vehicle(entity + 0x13C);
+            }
+            catch (const std::exception& error)
+            {
+                game::Com_Error(game::ERR_DROP, "COD4 helicopter playback: %s", error.what());
+                return;
+            }
+        }
+        CG_Vehicle_hook.invoke<void>(local_client_num, entity);
+    }
 
     bool bullet_should_cull_impact(const int local_client_num, const float* origin,
         const float* normal, const unsigned short target)
@@ -740,6 +766,35 @@ namespace // hooks
             time, torso, legs, update_time);
     }
 
+    void converted_bolted_fx(int local_client_num, int entity_number, unsigned parameter)
+    {
+        // Native EV_PLAY_FX_ON_TAG (0x31CBD0) uses low 9 bits for the FX
+        // table index and the following byte for the script-mover bone.
+        const auto index = parameter & 511u;
+        const auto binding = demo.fx_bindings().find(index);
+        if (!demo.is_converted() || binding == demo.fx_bindings().end())
+        {
+            CG_PlayBoltedFX_hook.invoke<void>(local_client_num, entity_number, parameter);
+            return;
+        }
+        if (!game::DB_XAssetExists(game::ASSET_TYPE_FX, binding->second.c_str())
+            || game::DB_IsXAssetDefault(game::ASSET_TYPE_FX, binding->second.c_str()))
+        {
+            game::Com_Error(game::ERR_DROP, "Converted bolted FX native asset unavailable: %s", binding->second.c_str());
+            return;
+        }
+        const auto* asset = game::DB_FindXAssetHeader(game::ASSET_TYPE_FX, binding->second.c_str(), false).fx;
+        if (!asset) return;
+        auto*& slot = reinterpret_cast<const game::FxEffectDef**>(0x3909D00_b)[index];
+        const auto* saved = slot;
+        slot = asset;
+        const auto restore = gsl::finally([&slot, saved] { slot = saved; });
+        CG_PlayBoltedFX_hook.invoke<void>(local_client_num, entity_number, parameter);
+        if (converted_trace.is_open())
+            converted_trace << "native bolted FX entity=" << entity_number << " effect=" << binding->second
+                << " bone=" << ((parameter >> 9) & 255u) << std::endl;
+    }
+
     void grenade_entity_event(const int local_client_num, std::uint8_t* entity, const unsigned event, const unsigned flags)
     {
         if (demo.is_converted() && demo.has_legacy_obituaries() && entity && event == 140 && entity[0x146] == 160)
@@ -804,13 +859,13 @@ namespace // hooks
                 || !game::DB_XAssetExists(game::ASSET_TYPE_FX, binding->second.c_str())
                 || game::DB_IsXAssetDefault(game::ASSET_TYPE_FX, binding->second.c_str()))
             {
-                game::Com_Error(game::ERR_DROP, "Converted car FX native asset unavailable");
+                game::Com_Error(game::ERR_DROP, "Converted scripted FX native asset unavailable");
                 return;
             }
             const auto asset = game::DB_FindXAssetHeader(game::ASSET_TYPE_FX, binding->second.c_str(), false).fx;
             if (!asset)
             {
-                game::Com_Error(game::ERR_DROP, "Converted car FX native definition unavailable");
+                game::Com_Error(game::ERR_DROP, "Converted scripted FX native definition unavailable");
                 return;
             }
             effect_slot = reinterpret_cast<game::FxEffectDef**>(0x3909D00_b) + index;
@@ -837,7 +892,7 @@ namespace // hooks
         });
         CG_EntityEvent_hook.invoke<void>(local_client_num, entity, event, flags);
         if (converted_trace.is_open())
-            converted_trace << (event == 111 ? "native car FX event entity=" : bullet_effect_entity
+            converted_trace << (event == 111 ? "native scripted FX event entity=" : bullet_effect_entity
                 ? "native bullet impact entity=" : "native grenade event entity=") << number << " event=" << event
                 << " recorded=" << found->second << " playback=" << saved
                 << " age=" << static_cast<std::int64_t>(saved) - found->second
@@ -1213,6 +1268,20 @@ namespace // hooks
 
 
 
+    void playerstate_client_changed(const int local_client_num, void* lua_vm)
+    {
+        // CG_UpdateOmnvars (0x331E90) sends this while transitioning snapshots.
+        // Converted playback has not yet finished copying the displayed PS.
+        // weaponinfohud.lua gates its cached grenade-count events on live
+        // Game.GetPlayerHealth(), so dispatch after CG_DrawActiveFrame instead.
+        if (demo.is_converted())
+        {
+            converted_hud_refresh_pending = true;
+            return;
+        }
+        LUI_PlayerstateClientChanged_hook.invoke<void>(local_client_num, lua_vm);
+    }
+
 	std::int32_t draw_active_frame_stub(const std::int32_t local_client_num, const std::int32_t server_time,
 		std::int32_t demo_type, const std::int32_t cubemap_shot, const std::int32_t cubemap_size,
 		const std::int32_t render_screen, const unsigned int a7)
@@ -1256,6 +1325,13 @@ namespace // hooks
 
 		const auto result = CG_DrawActiveFrame_hook.invoke<std::int32_t>(
 			local_client_num, frame_time, demo_type, cubemap_shot, cubemap_size, render_screen, a7);
+        if (!demo.is_converted()) converted_hud_refresh_pending = false;
+        else if (converted_hud_refresh_pending && demo.is_replay_armed()
+            && game::CL_IsCgameInitialized() && *game::hks::lua_state)
+        {
+            converted_hud_refresh_pending = false;
+            LUI_PlayerstateClientChanged_hook.invoke<void>(local_client_num, *game::hks::lua_state);
+        }
         demo.finish_grenade_fx_rebuild();
         return result;
 	}
@@ -1323,6 +1399,10 @@ namespace // hooks
                 const auto* name = *reinterpret_cast<const char* const*>(def);
                 if (!name) continue;
                 const std::string_view key(name);
+                // Converted snapshots carry the recorded team as an integer
+                // omnvar encoded relative to its native minimum (-1). A raw
+                // boolean 1 decodes as team 0 and removes the faction emblem.
+                if (demo.is_converted() && key == "ui_team_selected") continue;
                 if (demo.is_converted() && key == "ui_points_popup" && (def[8] & 8))
                 {
                     popup_def = def;
@@ -1840,6 +1920,8 @@ namespace demo_playback
 			// actually suppresses local input (movement/fire/ADS), not a hand-written cg field.
 			CG_DrawActiveFrame_hook.create(game::CG_DrawActiveFrame, draw_active_frame_stub);
             CG_EntityEvent_hook.create(0xF9400_b, grenade_entity_event);
+            CG_PlayBoltedFX_hook.create(0x31CBD0_b, converted_bolted_fx);
+            CG_Vehicle_hook.create(0x5FCEE0_b, replay_vehicle);
             BG_PlayerAnimation_hook.create(0x2B8EF0_b, player_animation);
             CG_PlaySound_hook.create(0x31D040_b, grenade_play_sound);
             FX_PlayOrientedEffectWithMarkEntity_hook.create(0x3D66D0_b, bullet_play_oriented_effect);
@@ -1859,6 +1941,7 @@ namespace demo_playback
 
 			// suppress team/loadout menus during playback (only acts when a demo is playing)
 			CG_UpdateOmnvars_hook.create(game::CG_UpdateOmnvars, control_ui_element);
+            LUI_PlayerstateClientChanged_hook.create(0x26E690_b, playerstate_client_changed);
 
 			// Never let the reliable-command walker request a command the client hasn't received.
 			// During playback the loopback server runs the map's GSC (custom_weapons/classes ->

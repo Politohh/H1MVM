@@ -2,10 +2,63 @@
 
 #include "cod4_world_translation.hpp"
 #include "cod4_obituary_events.hpp"
+#include "cod4_model_translation.hpp"
 #include <set>
 
 namespace cod4
 {
+    inline std::uint32_t native_team_selection(unsigned team, std::int32_t minimum)
+    {
+        // Integer omnvars store value - minimum. ui_team_selected is a team
+        // enum (-1..3), not a boolean indicating that a team was selected.
+        if (team > 3 || minimum > 0)
+            throw std::runtime_error("Invalid native HUD team selection");
+        return static_cast<std::uint32_t>(static_cast<std::int64_t>(team) - minimum);
+    }
+
+    inline std::string_view native_faction(character_family family)
+    {
+        switch (family)
+        {
+        case character_family::usmc_desert: return "marines";
+        case character_family::arab_desert: return "opfor";
+        case character_family::sas_ct:
+        case character_family::sas_woodland: return "sas";
+        case character_family::spetsnaz_urban:
+        case character_family::spetsnaz_woodland: return "russian";
+        }
+        return {};
+    }
+
+    // COD4 iw_11.iwd offhandClass: frag=1, smoke/concussion=2, flash=3.
+    // H1 stores the actual lethal/tactical weapon handles independently of
+    // the currently selected offHand weapon. An exhausted owned grenade must
+    // retain its icon and display zero through the normal keyed ammo records.
+    inline unsigned source_offhand_class(std::string_view name)
+    {
+        if (name == "frag_grenade_mp" || name == "frag_grenade_short_mp" || name == "brick_bomb_mp") return 1;
+        if (name == "smoke_grenade_mp" || name == "concussion_grenade_mp") return 2;
+        if (name == "flash_grenade_mp") return 3;
+        return 0;
+    }
+
+    template <typename Name>
+    std::pair<unsigned, unsigned> select_hud_offhands(const std::vector<unsigned>& inventory,
+        unsigned secondary_selection, Name name)
+    {
+        std::pair<unsigned, unsigned> result{};
+        // PM_Weapon_CheckForOffHand maps offhandSecondary 0 -> smoke (2),
+        // nonzero -> flash (3); it is not itself an offhandClass value.
+        const unsigned secondary_class = secondary_selection ? 3 : 2;
+        for (const auto weapon : inventory)
+        {
+            const auto kind = source_offhand_class(name(weapon));
+            if (kind == 1 && !result.first) result.first = weapon;
+            if (kind && kind != 1 && kind == secondary_class && !result.second) result.second = weapon;
+        }
+        return result;
+    }
+
     // Map fastfiles may retain the COD4 name or use MWR's DLC material name.
     // Select only an actual native asset, retaining the recorded compass bounds.
     template <typename Available>

@@ -44,6 +44,8 @@ namespace cod4
         constexpr std::array<std::string_view, 4> grenade_crouch{"mp_crouch_hold_run", "mp_crouch_hold_run_b", "mp_crouch_hold_run_l", "mp_crouch_hold_run_r"};
         constexpr std::array<std::string_view, 4> pistol_crouch{"mp_pistol_crouch_walk_f", "mp_pistol_crouch_walk_b", "mp_pistol_crouch_walk_l", "mp_pistol_crouch_walk_r"};
         constexpr std::array<std::string_view, 4> pistol_walk{"mp_pistol_stand_walk_f", "mp_pistol_stand_walk_b", "mp_pistol_stand_walk_l", "mp_pistol_stand_walk_r"};
+        constexpr std::array<std::string_view, 4> rpg_crouch{"mp_rpg_crouch_walk_f", "mp_rpg_crouch_walk_b", "mp_rpg_crouch_walk_l", "mp_rpg_crouch_walk_r"};
+        constexpr std::array<std::string_view, 4> rpg_ads_walk{"mp_rpg_walk_f_ads", "mp_rpg_walk_b_ads", "mp_rpg_walk_l_ads", "mp_rpg_walk_r_ads"};
         for (unsigned i = 0; i < directions.size(); ++i)
         {
             const auto direction = std::string(directions[i]);
@@ -53,7 +55,35 @@ namespace cod4
             if (name == "pb_combatwalk_" + direction + "_loop_pistol") return pistol_walk[i];
             if (name == "pb_combatrun_" + direction + "_loop_pistol") return native_runs[static_cast<unsigned>(body_family::pistol)][i];
             if (name == "pb_combatrun_" + direction + "_loop_grenade") return native_runs[static_cast<unsigned>(body_family::hold)][i];
+            if (name == "pb_combatrun_" + direction + "_rpg") return native_runs[static_cast<unsigned>(body_family::launcher)][i];
+            if (name == "pb_crouch_run_" + direction + "_rpg" || name == "pb_crouch_walk_" + direction + "_rpg") return rpg_crouch[i];
+            if (name == "pb_walk_" + direction + "_rpg_ads") return rpg_ads_walk[i];
+            const auto suffix = i == 0 ? std::string{} : "_" + direction;
+            if (name == "pb_hold_run" + suffix) return native_runs[static_cast<unsigned>(body_family::hold)][i];
+            if (name == "pb_crouch_hold_run" + suffix) return grenade_crouch[i];
         }
+        if (name == "pb_hold_idle") return "mp_hold_idle";
+        if (name == "pb_crouch_hold_idle") return "mp_crouch_hold_idle";
+        if (name == "pb_sprint_rpg") return "mp_rpg_sprint";
+        if (name == "pb_prone_aim_rpg") return "mp_rpg_prone_idle";
+        if (name == "pb_crouch_alert_rpg" || name == "pb_crouch_ads_rpg") return "mp_rpg_crouch_idle";
+        if (name == "pb_stand_bombplant") return "mp_srchdstry_stand_bomb_idle";
+        if (name == "pb_crouch2prone") return pistol ? "mp_pistol_crouch_2_prone" : launcher ? "mp_rpg_crouch_2_prone"
+            : family == body_family::hold ? "mp_hold_crouch_2_prone" : "mp_crouch_2_prone";
+        if (name == "pl_crouchturn_90left") return pistol ? "mp_pistol_crouch_aim_turn_l"
+            : launcher ? "mp_rpg_crouch_turn_l" : family == body_family::hold ? "mp_hold_crouch_turn_l" : "mp_crouch_aim_turn_l";
+        if (name == "pl_crouchturn_90right") return pistol ? "mp_pistol_crouch_aim_turn_r"
+            : launcher ? "mp_rpg_crouch_turn_r" : family == body_family::hold ? "mp_hold_crouch_turn_r" : "mp_crouch_aim_turn_r";
+        // No unarmed walk or these extended pain reactions exist in MWR's MP
+        // tree. Use native hold locomotion / stance-specific authored flinches.
+        if (name == "pb_stand_shoot_walk_forward_unarmed") return "mp_hold_run";
+        if (name == "pb_crouch_walk_forward_unarmed") return "mp_crouch_hold_run";
+        if (name == "pb_crouch_pain_holdstomach") return pistol ? "mp_flinch_pistol_crouch_a"
+            : launcher ? "mp_rpg_crouch_flinch_a" : family == body_family::hold ? "h1_mp_crouch_hold_flinch_a" : "mp_flinch_crouch_a";
+        if (name == "pb_prone_paina_holdchest" || name == "pb_prone_painb_holdhead") return pistol ? "mp_flinch_pistol_prone_a"
+            : launcher ? "mp_rpg_prone_flinch_a" : family == body_family::hold ? "h1_mp_prone_hold_flinch_a" : "mp_flinch_prone_a";
+        if (name == "mp_mantle_over_high") return "mp_mantle_over_57";
+        if (name == "pt_crouch_shoot_auto_ads") return "pt_crouch_shoot_auto";
         if (name == "pb_combatrun_forward_loop_stickgrenade") return "mp_hold_run";
         if (name == "pb_sprint_pistol") return "mp_pistol_sprint";
         if (name == "pb_pistol_run_fast") return "mp_pistol_stand_run_f";
