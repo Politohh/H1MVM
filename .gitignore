@@ -1,3 +1,8 @@
 .vs
 .vscode
 build/
+
+# Local research, generated diagnostics and Python caches.
+work/
+__pycache__/
+*.pyc
