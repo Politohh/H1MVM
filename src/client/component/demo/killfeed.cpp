@@ -153,7 +153,14 @@ namespace killfeed
 
 		std::string client_name(int client_num)
 		{
-			if (client_num < 0 || client_num >= 64) return "";
+			if (client_num < 0 || client_num >= 42) return "";
+			if (client_num >= 18)
+			{
+				char name[42]{};
+				utils::hook::invoke<int>(0x3439D0_b, 0, static_cast<unsigned char>(client_num),
+					static_cast<unsigned short>(2047), name, static_cast<int>(sizeof(name)));
+				return name;
+			}
 			auto* cg = game::CG_GetLocalClientGlobals();
 			if (!cg) return "";
 			auto* info = reinterpret_cast<clientInfo_t*>(reinterpret_cast<std::uintptr_t>(cg) + CLIENTINFO_OFFSET);

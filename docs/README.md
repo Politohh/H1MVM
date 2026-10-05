@@ -6,12 +6,13 @@ These documents describe individual implementation changes and their evidence. T
 
 ## Conversion and playback
 
-- [CoD4x protocol 21](cod4x-protocol21.md)
+- [CoD4x protocols 19 and 21](cod4x-protocol21.md)
 - [Actor animation audit and replacement coverage](cod4-actor-animation-audit.md)
 - [Promod stress test](promod-stress-test.md)
 - [Promod animation mapping](strike-promod-animation-mapping.md)
 - [Corpse animation and framing](promod-corpse-framing-fix.md)
 - [Replay player-slot initialization](warz-player-slots.md)
+- [Startup trampoline allocation](startup-trampoline-allocation.md)
 
 ## HUD and effects
 

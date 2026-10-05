@@ -1,4 +1,4 @@
-# CoD4x protocol 21 recordings
+# CoD4x protocol 19 and 21 recordings
 
 `demo0011.dm_1` begins with block 2: protocol 21, a legacy `-1` end marker,
 and eight reserved zero bytes. The original decoder accepted only packet and
@@ -17,7 +17,36 @@ The format was checked against the CoD4x client's
 and [origin encoding](https://github.com/callofduty4x/CoD4x_Client_pub/blob/master/src/msg.c),
 then verified against the complete supplied file. Unknown protocol versions,
 misplaced headers, corrupt markers and truncated records still fail explicitly.
-Reliable-message block 3 and other protocol versions remain unsupported.
+Reliable-message block 3 and protocols other than 19 and 21 remain unsupported.
+
+## Protocol 19
+
+Protocol 19 is now accepted by the shared protocol-header reader used by camera,
+player and world decoding. Its extended configstring bank, separate client-name
+messages and raw-float origin codec are already handled by these readers.
+This was checked against the official CoD4x 19.3 source at
+[`410a4184128631486258a888784b0f449c8206ec`](https://github.com/callofduty4x/CoD4x_Client_pub/tree/410a4184128631486258a888784b0f449c8206ec),
+specifically `CL_ParseGamestateX`, `CL_Record_WriteGameState`, and the
+`MSG_ReadOriginFloat` / `MSG_ReadOriginZFloat` implementations. This does not
+enable arbitrary version numbers or treat all CoD4x releases as interchangeable.
+
+`tests/run-cod4-protocol19.cmd <path-to-60_AMBUSH_ACOG_C4S.dm_1>` checks the full
+Ambush recording (source map `mp_convoy`), SHA-256
+`06e863883b5e02039f0109d93e29b9b7c3429d89beca4ffe66eabab9aeb85a9e`:
+
+- 1,424 retained camera frames from 1,667 archive records and 317 packets.
+- 316 synchronized player/world snapshots and 82 entity baselines.
+- Recorder 27, `dutchchedda`; 47 obituary events and 15 gun events.
+- Fractional actor positions, all three raw-origin codecs, and malformed,
+  misplaced, truncated and unsupported protocol-header rejection.
+
+This recording has 39 active player identities simultaneously. The replay now
+maps them to 18 native players and 21 native agents, preserving names and teams
+without overflowing H1's fixed player snapshot rows. Native agent script trees
+use the player tree's hunk allocation and matching cleanup. The character limit
+is 42, before the eight corpse slots. The full fixture passes decoding and
+identity mapping checks; visual conversion/playback of this file
+has not passed.
 
 ## Validation
 

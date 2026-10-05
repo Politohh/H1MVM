@@ -6,6 +6,7 @@
 #include "concurrency.hpp"
 #include "string.hpp"
 #include "nt.hpp"
+#include "near_memory.hpp"
 
 #ifdef max
 #undef max
@@ -36,32 +37,7 @@ namespace utils::hook
 
 		uint8_t* allocate_somewhere_near(const void* base_address, const size_t granularity, const size_t size)
 		{
-			size_t target_address = reinterpret_cast<size_t>(base_address) - (1ull << 31);
-			target_address &= ~(granularity - 1);
-
-			while (true)
-			{
-				target_address += granularity;
-
-				auto* target_ptr = reinterpret_cast<uint8_t*>(target_address);
-				if (is_relatively_far(base_address, target_ptr))
-				{
-					return nullptr;
-				}
-
-				const auto res = VirtualAlloc(target_ptr, size, MEM_RESERVE | MEM_COMMIT,
-					PAGE_EXECUTE_READWRITE);
-				if (res)
-				{
-					if (is_relatively_far(base_address, target_ptr))
-					{
-						VirtualFree(res, 0, MEM_RELEASE);
-						return nullptr;
-					}
-
-					return static_cast<uint8_t*>(res);
-				}
-			}
+			return detail::allocate_near(base_address, size, granularity);
 		}
 
 		class memory

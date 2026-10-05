@@ -4,6 +4,27 @@ Updated 2026-09-29. Conversion produces a native `.dm_h1` recording using the
 installed MWR models, attachments and animation clips. Use **F9 → Convert COD4
 demo → Refresh → Play**. Play Online remains the ordinary multiplayer entry.
 
+## M16 M203 model requests (2026-10-04)
+
+The Ambush conversion requested `attach_h1_launcher_m203_m16_npc` from the
+native `glmwrm16` attachment and rejected it after transient loading. A read-only
+inspection of the installed H1 catalog confirmed that the selected
+`mp/furniturekits/base.csv` GL row instead supplies the M16 M203 handguard
+models, including the native patch/camo and wet variants.
+
+Model acquisition now distinguishes base-weapon furniture from selected
+attachment furniture. It requests the kit's geometry instead of obsolete
+attachment view/world models when that kit supplies the corresponding view.
+Missing kit geometry still uses the attachment definition. Native reticles and
+model-valued weapon fields, including `h1_projectile_m203_grenade`, remain requested.
+
+The model-selection tests cover native M16 rows, dry/wet variants, remote world
+models, unrelated attachments and absent or partial kit data. They pass, as does
+the Backlot firing-event regression and Release/x64 build. The installed EXE/PDB
+match the build; rollback and parity evidence are recorded in
+`build/m203-install-validation.json`. Reconversion and visual playback are pending
+the user's test; H1 was left closed after installation.
+
 ## Current installed build and HUD work
 
 Release x64 executable SHA-256:
@@ -204,6 +225,24 @@ bone order or bone count differs. Backlot exercises silver and yellow sedans
 and a brown wagon, extending the earlier Crash sedan coverage.
 
 ## Destroyed car conversion fix (2026-09-29)
+
+### Stock wreck coverage update (2026-10-04)
+
+The protocol-19 Ambush recording exposed the missing
+`vehicle_80s_wagon1_yel_destroyed` profile. Its pinned Mod Tools model references
+`vehicle_80s_wagon_destroyed_lod01`, the same verified 42-bone skeleton as the
+brown wagon. The catalog now has 136 explicit model identities: all stock color
+variants of the 80s hatch/sedan/wagon and small hatch/wagon wrecks and wheels,
+the pickup wreck/wheel and UAZ wrecks, plus all vehicle debris in this recording.
+Each model and skeleton was checked against the original Git blob identity;
+custom model names still require their own verified profile.
+
+The focused regression verifies all 316 Ambush snapshots, including 632 yellow
+wagon wreck states, against reordered native bone names. The Diablo regression
+passes 173,246 mapped states, and the Backlot car fixture passes 18,216 states.
+The Ambush check can be run as the optional second argument to
+`tests\run-cod4-vehicle-variants.cmd`, after the Diablo fixture path. Full H1
+conversion and playback remain pending the user's test.
 
 The new `car_explo_to_h1.dm_1` Backlot recording exposed missing destroyed-car
 bone profiles. It contains 7,990 camera archives, 625 server world frames and

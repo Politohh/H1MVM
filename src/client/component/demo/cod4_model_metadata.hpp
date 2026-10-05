@@ -26,6 +26,7 @@ namespace cod4
         std::map<unsigned, int> bullet_times;
         std::map<unsigned, std::string> fx_bindings;
         std::map<unsigned, std::string> animation_bindings;
+        std::map<unsigned, std::string> agent_names;
     };
     inline model_metadata parse_model_metadata(const std::vector<std::string>& entries)
     {
@@ -33,6 +34,20 @@ namespace cod4
         model_metadata result;
         for (const auto& entry : entries)
         {
+            if (entry.starts_with("@agentname:"))
+            {
+                const std::string_view text(entry);
+                const auto separator = text.find(':', 11);
+                if (separator == text.npos) throw std::runtime_error("Incomplete recorded agent name");
+                unsigned index{};
+                const auto parsed = std::from_chars(text.data() + 11, text.data() + separator, index);
+                const auto name = text.substr(separator + 1);
+                if (parsed.ec != std::errc{} || parsed.ptr != text.data() + separator || !index || index >= 1024
+                    || name.empty() || name.size() > 31 || name.find_first_of("\r\n\0", 0, 3) != name.npos
+                    || !result.agent_names.emplace(index, name).second)
+                    throw std::runtime_error("Invalid recorded agent name");
+                continue;
+            }
             if (entry.starts_with("@fx:") || entry.starts_with("@anim:"))
             {
                 const std::string_view text(entry);

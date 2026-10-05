@@ -6,6 +6,7 @@
 #include "cod4_camera.hpp"
 #include "cod4_model_metadata.hpp"
 #include "cod4_obituary_events.hpp"
+#include "cod4_replay_agents.hpp"
 
 #include "component/command.hpp"
 #include "component/console.hpp"
@@ -407,7 +408,8 @@ namespace // demo class
         std::vector<std::uint8_t> initial;
         std::vector<std::string> model_names;
         std::map<unsigned, std::string> model_bindings;
-        std::map<unsigned, std::string> animation_bindings;
+		std::map<unsigned, std::string> animation_bindings;
+		std::map<unsigned, std::string> agent_names;
         for (int guard = 0; guard < 8 && input && initial.empty(); ++guard)
         {
             std::uint8_t id{}; std::uint32_t size{};
@@ -437,6 +439,7 @@ namespace // demo class
                     model_names.assign(models.names.begin(), models.names.end());
                     model_bindings = models.bindings;
                     animation_bindings = models.animation_bindings;
+                    agent_names = models.agent_names;
                     grenade_times_ = models.grenade_times;
                     grenade_times_.insert(models.car_fx_times.begin(), models.car_fx_times.end());
                     grenade_times_.insert(models.bullet_times.begin(), models.bullet_times.end());
@@ -466,6 +469,7 @@ namespace // demo class
         converted_trace_time = {};
         trace_converted("bootstrap begin");
         cod4_camera::set_model_bindings(model_bindings, animation_bindings);
+        cod4_camera::set_agent_names(agent_names);
         cod4_camera::bootstrap_demo(*mapname, initial);
         trace_converted("bootstrap complete");
         cod4_camera::validate_model_budget({model_names.begin(), model_names.end()});
@@ -670,6 +674,11 @@ namespace // hooks
     utils::hook::detour CG_PlayBoltedFX_hook;
     utils::hook::detour CG_Vehicle_hook;
     utils::hook::detour BG_PlayerAnimation_hook;
+    utils::hook::detour CG_CreatePlayerAnimTrees_hook;
+    utils::hook::detour XAnimFreeSmallTree_hook;
+    utils::hook::detour CL_GetAgentName_hook;
+    std::mutex replay_agent_tree_mutex;
+    std::set<void*> replay_agent_trees;
     utils::hook::detour CG_PlaySound_hook;
     thread_local bool suppress_grenade_sound{};
     utils::hook::detour FX_PlayOrientedEffectWithMarkEntity_hook;
@@ -746,17 +755,58 @@ namespace // hooks
         return CG_PlaySound_hook.invoke<int>(local_client_num, entity_num, origin, alias);
     }
 
+    void create_player_animation_trees(int local_client)
+    {
+        CG_CreatePlayerAnimTrees_hook.invoke<void>(local_client);
+        if (local_client != 0 || !cod4_camera::has_replay_agents()) return;
+        auto* cg = reinterpret_cast<std::uint8_t*>(game::CG_GetLocalClientGlobals());
+        if (!cg) { game::Com_Error(game::ERR_DROP, "Replay agent client globals unavailable"); return; }
+        const auto* anims = *reinterpret_cast<void* const*>(cg + 0x161B88);
+        if (!anims) { game::Com_Error(game::ERR_DROP, "Replay agent animation tree unavailable"); return; }
+        for (unsigned slot = cod4::client_slot_map::player_capacity; slot < cod4::client_slot_map::capacity; ++slot)
+        {
+            auto*& tree = *reinterpret_cast<void**>(cg + 0x1621D8 + slot * 0x740);
+            if (tree) continue;
+            tree = utils::hook::invoke<void*>(0x5CA9A0_b, anims, 0x322A30_b);
+            if (!tree) { game::Com_Error(game::ERR_DROP, "Cannot initialize replay agent animation tree"); return; }
+            std::lock_guard lock(replay_agent_tree_mutex);
+            replay_agent_trees.insert(tree);
+        }
+        console::info("COD4 replay: initialized 18 player and 24 native agent animation trees\n");
+    }
+
+    void free_small_animation_tree(void* tree, void* free_function)
+    {
+        bool replay_owned;
+        { std::lock_guard lock(replay_agent_tree_mutex); replay_owned = replay_agent_trees.erase(tree) != 0; }
+        // CG_FreePlayerAnimTrees (0x3127A0) already visits all 24 agent
+        // slots through 0x17F570 -> XAnimFreeSmallTree. That wrapper supplies
+        // a heap deallocator; these trees use the player's native hunk.
+        // Clear their animation nodes, then let the map hunk own the storage.
+        XAnimFreeSmallTree_hook.invoke<void>(tree, replay_owned ? nullptr : free_function);
+    }
+
+    int recorded_agent_name(int local_client, unsigned char client, unsigned short owner, char* output, int size)
+    {
+        if (output && size > 0)
+            if (const auto name = cod4_camera::agent_name(client))
+            {
+                const auto count = std::min(name->size(), static_cast<std::size_t>(size - 1));
+                std::memcpy(output, name->data(), count); output[count] = '\0';
+                return 1;
+            }
+        return CL_GetAgentName_hook.invoke<int>(local_client, client, owner, output, size);
+    }
+
     void player_animation(const int local_client, std::uint8_t* entity, std::uint8_t* character,
         const float* angles, const float* origin, const int time, const int torso, const int legs,
         const bool update_time)
     {
-        // Older conversions preserved sparse COD4 client numbers, but H1
-        // only allocates player trees for slots 0..17 (0x31C890). Reject
-        // those files before either sequence selection or XAnim playback
-        // dereferences an uninitialized tree. Fresh conversions compact all
-        // player identities and their references into native player slots.
+        // Old sparse conversions still need reconversion. Additional actors
+        // must have native agent state, not an out-of-range player client row.
         if (demo.is_converted() && character && entity
-            && (entity[10] == 1 || entity[10] == 2) && entity[12] >= 18)
+            && ((entity[10] == 1 && entity[12] >= cod4::client_slot_map::player_capacity)
+                || ((entity[10] == 2 || entity[10] == 18) && entity[12] >= cod4::client_slot_map::capacity)))
         {
             game::Com_Error(game::ERR_DROP,
                 "This converted demo uses unsupported player slots. Reconvert the original COD4 demo with this build.");
@@ -1923,6 +1973,9 @@ namespace demo_playback
             CG_PlayBoltedFX_hook.create(0x31CBD0_b, converted_bolted_fx);
             CG_Vehicle_hook.create(0x5FCEE0_b, replay_vehicle);
             BG_PlayerAnimation_hook.create(0x2B8EF0_b, player_animation);
+            CG_CreatePlayerAnimTrees_hook.create(0x31C890_b, create_player_animation_trees);
+            XAnimFreeSmallTree_hook.create(0x5CB830_b, free_small_animation_tree);
+            CL_GetAgentName_hook.create(0x3439D0_b, recorded_agent_name);
             CG_PlaySound_hook.create(0x31D040_b, grenade_play_sound);
             FX_PlayOrientedEffectWithMarkEntity_hook.create(0x3D66D0_b, bullet_play_oriented_effect);
             CG_ShouldCullImpactFX_hook.create(0xF36B0_b, bullet_should_cull_impact);

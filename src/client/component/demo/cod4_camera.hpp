@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <set>
+#include <optional>
 
 namespace cod4_camera
 {
@@ -19,6 +20,9 @@ namespace cod4_camera
     void set_model_bindings(const std::map<unsigned, std::string>& bindings,
         const std::map<unsigned, std::string>& animations = {});
     void clear_model_bindings();
+    void set_agent_names(const std::map<unsigned, std::string>& names);
+    bool has_replay_agents();
+    std::optional<std::string> agent_name(unsigned client);
     void validate_model_budget(const std::set<std::string>& models);
     // Register the recorded vehicle slot before native helicopter pose evaluation.
     void prepare_helicopter_vehicle(const std::uint8_t* entity_state);

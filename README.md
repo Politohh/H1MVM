@@ -18,7 +18,7 @@ The converter reads original CoD4 `.dm_1` recordings and saves `.dm_h1` demos fo
 - Pause, rewind, fast-forward, playback speed and timeline controls.
 - First-person, third-person, free camera and dolly camera modes, with editable camera-path markers.
 - Video capture through an optional FFmpeg executable.
-- CoD4 demo conversion, including tested Promod recordings and CoD4x protocol 21 support.
+- CoD4 demo conversion, including tested Promod recordings and CoD4x protocol 19 and 21 decoding.
 - Native MWR character and weapon mappings, actor and death animations, gun and blood effects, grenade effects and car explosions.
 - Airstrike jet and bomb conversion, attached jet effects, and helicopter flight conversion.
 - Recorded data for the native MWR HUD: ammo, grenade inventory, minimap, hitmarkers, score popups and killfeed.
@@ -75,6 +75,7 @@ Useful console commands:
 ## Current limitations
 
 - Custom CoD4 mod assets and unrecognized mappings can be unsupported. Conversion and playback may report an explicit error rather than substitute an unrelated asset.
+- Converted recordings map up to 42 character identities into 18 native player slots and 24 native agent slots. The 39-player Ambush fixture passes offline mapping checks; expanded playback validation is pending. Source player indices above 41 remain unsupported.
 - The latest jet-motion and team-emblem corrections in **2026.10.03** still need visual playback confirmation. A successful build or offline fixture check does not establish complete in-game parity.
 - Helicopter combat events, damage stages and ownership/compass markers are incomplete. Helicopter flight and recorded loop sound are handled separately.
 - General recorded sound-event playback and killstreak inventory HUD are incomplete.

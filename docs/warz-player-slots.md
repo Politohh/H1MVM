@@ -26,9 +26,44 @@ native meanings. The conversion report lists each assignment.
 The ineffective sequence-selection workaround was removed. Converted
 playback checks player identities before `BG_PlayerAnimation` and asks for
 reconversion if an older file still refers to an unsupported slot.
-Ordinary native gameplay passes through unchanged. Recordings requiring
-more than 18 distinct player slots are rejected before conversion starts;
-reusing native slots across disconnected source identities is not implemented.
+Ordinary native gameplay passes through unchanged. Smaller recordings retain
+these exact mappings. Larger recordings now use the additional 24 native agent
+slots; reusing native slots across disconnected source identities is not implemented.
+
+## Larger recordings
+
+The native snapshot layout has 18 clientState rows at snapshot `+0x45488`,
+followed by the agent count at `+0x46370` and 24 agentState rows of 128 bytes.
+The clientInfo name array also has 18 entries; `CG_SetNextSnap` keeps an
+18-entry stack presence array. Increasing the client count would overrun these
+structures even though characterInfo has 42 entries.
+
+Overflow recorded players therefore use `ET_AGENT` (18) and
+`MSG_WriteDeltaAgent` (`0x1404F3330`). Live Ambush inspection verified the
+69-field agent entity table retains the native player animation, motion,
+weapon and event-ring fields. Agent state carries model at `+2`, attachments
+at `+16`, team at `+76` and name token at `+124`.
+
+Recorded name tokens live in the converted file's `@agentname` metadata.
+`CL_GetAgentName` (`0x1403439D0`) resolves them through the current parsed
+agent ring, preserving name changes and feeding the existing native HUD and
+killfeed. It never indexes the 18-entry clientInfo array with a larger identity.
+
+`CG_CreatePlayerAnimTrees` additionally creates the agent slots' script trees
+with its existing allocator (`0x140322A30`) and native animation catalog.
+`CG_FreePlayerAnimTrees` already visits those slots through `0x14017F570`.
+That wrapper normally supplies a heap deallocator to `XAnimFreeSmallTree`;
+for tracked replay hunk allocations the hook clears the animation nodes with
+the same null deallocator used for native player trees. Other trees retain
+their original deallocator. Cleanup follows the allocated tree's ownership,
+even after playback stops or changes maps.
+
+The capacity check now protects 42 identities, with source player indices
+limited to 0..41. Corpse entities remain 42..49. No player snapshot client row
+is emitted for an agent slot. The protocol-19 Ambush fixture maps all 39
+identities to 18 players and 21 agents; decoding, names, teams, kill identities
+and capacity boundaries pass offline checks. Native conversion/playback
+acceptance is still pending.
 
 ## Validation
 

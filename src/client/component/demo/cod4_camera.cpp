@@ -13,12 +13,14 @@
 #include "cod4_obituary_events.hpp"
 #include "cod4_gun_events.hpp"
 #include "cod4_actor_translation.hpp"
+#include "cod4_replay_agents.hpp"
 #include "cod4_car_fx.hpp"
 #include "cod4_airstrike.hpp"
 #include "cod4_helicopter.hpp"
 #include "cod4_car_motion.hpp"
 #include "cod4_model_metadata.hpp"
 #include "cod4_transient_budget.hpp"
+#include "cod4_weapon_models.hpp"
 #include "cod4_model_translation.hpp"
 #include "demo_playback.hpp"
 #include "demo_game.hpp"
@@ -42,6 +44,8 @@ namespace cod4_camera
         std::vector<cod4::player_frame> players;
         cod4::world_track world;
         cod4::client_slot_map client_slots;
+        std::map<std::string, unsigned> agent_name_ids;
+        std::map<unsigned, std::string> recorded_agent_names;
         cod4::grenade_events grenade_track;
         std::vector<cod4::bullet_event> bullet_track;
         std::vector<cod4::h1_entity> bullet_entities;
@@ -661,7 +665,15 @@ namespace cod4_camera
                 const auto* kit = game::DB_FindXAssetHeader(game::ASSET_TYPE_STRINGTABLE,
                     "mp/furniturekits/base.csv", false).stringTable;
                 bool has_furniture = false;
-                bool kit_view_model = false, kit_world_model = false;
+                const auto kit_models = cod4::collect_weapon_kit_models(target, attachment_kit, needs_view,
+                    kit ? kit->rowCount : 0, [&](int row, int col)
+                    {
+                        return game::StringTable_GetColumnValueForRow(
+                            const_cast<game::StringTable*>(kit), row, col);
+                    });
+                for (const auto& model : kit_models.names)
+                    if (requested_models.insert(model).second)
+                        lifecycle << "request kit model " << model << std::endl;
                 if (kit) for (int row = 0; row < kit->rowCount; ++row)
                 {
                     const auto column = [&](int col) { return game::StringTable_GetColumnValueForRow(
@@ -670,21 +682,6 @@ namespace cod4_camera
                     const bool base_part = std::string_view(column(2)) == "1";
                     if (!base_part && mapping.attachment != column(1)) continue;
                     has_furniture |= base_part;
-                    // The kit selects dry/wet view and world-model parts.
-                    for (int col : {3, 4, 6, 7})
-                    {
-                        if ((col == 3 || col == 6) && !needs_view) continue;
-                        const std::string model = column(col);
-                        if (!model.empty())
-                        {
-                            if (col == 3 || col == 6) kit_view_model = true;
-                            else kit_world_model = true;
-                        }
-                        if (!model.empty() && requested_models.insert(model).second)
-                        {
-                            lifecycle << "request kit model " << model << std::endl;
-                        }
-                    }
                 }
                 if (has_furniture || mapping.attachment != "none")
                 {
@@ -724,9 +721,9 @@ namespace cod4_camera
                 // Furniture supplies the effective native models. Some base
                 // definitions retain obsolete model names (AK47's NPC model)
                 // that have no transient zone and are never used by this kit.
-                if (needs_view && !kit_view_model && def->gunModel)
+                if (needs_view && !kit_models.base_view && def->gunModel)
                     for (unsigned i = 0; i < 2; ++i) request_model(def->gunModel[i]);
-                if (!kit_world_model && def->worldModel)
+                if (!kit_models.base_world && def->worldModel)
                     for (unsigned i = 0; i < 2; ++i) request_model(def->worldModel[i]);
                 if (needs_view && def->reticleViewModels)
                     for (unsigned i = 0; i < 64; ++i) request_model(def->reticleViewModels[i]);
@@ -738,8 +735,13 @@ namespace cod4_camera
                     const auto* part = attachments[a];
                     if (!part) throw std::runtime_error("Missing native weapon attachment");
                     lifecycle << "native attachment " << part->name << std::endl;
-                    if (needs_view && part->viewModels) for (unsigned i = 0; i < 2; ++i) request_model(part->viewModels[i]);
-                    if (part->worldModels) for (unsigned i = 0; i < 2; ++i) request_model(part->worldModels[i]);
+                    // A selected furniture row supplies the attachment's native
+                    // geometry too. M16 GL metadata still names an obsolete
+                    // launcher; the base kit supplies the combined M203 part.
+                    if (needs_view && !kit_models.attachment_view && part->viewModels)
+                        for (unsigned i = 0; i < 2; ++i) request_model(part->viewModels[i]);
+                    if (!kit_models.attachment_world && part->worldModels)
+                        for (unsigned i = 0; i < 2; ++i) request_model(part->worldModels[i]);
                     if (needs_view && part->reticleViewModels) for (unsigned i = 0; i < 64; ++i) request_model(part->reticleViewModels[i]);
                     // WA model overrides store asset names (for example the
                     // GP25/M203 projectile). The base rifle definition has no
@@ -1090,7 +1092,7 @@ namespace cod4_camera
             const auto frame = track.sample(time);
             // H1's demo connection is client 0. A COD4 recorder can be any
             // client; keep it at 0 and compact sparse remote identities into
-            // the 18 native player slots. UI, actors and events share this map.
+            // native player/agent slots. UI, actors and events share this map.
             const auto remap_client = [](unsigned number) { return client_slots.client(number); };
             alignas(16) std::array<std::uint8_t, 18576> ps{};
             const auto put = [&](std::size_t offset, const auto& value) { std::memcpy(ps.data() + offset, &value, sizeof(value)); };
@@ -1292,9 +1294,7 @@ namespace cod4_camera
                     auto native = cod4::translate_actor(entity, cod4::sample_actor_motion(world, number, time),
                         weapons.at(entity.get(196)), actor_animations.at({entity.get(204), entity.get(208), entity.get(196)}),
                         event == events.end() ? nullptr : &event->second, alternate_weapons.contains(entity.get(196)));
-                    if (entity.get(4) == 1)
-                        cod4::write_native(native, 0, static_cast<std::uint16_t>(remap_client(number)));
-                    cod4::write_native(native, 12, static_cast<std::int8_t>(remap_client(entity.get(140))));
+                    cod4::assign_actor_slot(native, remap_client(entity.get(140)));
                     cod4::remap_entity_references(native, client_slots);
                     write_entity(native);
                     continue;
@@ -1388,15 +1388,22 @@ namespace cod4_camera
             context[28] = 0;
             packet.reset_index(); packet.byte(0);
             std::map<unsigned, cod4::h1_client> snapshot_clients;
+            std::map<unsigned, cod4::h1_agent> snapshot_agents;
             for (const auto& [number, client] : recorded_clients)
             {
                 const auto& models = character_models.at(client_model_key(client));
                 if (!models.body) continue; // Spectators have no recorded character model.
                 const auto& names = world.sample(time).client_names;
                 const auto name = names.find(number);
-                auto native = cod4::translate_client(client, models.body, models.attachments,
-                    name == names.end() ? std::string_view{} : std::string_view(name->second));
                 const auto destination = remap_client(number);
+                const auto full_name = name == names.end() ? std::string_view{} : std::string_view(name->second);
+                if (cod4::agent_slot(destination))
+                {
+                    snapshot_agents.emplace(destination, cod4::translate_agent(client, destination,
+                        models.body, models.attachments, agent_name_ids.at(cod4::recorded_actor_name(client, full_name))));
+                    continue;
+                }
+                auto native = cod4::translate_client(client, models.body, models.attachments, full_name);
                 cod4::write_native(native, 0, static_cast<std::uint8_t>(destination));
                 snapshot_clients.emplace(destination, native);
             }
@@ -1404,7 +1411,10 @@ namespace cod4_camera
             {
                 utils::hook::invoke<void>(0x4F3910_b, context.data(), &packet.msg, time, nullptr, native.data(), true);
             }
-            packet.bit0(); packet.reset_index(); packet.bit0();
+            packet.bit0(); packet.reset_index();
+            for (const auto& [number, native] : snapshot_agents)
+                utils::hook::invoke<void>(0x4F3330_b, context.data(), &packet.msg, time, nullptr, native.data(), true);
+            packet.bit0();
             utils::hook::invoke<void>(0x417CA0_b, &packet.msg);
             utils::hook::invoke<void>(0x500B40_b, &packet.msg);
             packet.bits(7, 3);
@@ -1438,6 +1448,7 @@ namespace cod4_camera
             requested_models.clear();
             model_bindings.clear();
             animation_bindings.clear();
+            agent_name_ids.clear(); recorded_agent_names.clear();
             bound_models.clear(); character_models.clear(); hands_models.clear();
             state.message = message;
             if (trace.is_open()) trace.close();
@@ -1550,6 +1561,8 @@ namespace cod4_camera
             { header += std::format("@model:{}:{}", index, model); header.push_back('\0'); }
             for (const auto& [index, animation] : animation_bindings)
             { header += std::format("@anim:{}:{}", index, animation); header.push_back('\0'); }
+            for (const auto& [index, name] : recorded_agent_names)
+            { header += std::format("@agentname:{}:{}", index, name); header.push_back('\0'); }
             for (const auto& [entity, time] : grenade_times)
             { header += std::format("@grenade:{}:{}", entity, time); header.push_back('\0'); }
             for (const auto& [entity, time] : car_effect_times)
@@ -1766,6 +1779,8 @@ namespace cod4_camera
                     gun_track = std::move(decoded_gun_events);
                     world = std::move(decoded_world);
                     client_slots = decoded_slots;
+                    agent_name_ids = cod4::collect_agent_names(world, client_slots);
+                    for (const auto& [name, index] : agent_name_ids) recorded_agent_names.emplace(index, name);
                     score_popups = cod4::collect_score_popups(world, track.configstrings);
                     hitmarkers = cod4::collect_hitmarkers(world, track.configstrings);
                     hitmarker_omnvar.reset();
@@ -1844,6 +1859,32 @@ namespace cod4_camera
     status get_status() { std::lock_guard lock(mutex); return state; }
     bool active() { std::lock_guard lock(mutex); return state.active; }
 
+    void set_agent_names(const std::map<unsigned, std::string>& names) { recorded_agent_names = names; }
+    bool has_replay_agents() { return !recorded_agent_names.empty(); }
+
+    std::optional<std::string> agent_name(unsigned client)
+    {
+        if (!cod4::agent_slot(client) || recorded_agent_names.empty()) return std::nullopt;
+        // Mirror CL_GetAgentName (0x3439D0): current parsed agent ring,
+        // rather than indexing H1's 18-entry clientInfo array with an agent.
+        const auto* cl = reinterpret_cast<const std::uint8_t*>(game::mp::cl.get());
+        if (!cl) return std::nullopt;
+        const int count = *reinterpret_cast<const int*>(cl + 0x4A6C);
+        const int first = *reinterpret_cast<const int*>(cl + 0x4A70);
+        const int capacity = *reinterpret_cast<const int*>(cl + 0x8FC0);
+        const auto* ring = *reinterpret_cast<const std::uint8_t* const*>(cl + 0x8FC8);
+        if (!ring || count < 0 || count > 24 || first < 0 || capacity <= 0 || capacity > 65536)
+            return std::nullopt;
+        for (int i = 0; i < count; ++i)
+        {
+            const auto* agent = ring + ((static_cast<unsigned>(first) + i) % capacity) * 128;
+            if (*reinterpret_cast<const std::uint16_t*>(agent) != client) continue;
+            const auto found = recorded_agent_names.find(*reinterpret_cast<const unsigned*>(agent + 124));
+            if (found != recorded_agent_names.end()) return found->second;
+        }
+        return std::nullopt;
+    }
+
     void validate_model_budget(const std::set<std::string>& models)
     {
         std::map<unsigned, std::set<unsigned>> required;
@@ -1894,6 +1935,7 @@ namespace cod4_camera
     void clear_model_bindings()
     {
         model_bindings.clear(); animation_bindings.clear(); converted_bindings = false;
+        recorded_agent_names.clear();
         replay_asset_pool = false;
     }
     void set_model_bindings(const std::map<unsigned, std::string>& bindings,

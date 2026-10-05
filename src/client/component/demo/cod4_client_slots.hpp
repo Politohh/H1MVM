@@ -5,12 +5,12 @@
 
 namespace cod4
 {
-    // CG_CreatePlayerAnimTrees (H1 0x31C890) allocates exactly 18 player
-    // trees. The 42 characterInfo records also include non-player slots;
-    // accepting a source client index below 42 is not sufficient.
+    // Keep H1's 18 client rows intact. Additional recorded identities use
+    // its 24 native agent rows and character slots, before corpse slot 42.
     struct client_slot_map
     {
-        static constexpr unsigned capacity = 18;
+        static constexpr unsigned player_capacity = 18;
+        static constexpr unsigned capacity = 42;
         std::map<unsigned, unsigned> slots;
 
         unsigned client(unsigned source) const { return slots.at(source); }
@@ -35,7 +35,8 @@ namespace cod4
                     identities.insert(entity.get(140));
         }
         if (identities.size() > client_slot_map::capacity)
-            throw std::runtime_error("Demo contains more than 18 distinct player slots; native MWR playback supports 18");
+            throw std::runtime_error("Demo contains " + std::to_string(identities.size())
+                + " distinct player slots; native MWR playback supports " + std::to_string(client_slot_map::capacity));
         if (*identities.rbegin() >= 42)
             throw std::runtime_error("Unsupported COD4 player slot");
 
@@ -48,7 +49,7 @@ namespace cod4
         {
             if (source == recorder) continue;
             const auto preferred = source == 0 ? recorder : source;
-            if (preferred < client_slot_map::capacity)
+            if (preferred < client_slot_map::player_capacity)
             {
                 result.slots.emplace(source, preferred);
                 occupied.insert(preferred);

@@ -155,7 +155,11 @@ namespace cod4
             const auto legacy_end = file.get<std::int32_t>();
             const auto reserved = file.get<std::uint64_t>();
             if (legacy_end != -1 || reserved) throw std::runtime_error("Invalid CoD4x protocol header");
-            if (protocol != 21) throw std::runtime_error("Unsupported CoD4x protocol " + std::to_string(protocol));
+            // Protocol 19.3 and 21 use the same extended gamestate, client-name
+            // records and raw origin fields decoded below. Keep this explicit:
+            // a protocol header alone does not establish wire compatibility.
+            if (protocol != 19 && protocol != 21)
+                throw std::runtime_error("Unsupported CoD4x protocol " + std::to_string(protocol));
             file.protocol = protocol;
             return protocol;
         }

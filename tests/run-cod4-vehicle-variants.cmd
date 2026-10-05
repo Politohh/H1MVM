@@ -13,5 +13,5 @@ if errorlevel 1 (
 if not exist build mkdir build
 cl /nologo /std:c++20 /EHsc /W4 /O2 /I src\client tests\cod4_vehicle_variants.cpp /Fe:build\cod4_vehicle_variants.exe /Fo:build\cod4_vehicle_variants.obj
 if errorlevel 1 exit /b 1
-build\cod4_vehicle_variants.exe "%~1"
+build\cod4_vehicle_variants.exe %*
 exit /b %errorlevel%
