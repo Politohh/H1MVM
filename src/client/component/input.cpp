@@ -9,6 +9,7 @@
 #include "demo/demo_playback.hpp"
 #include "demo/demo_gui.hpp"
 #include "demo/theater_camera.hpp"
+#include "demo/theater_ui.hpp"
 
 #include <utils/hook.hpp>
 
@@ -39,6 +40,9 @@ namespace input
 
 		void cl_key_event_stub(const int local_client_num, const int key, const int down)
 		{
+			// Release the playback latch even if the console opened while Space was held.
+			if (key == game::K_SPACE && !down && demo_playback::handle_key_event(key, down)) return;
+			if (!down && theater_ui::handle_key_event(key, down)) return;
 			if (!game_console::console_key_event(local_client_num, key, down))
 			{
 				return;
@@ -51,20 +55,30 @@ namespace input
 			}
 #endif
 
+			if (key == game::K_F9)
+			{
+				if (down)
+				{
+					if (theater_ui::available() && demo_playback::playing()) demo_gui::close();
+					if (!theater_ui::toggle()) demo_gui::toggle();
+				}
+				return;
+			}
+			if (key == game::K_F10)
+			{
+				if (down) { theater_ui::close(); demo_gui::toggle(); }
+				return;
+			}
+
 			if (demo_playback::handle_key_event(key, down))
 			{
 				return;
 			}
+			if (theater_ui::handle_key_event(key, down)) return;
 
 			// freecam mouse-wheel: roll / Alt+FOV (wheel arrives as K_MWHEELUP/DOWN key events)
-			if (down && theater_camera::handle_wheel(key))
+			if (!theater_ui::interactive() && down && theater_camera::handle_wheel(key))
 			{
-				return;
-			}
-
-			if (key == game::K_F9 && down)
-			{
-				demo_gui::toggle();
 				return;
 			}
 

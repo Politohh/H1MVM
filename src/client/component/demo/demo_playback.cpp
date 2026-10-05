@@ -3,6 +3,9 @@
 
 #include "demo_playback.hpp"
 #include "demo_utils.hpp"
+#include "demo_input.hpp"
+#include "demo_gui.hpp"
+#include "theater_ui.hpp"
 #include "cod4_camera.hpp"
 #include "cod4_model_metadata.hpp"
 #include "cod4_obituary_events.hpp"
@@ -27,6 +30,7 @@ namespace // demo class
     std::chrono::steady_clock::time_point converted_trace_time{};
     game::dvar_t* cod4_playback_hud{};
     bool converted_hud_refresh_pending{};
+    unsigned playback_session{};
 
     void trace_converted(const char* stage)
     {
@@ -99,6 +103,7 @@ namespace // demo class
 		[[nodiscard]] std::optional<std::int32_t> get_current_time() const;
 		[[nodiscard]] const std::optional<std::pair<std::int32_t, std::int32_t>>& get_time_bounds() const { return time_bounds_; }
 		[[nodiscard]] const std::filesystem::path& get_path() const { return path_; }
+		const std::optional<demo_timeline::index>& timeline_index() const { return timeline_index_; }
 
 		void parse_demo_wrapper();
 		void stop();
@@ -128,6 +133,7 @@ namespace // demo class
 		std::array<predicted_data_t, 256> pred_data_{};
 		std::optional<std::int32_t> rewind_snap_svr_time_;
 		std::optional<std::pair<std::int32_t, std::int32_t>> time_bounds_; // {first_svr_time, last_svr_time}, from gen_footer
+		std::optional<demo_timeline::index> timeline_index_;
 		std::optional<gamestate_t> gs_;
 		std::vector<std::uint8_t> buffer_;
 		std::filesystem::path path_;
@@ -237,6 +243,7 @@ namespace // demo class
 		game::Dvar_SetFromStringByNameFromSource("developer", "1", game::DVAR_SOURCE_INTERNAL);
 
 		file_ = std::move(file);
+		++playback_session;
 		assert(file_.good() && file_.is_open());
 
 		// (re)set data
@@ -375,6 +382,11 @@ namespace // demo class
 				if (file_.good())
 				{
 					result = std::make_pair(first_time, last_time);
+					std::vector<std::uint8_t> footer(size);
+					std::memcpy(footer.data(), &first_time, 4);
+					std::memcpy(footer.data() + 4, &last_time, 4);
+					file_.read(reinterpret_cast<char*>(footer.data() + 8), size - 8);
+					if (file_.good()) timeline_index_ = demo_timeline::decode(footer, first_time, last_time);
 				}
 				break;
 			}
@@ -538,6 +550,7 @@ namespace // demo class
 		pred_data_.fill({});
 		rewind_snap_svr_time_ = {};
 		time_bounds_.reset();
+		timeline_index_.reset();
 		gs_.reset();
 		buffer_.clear();
 		file_.clear();
@@ -556,7 +569,9 @@ namespace // demo class
 		// ensure that sv_cheats is always disabled after demo playback
 		if (auto* sv_cheats = game::Dvar_FindVar("sv_cheats"); sv_cheats)
 		{
-			sv_cheats->current.enabled = false;
+			// Use the native setter after disarming/closing the replay so the
+			// normal sv_cheats transition also resets cheat-protected dvars.
+			game::Dvar_SetFromStringFromSource(sv_cheats, "0", game::DVAR_SOURCE_INTERNAL);
 		}
 	}
 
@@ -1918,6 +1933,24 @@ namespace demo_playback
 		return demo.get_time_bounds();
 	}
 
+	bool seeking() { return demo.is_seeking(); }
+	unsigned session_id() { return playback_session; }
+	const std::optional<demo_timeline::index>& timeline_index() { return demo.timeline_index(); }
+
+	bool seek_to(std::int32_t target)
+	{
+		const auto current = current_time();
+		const auto bounds = time_bounds();
+		if (!current || !bounds || seeking()) return false;
+		target = demo_timeline::clamp_target(target, bounds->first, bounds->second);
+		const auto delta = static_cast<std::int64_t>(target) - *current;
+		if (delta == 0) return true;
+		demo.begin_seek();
+		if (delta < 0) return demo.rewind_demo(static_cast<std::uint32_t>(-delta));
+		fast_forward_demo(static_cast<std::uint32_t>(delta));
+		return true;
+	}
+
 	const std::filesystem::path& current_path()
 	{
 		return demo.get_path();
@@ -1925,24 +1958,13 @@ namespace demo_playback
 
 	bool handle_key_event(const int key, const int down)
 	{
-		// Space (K_SPACE) normally binds to +gostand; harmless but pointless to also forward
-		// while a demo plays (local input is already suppressed via CG_DrawActiveFrame's
-		// demoType override), so swallow it here instead and use it to toggle pause.
-		if (key == game::K_SPACE && down && demo.is_demo_playing() && demo.is_replay_armed())
-		{
-			// ...but only when focus is on gameplay. If the console / chat / a menu owns the
-			// keyboard (keyCatchers != 0) the user is typing -- let the space through so it types
-			// a space instead of pausing the demo.
-			if (*game::keyCatchers != 0)
-			{
-				return false;
-			}
-
-			demo.toggle_paused();
-			return true;
-		}
-
-		return false;
+		if (key != game::K_SPACE) return false;
+		static demo_input::shortcut_key space;
+		const bool allowed = demo.is_demo_playing() && demo.is_replay_armed() &&
+			demo_input::pause_allowed(*game::keyCatchers, theater_ui::keyboard_available(), demo_gui::is_open());
+		const auto result = space.event(down != 0, allowed);
+		if (result == demo_input::shortcut_key::result::toggle) demo.toggle_paused();
+		return result != demo_input::shortcut_key::result::pass;
 	}
 
 	class component final : public component_interface

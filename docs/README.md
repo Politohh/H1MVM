@@ -6,6 +6,7 @@ These documents describe individual implementation changes and their evidence. T
 
 ## Conversion and playback
 
+- [Native theater timeline and controls](native-theater.md)
 - [CoD4x protocols 19 and 21](cod4x-protocol21.md)
 - [Actor animation audit and replacement coverage](cod4-actor-animation-audit.md)
 - [Promod stress test](promod-stress-test.md)

@@ -35,6 +35,8 @@ namespace theater_camera
 		game::dvar_t* demo_camera_speed = nullptr; // freecam units/second
 		game::dvar_t* demo_camera_sens = nullptr;  // mouse-look sensitivity
 		game::dvar_t* demo_cod4_fov = nullptr;     // fov for CoD4 first-person playback
+		game::dvar_t* demo_camera_boost{}, *demo_camera_slow{};
+		std::array<game::dvar_t*, 3> dolly_position{}, dolly_rotation{};
 
 		const char* mode_names[] = { "first_person", "third_person", "freecam", "dolly", nullptr };
 
@@ -63,7 +65,6 @@ namespace theater_camera
 		// each frame during demo playback (why the camera still turned with F9 open).
 		bool input_blocked = false;
 		bool prev_capture_key = false;             // middle-mouse edge for the drop-marker hotkey
-		bool prev_j = false, prev_k = false, prev_l = false; // classic dollycam J/K/L key edges
 
 		std::vector<camera_keyframe_t> keyframes;
 
@@ -268,8 +269,8 @@ namespace theater_camera
 			angle_vectors(freecam_angles, forward, right, up);
 
 			float speed = (demo_camera_speed ? demo_camera_speed->current.value : 500.0f) * dt;
-			if (key_down(VK_SHIFT)) speed *= 4.0f;   // sprint
-			if (key_down(VK_MENU))  speed *= 0.25f;  // Alt = slow/precise
+			if (key_down(VK_SHIFT)) speed *= demo_camera_boost ? demo_camera_boost->current.value : 4.0f;
+			if (key_down(VK_MENU)) speed *= demo_camera_slow ? demo_camera_slow->current.value : .25f;
 
 			auto add = [&](const float* v, float s)
 			{
@@ -313,7 +314,7 @@ namespace theater_camera
 			return ref + normalize_angle(b - ref);
 		}
 
-		camera_pose_t sample_dolly(int time)
+		camera_pose_t sample_dolly_base(int time)
 		{
 			const auto n = keyframes.size();
 			if (n == 0)
@@ -364,6 +365,17 @@ namespace theater_camera
 			}
 			r.fov = catmull_rom(k0.fov, k1.fov, k2.fov, k3.fov, t);
 			return r;
+		}
+
+		camera_pose_t sample_dolly(int time)
+		{
+			auto pose = sample_dolly_base(time);
+			for (int axis = 0; axis < 3; ++axis)
+			{
+				if (dolly_position[axis]) pose.pos[axis] += dolly_position[axis]->current.value;
+				if (dolly_rotation[axis]) pose.angles[axis] = normalize_angle(pose.angles[axis] + dolly_rotation[axis]->current.value);
+			}
+			return pose;
 		}
 
 		// Smooth per-frame playback clock: cl->serverTime advances every render frame,
@@ -639,22 +651,8 @@ namespace theater_camera
 			// keep the HUD hidden every frame while in a movie mode (freecam/dolly)
 			set_hud_hidden(mode == THEATER_CAMERA_FREECAM || mode == THEATER_CAMERA_DOLLY);
 
-			// classic dollycam keybinds (only when the overlay is closed + window focused):
-			//   J = play the campath, K = place a marker, L = delete all markers.
-			if (input_available())
-			{
-				const bool j = (GetAsyncKeyState('J') & 0x8000) != 0;
-				const bool k = (GetAsyncKeyState('K') & 0x8000) != 0;
-				const bool l = (GetAsyncKeyState('L') & 0x8000) != 0;
-				if (j && !prev_j) start_cinematic();
-				if (k && !prev_k) capture_marker_internal();
-				if (l && !prev_l) clear_keyframes();
-				prev_j = j; prev_k = k; prev_l = l;
-			}
-			else
-			{
-				prev_j = prev_k = prev_l = false;
-			}
+			// J/K/L are handled once by the game key-event bridge, including while
+			// native theater controls are open. Keep middle-mouse capture below.
 
 			if (mode == THEATER_CAMERA_FREECAM)
 			{
@@ -755,6 +753,17 @@ namespace theater_camera
 		for (int i = 0; i < 3; ++i) { p.pos[i] = freecam_pos[i]; p.angles[i] = freecam_angles[i]; }
 		p.fov = freecam_fov;
 		return p;
+	}
+
+	void set_freecam_pose(const camera_pose_t& pose)
+	{
+		set_mode(THEATER_CAMERA_FREECAM);
+		on_mode_changed(THEATER_CAMERA_FREECAM);
+		g_last_mode = THEATER_CAMERA_FREECAM;
+		for (int i = 0; i < 3; ++i) { freecam_pos[i] = pose.pos[i]; freecam_angles[i] = pose.angles[i]; }
+		freecam_fov = std::clamp(pose.fov, 1.f, 179.f);
+		freecam_seeded = true;
+		g_mouse_dx = g_mouse_dy = 0;
 	}
 
 	// overwrite a keyframe's pose (position/rotation/fov), keeping its time
@@ -964,6 +973,19 @@ namespace theater_camera
 			demo_cod4_fov = game::demo_compat::register_float(
 				"demo_cod4_fov", 65.0f, 40.0f, 160.0f, game::DVAR_FLAG_NONE,
 				"Field of view for CoD4 first-person demo playback");
+			demo_camera_boost = game::demo_compat::register_float("demo_camera_boost", 4.f, 1.f, 20.f,
+				game::DVAR_FLAG_NONE, "Freecam Shift speed multiplier");
+			demo_camera_slow = game::demo_compat::register_float("demo_camera_slow", .25f, .01f, 1.f,
+				game::DVAR_FLAG_NONE, "Freecam Alt precision speed multiplier");
+			const char* position_names[] = {"demo_dolly_x", "demo_dolly_y", "demo_dolly_z"};
+			const char* rotation_names[] = {"demo_dolly_pitch", "demo_dolly_yaw", "demo_dolly_roll"};
+			for (int axis = 0; axis < 3; ++axis)
+			{
+				dolly_position[axis] = game::demo_compat::register_float(position_names[axis], 0, -5000, 5000,
+					game::DVAR_FLAG_NONE, "Dolly path world-space position offset");
+				dolly_rotation[axis] = game::demo_compat::register_float(rotation_names[axis], 0, -360, 360,
+					game::DVAR_FLAG_NONE, "Dolly path angle offset in degrees");
+			}
 
 			// console convenience commands (the F9 GUI drives these too)
 			command::add("demo_camera_capture", []() { capture_keyframe(); });

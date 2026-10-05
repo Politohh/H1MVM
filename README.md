@@ -14,7 +14,7 @@ The converter reads original CoD4 `.dm_1` recordings and saves `.dm_h1` demos fo
 
 ## Features
 
-- H1 demo recording and playback, with a demo browser opened through **F9**.
+- H1 demo recording and playback, with a native MWR timeline and demo browser.
 - Pause, rewind, fast-forward, playback speed and timeline controls.
 - First-person, third-person, free camera and dolly camera modes, with editable camera-path markers.
 - Video capture through an optional FFmpeg executable.
@@ -23,6 +23,7 @@ The converter reads original CoD4 `.dm_1` recordings and saves `.dm_h1` demos fo
 - Airstrike jet and bomb conversion, attached jet effects, and helicopter flight conversion.
 - Recorded data for the native MWR HUD: ammo, grenade inventory, minimap, hitmarkers, score popups and killfeed.
 - `developer 1` enabled when loading a demo.
+- Developer-style dvar access during demo playback, with native value ranges and latch behavior preserved.
 
 Conversion is experimental. Coverage varies by recording, map and mod; see [Current limitations](#current-limitations).
 
@@ -59,7 +60,20 @@ cod4convert "C:\Demos\example.dm_1"
 
 In an H1 multiplayer match, `demostart` enables automatic recording and `demostop` disables it. Files are named automatically; these commands do not take a custom recording name. Recording locations use `demos/client/auto/`, or a mod-specific subdirectory when a mod is active.
 
-Use **F9** to browse and play demos, adjust playback and choose a camera mode. The camera editor provides controls for creating and editing dolly paths. The capture section lets you select a video range and configure FFmpeg separately.
+Use **F9** to browse demos when playback is stopped. During playback, **F1** shows or hides the native Theater controls, and **F2** cycles camera modes. **F9** also opens the native controls. Click the track to seek, or use the shortcuts below.
+
+| Key | During demo playback |
+| --- | --- |
+| **F1** | Show/hide Theater controls |
+| **F2** | Cycle first person, third person, free camera and dolly |
+| **K** | Add dolly marker |
+| **J** | Start/stop dolly playback |
+| **L** | Clear all markers while dolly is stopped |
+| **Space** | Pause/resume |
+| **← / →** | Seek backward/forward five seconds |
+| **↑ / ↓** | Increase/decrease playback speed |
+
+**EDITOR** opens the native MWR editor with camera, visual settings, preset, capture and custom-slider pages. All twelve category buttons remain visible without scrolling. Each page exposes supported H1 settings; features that need additional engine hooks show their current limitations. Back returns to the timeline. **F10** retains the existing browser and advanced camera/capture editor. `demotimeline` shows or hides the native panel. Kill/death markers are indexed in newly converted demos; older files collect them during playback. See [Native theater timeline](docs/native-theater.md).
 
 Useful console commands:
 

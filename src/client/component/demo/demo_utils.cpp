@@ -752,13 +752,15 @@ namespace demo_utils
 			write_general_header_(output);
 		}
 
-		void write_general_footer_(auto& output, std::int32_t first_svr_time, std::int32_t last_svr_time)
+		void write_general_footer_(auto& output, std::int32_t first_svr_time, std::int32_t last_svr_time,
+			std::string_view timeline = {})
 		{
 			assert(first_svr_time > 0 && last_svr_time > 0 && last_svr_time > first_svr_time);
 
 			const auto duration = (last_svr_time - first_svr_time) / 1000;
 			const auto fmt_duration = std::format("[{:02}:{:02}:{:02}]", duration / 3600, (duration % 3600) / 60, duration % 60);
-			const auto size = 2 * 4 + fmt_duration.size() + 1;
+			const auto size = 2 * 4 + fmt_duration.size() + 1 + timeline.size();
+			if (size > MAX_SIZE) throw std::runtime_error("Demo timeline footer exceeds chunk limit");
 
 			write_id_and_size(output, size, demo_data_id::gen_footer);
 
@@ -767,6 +769,7 @@ namespace demo_utils
 			output.write(reinterpret_cast<const char*>(&last_svr_time), 4);
 			output.write(fmt_duration.c_str(), fmt_duration.size());
 			output.write(&null_terminator, 1);
+			output.write(timeline.data(), timeline.size());
 		}
 
 		void write_general_footer(buffer_t& output, std::int32_t first_svr_time, std::int32_t last_svr_time)
@@ -774,9 +777,10 @@ namespace demo_utils
 			write_general_footer_(output, first_svr_time, last_svr_time);
 		}
 
-		void write_general_footer(std::ofstream& output, std::int32_t first_svr_time, std::int32_t last_svr_time)
+		void write_general_footer(std::ofstream& output, std::int32_t first_svr_time, std::int32_t last_svr_time,
+			std::string_view timeline)
 		{
-			write_general_footer_(output, first_svr_time, last_svr_time);
+			write_general_footer_(output, first_svr_time, last_svr_time, timeline);
 		}
 
 		void write_end_of_file_(auto& output)

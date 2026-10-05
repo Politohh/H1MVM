@@ -4,6 +4,7 @@
 #include "demo_game.hpp"
 #include "cod4_camera.hpp"
 #include "demo_playback.hpp"
+#include "theater_ui.hpp"
 
 #include "game/dvars.hpp"
 #include "component/scheduler.hpp"
@@ -209,6 +210,7 @@ namespace killfeed
 		{
 			entry_t e{};
 			e.time = now_time();
+			theater_ui::note_obituary(e.time, attacker, victim);
 			e.attacker = client_name(attacker);
 			e.victim = client_name(victim);
 			e.icon = icon;

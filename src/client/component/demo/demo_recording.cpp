@@ -3,6 +3,7 @@
 
 #include "demo_playback.hpp"
 #include "demo_recording.hpp"
+#include "theater_ui.hpp"
 #include "demo_utils.hpp"
 
 #include "component/command.hpp"
@@ -114,7 +115,8 @@ namespace // demo class
 
 	bool demo_recording_t::stop_internal(std::ofstream& file, std::int32_t first_svr_time, std::int32_t last_svr_time)
 	{
-		write_general_footer(file, first_svr_time, last_svr_time);
+		write_general_footer(file, first_svr_time, last_svr_time,
+			theater_ui::recording_index(first_svr_time, last_svr_time));
 		write_end_of_file(file);
 
 		file.flush();
@@ -213,6 +215,7 @@ namespace // demo class
 
 	void demo_recording_t::process_new_gamestate(std::span<const std::uint8_t> network_data)
 	{
+		theater_ui::begin_recording();
 		process_old_data();
 
 		// reserve memory (low size if auto recording is enabled, because then the demo writes almost directly to disk)

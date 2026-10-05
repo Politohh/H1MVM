@@ -1,4 +1,5 @@
 #pragma once
+#include "demo_timeline.hpp"
 
 namespace demo_playback
 {
@@ -13,6 +14,10 @@ namespace demo_playback
 	void toggle_pause();
 	[[nodiscard]] std::optional<std::int32_t> current_time();
 	[[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> time_bounds();
+	[[nodiscard]] bool seeking();
+	[[nodiscard]] unsigned session_id();
+	[[nodiscard]] bool seek_to(std::int32_t server_time);
+	[[nodiscard]] const std::optional<demo_timeline::index>& timeline_index();
 	[[nodiscard]] const std::filesystem::path& current_path();
 
 	// returns true if the key event was consumed by demo playback and should not be

@@ -3,6 +3,7 @@
 
 #include "console.hpp"
 #include "scheduler.hpp"
+#include "demo/demo_playback.hpp"
 
 #include "game/game.hpp"
 #include "game/dvars.hpp"
@@ -12,12 +13,27 @@
 
 namespace dvar_cheats
 {
+	bool demo_developer_controls()
+	{
+		// The replay owns the client stream only after map bootstrap has armed it.
+		// Loading a file, a private match and ordinary server play do not qualify.
+		return !game::environment::is_dedi() && demo_playback::playing() && demo_playback::is_replay_armed();
+	}
+
 	void apply_sv_cheats(const game::dvar_t* dvar, const game::DvarSetSource source, game::dvar_value* value)
 	{
 		static const auto sv_cheats_hash = game::generateHashValue("sv_cheats");
 
 		if (dvar && dvar->hash == sv_cheats_hash)
 		{
+			// A recorded server update must not turn cheats off and reset the
+			// renderer controls while the user is editing an offline demo.
+			if (demo_developer_controls())
+			{
+				value->enabled = true;
+				return;
+			}
+
 			// if dedi, do not allow internal to change value so servers can allow cheats if they want to
 			if (game::environment::is_dedi() && source == game::DvarSetSource::DVAR_SOURCE_INTERNAL)
 			{
@@ -41,6 +57,10 @@ namespace dvar_cheats
 
 	bool dvar_flag_checks(const game::dvar_t* dvar, const game::DvarSetSource source)
 	{
+		// Keep native type/domain validation and latch behavior. Only the
+		// permission checks are lifted, and only for an armed demo replay.
+		if (demo_developer_controls()) return true;
+
 		const auto info = dvars::get_dvar_info_from_hash(dvar->hash);
 		const auto name = info.has_value()
 			? info.value().name.data()

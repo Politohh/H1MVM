@@ -54,6 +54,7 @@ namespace theater_camera
 
 	// ---- keyframe editing (used by the timeline/marker editor) ------------------
 	[[nodiscard]] camera_pose_t get_freecam_pose();
+	void set_freecam_pose(const camera_pose_t& pose);
 	void update_keyframe_pose(std::size_t index, const camera_pose_t& pose);
 	std::size_t set_keyframe_time(std::size_t index, int new_time); // retimes + resorts, returns new index
 	// insert a new node at an explicit demo_time with the given pose (kept sorted). nodes after

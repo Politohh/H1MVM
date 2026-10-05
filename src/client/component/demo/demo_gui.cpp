@@ -7,9 +7,11 @@
 #include "theater_camera.hpp"
 #include "demo_avidemo.hpp"
 #include "cod4_camera.hpp"
+#include "theater_ui.hpp"
 
 #include "component/command.hpp"
 #include "component/console.hpp"
+#include "component/scheduler.hpp"
 #include "utils/hook.hpp"
 #include "utils/concurrency.hpp"
 
@@ -166,27 +168,7 @@ namespace demo_gui
 		// seek demo playback to an absolute demo serverTime (reuses demoforward/demorewind).
 		void seek_to(int demo_time)
 		{
-			const auto cur = demo_playback::current_time();
-			if (!cur)
-			{
-				return;
-			}
-			// keep the target a hair inside the demo so a forward seek never runs into EOF -- that
-			// stops the demo and kicks us back to the menu (which looked like "the demo just ended").
-			if (const auto b = demo_playback::time_bounds(); b)
-			{
-				const int hi = std::max(b->first, b->second - 250);
-				demo_time = std::clamp(demo_time, b->first, hi);
-			}
-			const int delta = demo_time - *cur;
-			if (delta > 0)
-			{
-				command::execute(std::format("demoforward {}", delta), true);
-			}
-			else if (delta < 0)
-			{
-				command::execute(std::format("demorewind {}", -delta), true);
-			}
+			(void)demo_playback::seek_to(demo_time);
 		}
 
 		// Draw the dolly markers (yellow dots + index) and the smooth spline path (blue line)
@@ -277,10 +259,12 @@ namespace demo_gui
 				{ "Scroll",     "Camera roll" },
 				{ "Alt+Scroll", "Field of view" },
 				{ "MMB / K",    "Place marker" },
-				{ "J",          "Play campath" },
-				{ "L",          "Delete all markers" },
+				{ "J",          "Start / stop campath" },
+				{ "L",          "Clear markers (path stopped)" },
 				{ "Space",      "Pause / play" },
-				{ "F9",         "Open editor" },
+				{ "F1",         "Show / hide controls" },
+				{ "F2",         "Cycle camera modes" },
+				{ "F10",        "Open editor" },
 			};
 			constexpr int n = static_cast<int>(sizeof(rows) / sizeof(rows[0]));
 
@@ -624,6 +608,7 @@ namespace demo_gui
 			{
 				ts->current.value = std::clamp(speed, 0.025f, 4.0f);
 				g_desired_timescale = ts->current.value; // explicit intent (also lets you set 1.0x)
+				(void)theater_ui::action("speed", static_cast<int>(ts->current.value * 1000.f));
 			}
 		}
 
@@ -1014,7 +999,7 @@ namespace demo_gui
 				}
 			}
 			ImGui::TextDisabled("Freecam + Capture markers, then switch to Dolly and scrub/play the timeline.");
-			ImGui::TextDisabled("Hotkeys (overlay closed):  J = play campath   K = place marker   L = delete all");
+			ImGui::TextDisabled("Hotkeys outside editor: J = start/stop path   K = marker   L = clear (path stopped)");
 
 			// ===== Markers =====
 			section_header("Markers");
@@ -1125,7 +1110,7 @@ namespace demo_gui
 
 			// While the overlay is open, freeze the freecam so the mouse only drives the UI
 			// cursor (and the camera holds still for a clean capture) -- not both at once.
-			theater_camera::set_input_blocked(toggled);
+			theater_camera::set_input_blocked(toggled || theater_ui::interactive());
 
 			// Keep the OS cursor free while the overlay is open so its buttons can be clicked.
 			// During demo playback the game clips/captures the cursor to the window for
@@ -1143,7 +1128,7 @@ namespace demo_gui
 
 			ImGui::NewFrame();
 
-			persist_timescale(); // keep the user's slow-mo across demo restarts (rewind/cinematic)
+			// Speed persistence is shared with the native theater UI.
 
 			// world-anchored dolly markers + path (shown even when the F9 window is closed)
 			draw_markers_overlay();
@@ -1169,6 +1154,13 @@ namespace demo_gui
 		utils::hook::detour wnd_proc_hook;
 		LRESULT wnd_proc_stub(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
+			// Windows treats F10 as a system/menu key; it may never reach CL_KeyEvent.
+			if (wParam == VK_F10 && (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN || msg == WM_KEYUP || msg == WM_SYSKEYUP))
+			{
+				if ((msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN) && !(lParam & (1LL << 30)))
+					scheduler::once([] { theater_ui::close(); toggle_window(); }, scheduler::main);
+				return 0;
+			}
 			// F9 (the window toggle key) is handled at the game key-event layer (see
 			// demo_playback::handle_key_event / input.cpp), not here -- no need to special-case
 			// it like gui.cpp does for VK_ESCAPE (which it uses to close its own menu).
@@ -1246,6 +1238,8 @@ namespace demo_gui
 	{
 		toggle_window();
 	}
+	void close() { if (toggled) toggle_window(); }
+	bool is_open() { return toggled; }
 }
 
 REGISTER_COMPONENT(demo_gui::component)
@@ -1257,6 +1251,8 @@ namespace demo_gui
 	void toggle()
 	{
 	}
+	void close() {}
+	bool is_open() { return false; }
 }
 
 #endif

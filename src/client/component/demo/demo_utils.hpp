@@ -180,7 +180,8 @@ namespace demo_utils
 		void write_general_header(std::ofstream& output);
 
 		//void write_general_footer(buffer_t& output, std::int32_t first_svr_time, std::int32_t last_svr_time);
-		void write_general_footer(std::ofstream& output, std::int32_t first_svr_time, std::int32_t last_svr_time);
+		void write_general_footer(std::ofstream& output, std::int32_t first_svr_time, std::int32_t last_svr_time,
+			std::string_view timeline = {});
 
 		//void write_end_of_file(buffer_t& output);
 		void write_end_of_file(std::ofstream& output);

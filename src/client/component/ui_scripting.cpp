@@ -21,6 +21,8 @@
 #include "updater.hpp"
 #include "server_list.hpp"
 #include "party.hpp"
+#include "demo/theater_ui.hpp"
+#include "demo/theater_editor.hpp"
 
 #include "game/ui_scripting/execution.hpp"
 #include "game/scripting/execution.hpp"
@@ -272,6 +274,19 @@ namespace ui_scripting
 			using game = table;
 			auto game_type = game();
 			lua["game"] = game_type;
+
+			game_type["theaterready"] = [](const game&, bool value) { theater_ui::set_ready(value); };
+			game_type["theaterkeyboard"] = [](const game&, bool value) { theater_ui::set_keyboard_available(value); };
+			game_type["gettheaterstate"] = [](const game&, int cached_revision, int cached_keys)
+			{ return json_to_lua(theater_ui::state(cached_revision, cached_keys)); };
+			game_type["theateraction"] = [](const game&, const std::string& name, int value)
+			{ return theater_ui::action(name, value); };
+			game_type["gettheatereditor"] = [](const game&, int revision)
+			{ return json_to_lua(theater_editor::state(revision)); };
+			game_type["theatereditorset"] = [](const game&, const std::string& name, double value)
+			{ return theater_editor::set(name, value); };
+			game_type["theatereditoraction"] = [](const game&, const std::string& name, const std::string& argument)
+			{ return theater_editor::action(name, argument); };
 
 			game_type["getfps"] = [](const game&)
 			{
@@ -674,6 +689,7 @@ namespace ui_scripting
 
 		void start()
 		{
+			theater_ui::set_ready(false);
 			globals = {};
 
 			const auto lua = get_globals();
@@ -755,6 +771,7 @@ namespace ui_scripting
 
 		void hks_shutdown_stub()
 		{
+			theater_ui::set_ready(false);
 			converted_functions.clear();
 			globals = {};
 			return hks_shutdown_hook.invoke<void>();

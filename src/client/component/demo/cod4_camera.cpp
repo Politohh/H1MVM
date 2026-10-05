@@ -11,6 +11,7 @@
 #include "cod4_grenade_events.hpp"
 #include "cod4_bullet_events.hpp"
 #include "cod4_obituary_events.hpp"
+#include "demo_timeline.hpp"
 #include "cod4_gun_events.hpp"
 #include "cod4_actor_translation.hpp"
 #include "cod4_replay_agents.hpp"
@@ -1607,7 +1608,13 @@ namespace cod4_camera
                     archive_index++, demo_utils::predicted_data_id::player);
                 feed_snapshot(frame.time, &output);
             }
-            demo_utils::write_general_footer(output, track.frames.front().time, track.frames.back().time);
+            std::vector<demo_timeline::event> timeline;
+            for (const auto& e : obituary_track)
+                timeline.push_back({e.time, e.attacker == 1022 ? 2046 : static_cast<int>(client_slots.client(e.attacker)),
+                    static_cast<int>(client_slots.client(e.victim))});
+            demo_utils::write_general_footer(output, track.frames.front().time, track.frames.back().time,
+                demo_timeline::encode(static_cast<int>(client_slots.client(world.client_num)), timeline,
+                    track.frames.front().time, track.frames.back().time));
             demo_utils::write_end_of_file(output);
             output.close();
             auto report_path = conversion_output;
