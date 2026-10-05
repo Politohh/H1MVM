@@ -16,6 +16,7 @@ The playback timeline uses MWR LUI widgets and its native title font. Transport 
 - **Editor:** native MWR editor with Main, Camera, Misc, Bone Camera, SSAO, Fog, DOF, Sun, Lights, Streams, Weapon and Sliders. All category buttons are visible without scrolling. Back returns to the timeline.
 - **F10:** existing browser, converter and advanced camera/capture editor.
 - Click the track or a camera-key marker to seek. Skip buttons move five seconds. Speed and camera buttons cycle the available values.
+- Entering Free Camera through the camera button or F2 closes the interactive controls and leaves the passive bar visible, releasing keyboard and mouse input for flight. F1/F9 reopen the controls; while those controls are open, close them to resume flying.
 - `demotimeline` toggles panel visibility; `demo_native_timeline` stores the visibility preference. `demotheaterstatus` prints playback/UI diagnostics.
 
 ## Implementation

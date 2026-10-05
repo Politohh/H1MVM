@@ -131,7 +131,13 @@ local data = {playing = false, open = false, enabled = true, session = 1, paused
     name = "test.dm_h1", elapsed = 0, duration = 10000, speed = 1, camera = 0, selected = -1,
     events = {}, keys = {}, revision = 0}
 game = {}
-function game:gettheaterstate() return data end
+function game:gettheaterstate()
+    -- The real C++ bridge returns a new snapshot. Keep the prior poll's camera
+    -- value stable when the simulated engine changes modes between updates.
+    local snapshot = {}
+    for key, value in pairs(data) do snapshot[key] = value end
+    return snapshot
+end
 local editorData = {revision = 1, custom = {}, values = {demo_camera_speed = 500, cg_drawGun = 1}, controls = {
     {page = "camera", name = "demo_camera_speed", label = "FLY SPEED", kind = "float", min = 10, max = 20000, step = 50},
     {page = "weapon", name = "cg_drawGun", label = "VIEWMODEL", kind = "bool", min = 0, max = 1, step = 1}
@@ -214,6 +220,19 @@ assert(click("theater_forward")[2] == 5000)
 assert(click("theater_seek_39")[2] == 4937)
 assert(click("theater_speed")[2] == 2000)
 assert(click("theater_camera")[2] == 1)
+-- The camera button and F2 both publish the resulting mode through this
+-- snapshot. Entering freecam must leave FlowManager's interactive menu.
+data.camera = 2; tick()
+assert(not root.menu and passive.style.alpha == 1,
+    "entering freecam must release native controls and retain the passive bar")
+assert(not data.open and game.keyboard, "freecam must receive gameplay input")
+data.open = true; tick(); tick()
+assert(root.menu and root.menu.id == "h1_theater_controls",
+    "controls may be explicitly reopened while already in freecam")
+data.camera = 1; tick()
+data.paused = false; data.camera = 2; tick()
+assert(not root.menu and game.keyboard, "running playback must also release controls for freecam")
+data.paused = true; data.open = true; tick(); tick()
 assert(click("theater_key_1")[1] == "seek" and commands[#commands][2] == 8000)
 data.elapsed = 10000; tick()
 assert(find(root.menu, "theater_playhead").style.left == 468)
@@ -256,4 +275,4 @@ root.menu = nil; tick(); assert(game.keyboard)
 data.open = true; tick(); tick(); click("theater_editor"); tick(); tick()
 data.playing = false; tick(); assert(passive.style.alpha == 0 and not root.menu)
 hud:processEvent({name = "menu_close"}); assert(passive.closed)
-print("PASS Lua paused updates, event markers, transport wiring, native editor categories, route transitions, Back and playback cleanup")
+print("PASS Lua paused updates, event markers, transport wiring, freecam input handoff, native editor categories, route transitions, Back and playback cleanup")

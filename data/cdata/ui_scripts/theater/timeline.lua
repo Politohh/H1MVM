@@ -274,9 +274,17 @@ local function updateTheater(root)
     local previous = latest
     latest = game:gettheaterstate(previous.revision or -1, previous.keyRevision or -1)
     latest.events, latest.keys = latest.events or previous.events or {}, latest.keys or previous.keys or {}
-    if hudPanel then updatePanel(hudPanel, latest) end
     local desired = latest.playing and latest.enabled and
         (latest.editor and EDITOR or latest.open and MENU) or nil
+    -- Camera switching (button or F2) must hand input back to freecam. Keep
+    -- the passive timeline visible; F1/F9 can explicitly reopen the controls.
+    -- Do this on entry only, so reopening controls while flying still works.
+    if desired == MENU and latest.camera == 2 and previous.camera ~= 2 then
+        action("close")
+        latest.open = false
+        desired = nil
+    end
+    if hudPanel then updatePanel(hudPanel, latest) end
     if menuRoot and menuRoot.theaterMenu ~= desired then
         local closing = menuRoot
         -- A route transition must not run the user's close action.

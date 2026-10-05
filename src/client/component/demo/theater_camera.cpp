@@ -251,18 +251,15 @@ namespace theater_camera
 				return;
 			}
 
-			// ---- look: real game mouse delta (tapped in in_mouse_move_stub) + arrow keys ----
+			// ---- look: real game mouse delta (tapped in in_mouse_move_stub) ----
 			const float sens = demo_camera_sens ? demo_camera_sens->current.value : 0.06f;
 			freecam_angles[1] -= g_mouse_dx * sens;                                            // yaw
 			freecam_angles[0] = std::clamp(freecam_angles[0] + g_mouse_dy * sens, -89.0f, 89.0f); // pitch
 			g_mouse_dx = 0;
 			g_mouse_dy = 0;
 
-			const float key_look = 90.0f * dt; // deg/sec for arrow-key look
-			if (key_down(VK_LEFT))  freecam_angles[1] += key_look;
-			if (key_down(VK_RIGHT)) freecam_angles[1] -= key_look;
-			if (key_down(VK_UP))    freecam_angles[0] = std::clamp(freecam_angles[0] - key_look, -89.0f, 89.0f);
-			if (key_down(VK_DOWN))  freecam_angles[0] = std::clamp(freecam_angles[0] + key_look, -89.0f, 89.0f);
+			// Arrow keys belong to replay seek/speed shortcuts in every camera
+			// mode; polling them here would also rotate the camera during a seek.
 
 			// ---- movement ----
 			float forward[3], right[3], up[3];
