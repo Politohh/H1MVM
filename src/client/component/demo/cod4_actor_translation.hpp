@@ -136,7 +136,7 @@ namespace cod4
         unsigned weapon, unsigned animation, const gun_event_state* events = nullptr, bool alternate = false)
     {
         const auto type = source.get(4), number = source.get(0), client = source.get(140);
-        if ((type != 1 && type != 2) || client >= 42 || (type == 1 && number >= 42)
+        if ((type != 1 && type != 2) || client >= 64 || (type == 1 && number >= 64)
             || (type == 2 && (number < 64 || number >= 72))) throw std::runtime_error("Invalid COD4 actor identity");
         h1_entity result{};
         write_native(result, 0, type == 2 ? actor_entity_number(number) : translate_entity_number(number));

@@ -43,7 +43,7 @@ namespace cod4
                 // +120 attackerEntityNum; the H1 fields differ.
                 const auto victim = entity.get(116), attacker = entity.get(120);
                 const auto parameter = entity.get(156);
-                if ((attacker >= 42 && attacker != 1022) || victim >= 42 || parameter > 255)
+                if ((attacker >= 64 && attacker != 1022) || victim >= 64 || parameter > 255)
                     throw std::runtime_error("Invalid COD4 obituary payload");
                 // A low parameter is the kill weapon itself, not MOD or the
                 // attacker's currently held weapon (which can already change).

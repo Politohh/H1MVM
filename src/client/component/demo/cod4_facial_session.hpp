@@ -64,6 +64,7 @@ namespace cod4::face
         for (std::size_t f = 0; f < world.frames.size(); ++f)
         {
             const auto& frame = world.frames[f];
+            const auto current_slots = slots.at(frame.time);
             const auto identities = clients_with_corpse_identities(world, frame.time);
             const int end = f + 1 < world.frames.size() ? world.frames[f + 1].time : frame.time + 1;
             std::map<unsigned, actor_interval> current;
@@ -119,7 +120,7 @@ namespace cod4::face
                     const auto full_body = load_clip(name(legs));
                     if (!result.clips[full_body].second.tracks.empty()) { token = legs; animation = full_body; }
                 }
-                const unsigned native = actor.get(4) == 2 ? actor_entity_number(entity) : slots.client(client);
+                const unsigned native = actor.get(4) == 2 ? actor_entity_number(entity) : current_slots.client(client);
                 actor_interval value{frame.time, end, frame.time, rigs.at(rig_name), animation, token, client};
                 const auto old = prior.find(native);
                 if (old != prior.end() && old->second.end == frame.time && old->second.rig == value.rig
@@ -127,7 +128,8 @@ namespace cod4::face
                     value.started = old->second.started;
                 else if (death && actor.get(4) == 2)
                 {
-                    const auto player = prior.find(slots.client(client));
+                    const auto player = std::find_if(prior.begin(), prior.end(), [&](const auto& entry)
+                    { return entry.first < 42 && entry.second.client == client; });
                     if (player != prior.end() && player->second.end == frame.time && player->second.rig == value.rig
                         && player->second.animation == value.animation && player->second.token == token)
                         value.started = player->second.started;
@@ -238,7 +240,7 @@ namespace cod4::face
             for (unsigned k = count(200000); k; --k)
             {
                 actor_interval value; value.begin = r.read<int>(); value.end = r.read<int>(); value.started = r.read<int>();
-                value.rig = r.read<unsigned>(); value.animation = r.read<unsigned>(); value.token = r.read<unsigned>(); value.client = count(41);
+                value.rig = r.read<unsigned>(); value.animation = r.read<unsigned>(); value.token = r.read<unsigned>(); value.client = count(63);
                 if (value.begin < 0 || value.end <= value.begin || value.started < 0 || value.started > value.begin
                     || value.rig >= result.rigs.size() || value.animation >= result.clips.size() || value.token >= 1024
                     || (!entries.empty() && entries.back().end > value.begin)) throw std::runtime_error("Invalid facial actor timing");

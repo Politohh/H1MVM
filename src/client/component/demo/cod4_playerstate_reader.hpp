@@ -21,6 +21,36 @@ namespace cod4
         float real(std::string_view name) const { return std::bit_cast<float>(integer(name)); }
     };
 
+    inline float interpolate_view_height(const std::vector<player_frame>& players, double time)
+    {
+        if (players.empty()) throw std::runtime_error("Cannot sample an empty player track");
+        const auto next = std::upper_bound(players.begin(), players.end(), time,
+            [](double t, const player_frame& f) { return t < static_cast<int>(f.integer("commandTime")); });
+        if (next == players.begin()) return players.front().real("viewHeightCurrent");
+        const auto& prior = *(next - 1);
+        const float height = prior.real("viewHeightCurrent");
+        if (next == players.end()) return height;
+        const int start = static_cast<int>(prior.integer("commandTime"));
+        const int end = static_cast<int>(next->integer("commandTime"));
+        // Sample on the same recorded command clock as the camera archives.
+        // Stance flags/targets can reverse mid-transition: they must NOT stop
+        // interpolation of the actual recorded eye height. Do stop at a new
+        // viewpoint, respawn/teleport, movement mode or missing-data interval.
+        if (end <= start || end - start > 250
+            || prior.integer("ClientNum") != next->integer("ClientNum")
+            || prior.integer("pm_type") != next->integer("pm_type")
+            || ((prior.integer("eFlags") ^ next->integer("eFlags")) & 2u)) return height;
+        float distance2{};
+        for (const auto name : {"origin[0]", "origin[1]", "origin[2]"})
+        {
+            const float delta = next->real(name) - prior.real(name);
+            distance2 += delta * delta;
+        }
+        if (distance2 > 256.0f * 256.0f) return height;
+        return std::lerp(height, next->real("viewHeightCurrent"),
+            std::clamp(static_cast<float>((time - start) / (end - start)), 0.0f, 1.0f));
+    }
+
     inline float interpolate_ads(const std::vector<player_frame>& players, int time)
         {
             if (players.empty()) throw std::runtime_error("Cannot sample an empty player track");

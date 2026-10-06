@@ -60,13 +60,13 @@ namespace input
 				if (down)
 				{
 					if (theater_ui::available() && demo_playback::playing()) demo_gui::close();
-					if (!theater_ui::toggle()) demo_gui::toggle();
+					(void)theater_ui::toggle();
 				}
 				return;
 			}
 			if (key == game::K_F10)
 			{
-				if (down) { theater_ui::close(); demo_gui::toggle(); }
+				if (down && demo_playback::playing()) { theater_ui::close(); demo_gui::toggle(); }
 				return;
 			}
 

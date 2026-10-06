@@ -91,7 +91,8 @@ int main(int argc, char** argv)
         if (argc == 3)
         {
             const auto bytes = read(argv[1]); const auto camera = cod4::decode(bytes);
-            const auto world = cod4::decode_world(bytes); const auto players = cod4::decode_players(bytes);
+            auto world = cod4::decode_world(bytes); const auto players = cod4::decode_players(bytes);
+            cod4::resolve_view_client(world, players);
             const auto data = build_session(world, players, camera.configstrings, cod4::make_client_slots(world),
                 [&](std::string_view category, std::string_view name) { return read(std::filesystem::path(argv[2])/category/name); });
             const auto saved = encode_session(data); const auto reloaded = decode_session(saved);

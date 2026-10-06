@@ -36,6 +36,11 @@ function menu_xboxlive(f16_arg0)
         MPLobbyOnline.disablePrivateMatchButton)
     privateMatchButton:rename("menu_xboxlive_private_match")
     privateMatchButton:setDisabledRefreshRate(500)
+    if game.gettheaterlibrary then
+        menu:AddButton("THEATER", function(button, event)
+            LUI.FlowManager.RequestAddMenu(button, "h1_theater_library", true, event and event.controller or nil)
+        end)
+    end
     if not Engine.IsCoreMode() then
         local leaderboardButton = menu:AddButton("@LUA_MENU_LEADERBOARD", "OpLeaderboardMain")
         leaderboardButton:rename("OperatorMenu_leaderboard")

@@ -158,7 +158,7 @@ namespace cod4
     inline h1_client translate_client(const client_state& source, std::uint16_t body,
         const std::array<std::uint16_t, 6>& attachments, std::string_view recorded_name = {})
     {
-        if (source.get(0) >= 42 || !body || body >= 1024)
+        if (source.get(0) >= 64 || !body || body >= 1024)
             throw std::runtime_error("Invalid H1 client model translation");
         h1_client result{};
         write_native(result, 0, static_cast<std::uint8_t>(source.get(0)));

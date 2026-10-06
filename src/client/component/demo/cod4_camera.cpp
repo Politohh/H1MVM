@@ -15,6 +15,7 @@
 #include "cod4_gun_events.hpp"
 #include "cod4_actor_translation.hpp"
 #include "cod4_replay_agents.hpp"
+#include "cod4_corpse_session.hpp"
 #include "cod4_car_fx.hpp"
 #include "cod4_airstrike.hpp"
 #include "cod4_helicopter.hpp"
@@ -32,6 +33,7 @@
 #include "component/party.hpp"
 #include "component/scheduler.hpp"
 #include "utils/hook.hpp"
+#include "utils/memory.hpp"
 #include "utils/mapents.hpp"
 #include "component/gsc/script_loading.hpp"
 #include "game/dvars.hpp"
@@ -47,6 +49,8 @@ namespace cod4_camera
         std::vector<cod4::player_frame> players;
         cod4::world_track world;
         cod4::client_slot_map client_slots;
+        cod4::corpse_session corpse_data;
+        std::map<unsigned, cod4::obituary_identity> obituary_identities;
         std::map<std::string, unsigned> agent_name_ids;
         std::map<unsigned, std::string> recorded_agent_names;
         cod4::grenade_events grenade_track;
@@ -139,6 +143,46 @@ namespace cod4_camera
         bool shocks_resolved{};
         void save_initial_gamestate(const std::string& map);
         std::ofstream lifecycle;
+
+        constexpr unsigned skeleton_frame_bytes = 2 * 1024 * 1024;
+        void expand_skeleton_buffers()
+        {
+            // CG frame preparation alternates two arenas using the native
+            // skeleton timestamp. Both allocation paths share this pointer
+            // and atomic cursor. Keep their alignment and overflow guards.
+            constexpr std::array<std::uint8_t, 11> frame_code{
+                0x48, 0xC1, 0xE0, 0x12, 0x48, 0x8D, 0x0D, 0x85, 0xCC, 0xDC, 0x02};
+            constexpr std::array<std::uint8_t, 4> draw_stride{0x48, 0xC1, 0xE0, 0x12};
+            constexpr std::array<std::uint8_t, 7> draw_base{0x48, 0x8D, 0x80, 0xA3, 0x2F, 0xED, 0x02};
+            constexpr std::array<std::uint8_t, 7> allocation_code{0x3D, 0xF0, 0xFF, 0x03, 0x00, 0x77, 0x0B};
+            constexpr std::array<std::uint8_t, 7> pose_code{0x3D, 0xF0, 0xFF, 0x03, 0x00, 0x77, 0x1E};
+            if (std::memcmp(reinterpret_cast<const void*>(0x106313_b), frame_code.data(), frame_code.size())
+                || std::memcmp(reinterpret_cast<const void*>(0xF5FCE_b), draw_stride.data(), draw_stride.size())
+                || std::memcmp(reinterpret_cast<const void*>(0xF5FDD_b), draw_base.data(), draw_base.size())
+                || std::memcmp(reinterpret_cast<const void*>(0x343213_b), allocation_code.data(), allocation_code.size())
+                || std::memcmp(reinterpret_cast<const void*>(0x34328D_b), pose_code.data(), pose_code.size()))
+                throw std::runtime_error("Unsupported native skeleton buffer layout");
+            // Process-lifetime storage: native DObjs can still hold the previous
+            // frame's arena. Never free or replace these buffers on demo stop/seek.
+            auto* buffers = utils::memory::allocate_near(0x106317_b, 2 * skeleton_frame_bytes, PAGE_READWRITE);
+            if (!buffers) throw std::runtime_error("Cannot allocate replay skeleton buffers");
+            if (utils::hook::is_relatively_far(0x10631A_b, reinterpret_cast<std::size_t>(buffers), 4))
+            {
+                VirtualFree(buffers, 0, MEM_RELEASE);
+                throw std::runtime_error("Replay skeleton buffers are outside native pointer range");
+            }
+            utils::hook::inject(0x10631A_b, buffers);
+            utils::hook::set<std::uint8_t>(0x106316_b, 21); // Two 2 MB arenas instead of two 256 KB arenas.
+            // CG_DrawActiveFrame also inlines the arena switch using a
+            // displacement relative to the image base held in rdi.
+            utils::hook::set<std::int32_t>(0xF5FE0_b, static_cast<std::int32_t>(
+                reinterpret_cast<std::intptr_t>(buffers) - static_cast<std::intptr_t>(game::base_address)));
+            utils::hook::set<std::uint8_t>(0xF5FD1_b, 21);
+            utils::hook::set<unsigned>(0x343214_b, skeleton_frame_bytes - 16);
+            utils::hook::set<unsigned>(0x34328E_b, skeleton_frame_bytes - 16);
+            console::info("COD4 replay: native skeleton arenas expanded to %u bytes per frame (two buffers)\n",
+                skeleton_frame_bytes);
+        }
 
         std::uint8_t reserve_view_weapon_pool(const char* name, unsigned native_count)
         {
@@ -1116,7 +1160,8 @@ namespace cod4_camera
             // H1's demo connection is client 0. A COD4 recorder can be any
             // client; keep it at 0 and compact sparse remote identities into
             // native player/agent slots. UI, actors and events share this map.
-            const auto remap_client = [](unsigned number) { return client_slots.client(number); };
+            const auto frame_slots = client_slots.at(time);
+            const auto remap_client = [&frame_slots](unsigned number) { return frame_slots.client(number); };
             alignas(16) std::array<std::uint8_t, 18576> ps{};
             const auto put = [&](std::size_t offset, const auto& value) { std::memcpy(ps.data() + offset, &value, sizeof(value)); };
             // H1's linked-view entity uses ENTITYNUM_NONE, not zero. Zero links
@@ -1194,7 +1239,7 @@ namespace cod4_camera
             const auto body_index = next_body == track.frames.begin() ? 0 : next_body - track.frames.begin() - 1;
             const auto& [legs, torso] = body_indices.at(static_cast<std::size_t>(body_index));
             const auto source_weapon = player.integer("weapon");
-            put(0x22, static_cast<std::uint16_t>(client_slots.reference(
+            put(0x22, static_cast<std::uint16_t>(frame_slots.reference(
                 cod4::translate_entity_number(player.integer("groundEntityNum")))));
             put(0x54, cod4::translate_movement_flags(player.integer("pm_flags")));
             put(0xB0, player.integer("legsTimer"));
@@ -1204,7 +1249,10 @@ namespace cod4_camera
             put(0xC8, cod4::translate_body_heading(frame));
             put(0x3C, hands_models.at(hands_key_at(time)));
             put(0x138, player.integer("viewHeightTarget"));
-            put(0x13C, player.real("viewHeightCurrent"));
+            // Archives are much denser than the source player snapshots. A
+            // held height here makes H1 traverse the entire 50 ms stance step
+            // in the final archive interval (often just 4 ms).
+            put(0x13C, cod4::interpolate_view_height(players, time));
             put(0x394, weapons.at(source_weapon));
             put(0x39C, cod4::interpolate_ads(players, time));
             put(0x224, cod4::translate_animation(player.integer("weapAnim")));
@@ -1317,8 +1365,11 @@ namespace cod4_camera
                     auto native = cod4::translate_actor(entity, cod4::sample_actor_motion(world, number, time),
                         weapons.at(entity.get(196)), actor_animations.at({entity.get(204), entity.get(208), entity.get(196)}),
                         event == events.end() ? nullptr : &event->second, alternate_weapons.contains(entity.get(196)));
-                    cod4::assign_actor_slot(native, remap_client(entity.get(140)));
-                    cod4::remap_entity_references(native, client_slots);
+                    const auto owner = frame_slots.slots.find(entity.get(140));
+                    cod4::assign_actor_slot(native, owner == frame_slots.slots.end() ? 1u : owner->second);
+                    if (entity.get(4) == 1)
+                        cod4::write_native(native, 92, client_slots.actor_flags(entity.get(140), time, cod4::actor_flags(entity.get(8))));
+                    cod4::remap_entity_references(native, frame_slots, &entity);
                     write_entity(native);
                     continue;
                 }
@@ -1327,7 +1378,7 @@ namespace cod4_camera
                     const auto weapon_index = cod4::item_weapon_index(entity);
                     auto native = cod4::translate_item(entity, weapons.at(weapon_index), time,
                         alternate_weapons.contains(weapon_index));
-                    cod4::remap_entity_references(native, client_slots);
+                    cod4::remap_entity_references(native, frame_slots, &entity);
                     write_entity(native);
                     continue;
                 }
@@ -1335,7 +1386,7 @@ namespace cod4_camera
                 {
                     auto native = cod4::translate_missile(entity, weapons.at(entity.get(196)), time,
                         alternate_weapons.contains(entity.get(196)));
-                    cod4::remap_entity_references(native, client_slots);
+                    cod4::remap_entity_references(native, frame_slots, &entity);
                     write_entity(native);
                     continue;
                 }
@@ -1414,6 +1465,7 @@ namespace cod4_camera
             std::map<unsigned, cod4::h1_agent> snapshot_agents;
             for (const auto& [number, client] : recorded_clients)
             {
+                if (!frame_slots.slots.contains(number)) continue;
                 const auto& models = character_models.at(client_model_key(client));
                 if (!models.body) continue; // Spectators have no recorded character model.
                 const auto& names = world.sample(time).client_names;
@@ -1517,6 +1569,7 @@ namespace cod4_camera
             airstrike_entities.clear(); airstrike_times.clear();
             bullet_entities.clear(); bullet_times.clear();
             obituary_entities.clear();
+            obituary_identities.clear(); corpse_data = {};
             unsigned fx_entity_number = map_models.empty() ? 1024u : map_models.rbegin()->first + 1;
             for (const auto& event : grenade_track.events)
             {
@@ -1547,9 +1600,10 @@ namespace cod4_camera
             }
             for (const auto& event : bullet_track)
             {
+                const auto event_slots = client_slots.at(event.time);
                 bullet_entities.push_back(cod4::translate_bullet_event(event, fx_entity_number,
                     weapons.at(event.weapon), alternate_weapons.contains(event.weapon),
-                    0, &client_slots));
+                    0, &event_slots));
                 bullet_times.emplace(fx_entity_number++, event.time);
                 lifecycle << "bullet impact time=" << event.time << " source_entity=" << event.entity
                     << " source_event=" << event.source_event << " native_event=" << cod4::native_bullet_event(event.source_event)
@@ -1560,12 +1614,25 @@ namespace cod4_camera
             }
             for (const auto& event : obituary_track)
             {
-                const auto remap = [](unsigned client)
-                { return client == 1022 ? 2046u : client_slots.client(client); };
+                const auto [attacker, victim] = client_slots.obituary(event.attacker, event.victim, event.time);
                 obituary_entities.push_back(cod4::translate_obituary_event(event, fx_entity_number,
-                    remap(event.attacker), remap(event.victim),
+                    attacker, victim,
                     event.source_weapon ? weapons.at(event.source_weapon) : 0,
                     alternate_weapons.contains(event.source_weapon)));
+                if (client_slots.dynamic())
+                {
+                    const auto& frame = world.sample(event.time);
+                    const auto name_token = [&](unsigned source)
+                    {
+                        if (source == 1022) return 0u;
+                        const auto name = frame.client_names.find(source);
+                        return agent_name_ids.at(cod4::recorded_actor_name(frame.clients.at(source),
+                            name == frame.client_names.end() ? std::string_view{} : name->second));
+                    };
+                    obituary_identities.emplace(fx_entity_number, cod4::obituary_identity{attacker,victim,
+                        name_token(event.attacker), name_token(event.victim),
+                        event.attacker == 1022 ? 0u : frame.clients.at(event.attacker).get(4), frame.clients.at(event.victim).get(4)});
+                }
                 lifecycle << "obituary time=" << event.time << " source_entity=" << event.entity
                     << " native_entity=" << fx_entity_number << " attacker=" << event.attacker
                     << " victim=" << event.victim << " source_parameter=" << event.event_parameter << std::endl;
@@ -1577,8 +1644,8 @@ namespace cod4_camera
             std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
             output.exceptions(std::ios::badbit | std::ios::failbit);
             std::string header;
-            for (const auto& item : std::vector<std::string>{"", use_facial_heads ? "H1 COD4 conversion v4" : "H1 COD4 conversion v3",
-                use_facial_heads ? "v0.0.4" : "v0.0.3",
+            for (const auto& item : std::vector<std::string>{"", client_slots.dynamic() ? "H1 COD4 conversion v5" : use_facial_heads ? "H1 COD4 conversion v4" : "H1 COD4 conversion v3",
+                client_slots.dynamic() ? "v0.0.5" : use_facial_heads ? "v0.0.4" : "v0.0.3",
                 std::to_string(PROTOCOL), "", "COD4 conversion", "", track.map, "war"})
             { header += item; header.push_back('\0'); }
             for (const auto& model : requested_models) { header += model; header.push_back('\0'); }
@@ -1588,6 +1655,12 @@ namespace cod4_camera
             { header += std::format("@anim:{}:{}", index, animation); header.push_back('\0'); }
             for (const auto& [index, name] : recorded_agent_names)
             { header += std::format("@agentname:{}:{}", index, name); header.push_back('\0'); }
+            for (const auto& [entity, value] : obituary_identities)
+            {
+                header += std::format("@obit:{}:{}:{}:{}:{}:{}:{}", entity, value.attacker, value.victim,
+                    value.attacker_name, value.victim_name, value.attacker_team, value.victim_team);
+                header.push_back('\0');
+            }
             for (const auto& [entity, time] : grenade_times)
             { header += std::format("@grenade:{}:{}", entity, time); header.push_back('\0'); }
             for (const auto& [entity, time] : car_effect_times)
@@ -1605,6 +1678,29 @@ namespace cod4_camera
             const auto map_header = track.map + std::string("\0war\0", 5);
             demo_utils::write_id_and_size(output, map_header.size(), demo_utils::demo_data_id::map_header);
             output.write(map_header.data(), map_header.size());
+            if (client_slots.dynamic())
+            {
+                for (const auto& frame : world.frames)
+                {
+                    cod4::corpse_frame saved; saved.time = frame.time;
+                    const auto identities = cod4::clients_with_corpse_identities(world, frame.time);
+                    for (const auto& [number, entity] : frame.entities)
+                    {
+                        if (entity.get(4) != 2) continue;
+                        const auto& identity = identities.at(entity.get(140));
+                        const auto& models = character_models.at(client_model_key(identity));
+                        saved.corpses.push_back({cod4::actor_entity_number(number), identity.get(4), models.body, models.attachments});
+                    }
+                    corpse_data.frames.push_back(std::move(saved));
+                }
+                const auto bytes = cod4::encode_corpses(corpse_data);
+                for (std::size_t offset = 0; offset < bytes.size(); offset += demo_utils::globals::MAX_SIZE)
+                {
+                    const auto size = std::min<std::size_t>(demo_utils::globals::MAX_SIZE, bytes.size() - offset);
+                    demo_utils::write_id_and_size(output, size, demo_utils::demo_data_id::corpse_data);
+                    output.write(reinterpret_cast<const char*>(bytes.data() + offset), size);
+                }
+            }
             if (use_facial_heads)
             {
                 const auto face = cod4::face::build_session(world, players, track.configstrings, client_slots, facial::asset);
@@ -1648,8 +1744,10 @@ namespace cod4_camera
             }
             std::vector<demo_timeline::event> timeline;
             for (const auto& e : obituary_track)
-                timeline.push_back({e.time, e.attacker == 1022 ? 2046 : static_cast<int>(client_slots.client(e.attacker)),
-                    static_cast<int>(client_slots.client(e.victim))});
+            {
+                const auto [attacker, victim] = client_slots.obituary(e.attacker, e.victim, e.time);
+                timeline.push_back({e.time, static_cast<int>(attacker), static_cast<int>(victim)});
+            }
             demo_utils::write_general_footer(output, track.frames.front().time, track.frames.back().time,
                 demo_timeline::encode(static_cast<int>(client_slots.client(world.client_num)), timeline,
                     track.frames.front().time, track.frames.back().time));
@@ -1664,8 +1762,31 @@ namespace cod4_camera
                 << "\nOmitted prop model identities: " << omitted_props.size() << "\n";
             report << "\nCharacter model combinations: " << character_models.size()
                 << "\nHands/body combinations: " << hands_models.size() << "\n";
-            for (const auto& [source, destination] : client_slots.slots)
-                report << "Player slot: COD4 " << source << " -> H1 " << destination << '\n';
+            if (client_slots.dynamic())
+            {
+                std::set<unsigned> source_players;
+                std::map<unsigned, unsigned> previous;
+                unsigned reassignments{};
+                for (const auto& [time, assignments] : client_slots.frames)
+                {
+                    for (const auto& [source, destination] : assignments)
+                    {
+                        source_players.insert(source);
+                        const auto old = previous.find(destination);
+                        if (old == previous.end() || old->second != source)
+                        {
+                            if (old != previous.end()) ++reassignments;
+                            report << "Player slot at " << time << " ms: COD4 " << source << " -> H1 " << destination << '\n';
+                        }
+                        previous[destination] = source;
+                    }
+                }
+                report << "Temporal player slots: " << source_players.size() << " identities, "
+                    << reassignments << " native slot reassignments; corpse identities stored independently\n";
+            }
+            else
+                for (const auto& [source, destination] : client_slots.slots)
+                    report << "Player slot: COD4 " << source << " -> H1 " << destination << '\n';
             report << "\nNative MWR grenade detonations: " << grenade_track.events.size() << '\n';
             std::set<unsigned> remote_players, corpses, pickups;
             for (const auto& snapshot : world.frames)
@@ -1781,7 +1902,7 @@ namespace cod4_camera
                 use_facial_heads = facial_heads && facial_heads->current.enabled;
                 if (use_facial_heads && !facial::supported)
                     throw std::runtime_error("Facial playback is unavailable for this H1 animation ABI");
-                conversion_output = std::filesystem::path("demos/client/auto") / (path.stem().string() + ".dm_h1");
+                conversion_output = std::filesystem::path("demos") / (path.stem().string() + ".dm_h1");
                 if (convert)
                 {
                     unsigned version = 0;
@@ -1802,6 +1923,7 @@ namespace cod4_camera
                 auto decoded_players = cod4::decode_players(source_bytes);
                 auto decoded_gun_events = cod4::collect_gun_events(decoded_players);
                 auto decoded_world = cod4::decode_world(source_bytes);
+                cod4::resolve_view_client(decoded_world, decoded_players);
                 const auto decoded_slots = cod4::make_client_slots(decoded_world);
                 auto decoded_grenades = cod4::collect_grenade_events(decoded_world);
                 auto decoded_bullets = cod4::collect_bullet_events(decoded_world);
@@ -1984,6 +2106,7 @@ namespace cod4_camera
     void clear_model_bindings()
     {
         facial::publish({});
+        corpse_data = {}; obituary_identities.clear();
         model_bindings.clear(); animation_bindings.clear(); converted_bindings = false;
         recorded_agent_names.clear();
         replay_asset_pool = false;
@@ -1991,6 +2114,52 @@ namespace cod4_camera
     void set_facial_data(const std::vector<std::uint8_t>& bytes)
     {
         facial::publish(bytes.empty() ? nullptr : std::make_shared<const cod4::face::session>(cod4::face::decode_session(bytes)));
+    }
+    void set_corpse_data(const std::vector<std::uint8_t>& bytes) { corpse_data = cod4::decode_corpses(bytes); }
+    void set_obituary_identities(const std::map<unsigned, cod4::obituary_identity>& identities) { obituary_identities = identities; }
+    std::optional<cod4::obituary_identity> obituary_identity(unsigned entity)
+    {
+        const auto found = obituary_identities.find(entity);
+        return found == obituary_identities.end() ? std::nullopt : std::optional{found->second};
+    }
+    std::optional<std::string> recorded_name(unsigned token)
+    {
+        const auto found = recorded_agent_names.find(token);
+        return found == recorded_agent_names.end() ? std::nullopt : std::optional{found->second};
+    }
+    void prepare_corpse(int local_client, const std::uint8_t* entity)
+    {
+        if (local_client != 0 || !entity || corpse_data.frames.empty()) return;
+        const auto* cg = reinterpret_cast<const std::uint8_t*>(game::CG_GetLocalClientGlobals());
+        auto* cgs = static_cast<std::uint8_t*>(game::CG_GetServerCommandsState());
+        if (!cg || !cgs) return;
+        std::uint16_t number{}; std::memcpy(&number, entity + 0x13C, 2);
+        const auto* saved = corpse_data.sample(number, *reinterpret_cast<const int*>(cg + 0x92BE8));
+        if (!saved) return;
+        auto* info = cgs + 0x26D0 + (number - 42) * 0x740;
+        // CG_UpdateAgentInfo's model/tag strings and team fields. Each corpse
+        // keeps its own native tree at +0x4B0; never copy a reused player's tree.
+        for (const auto offset : {4u, 8u}) *reinterpret_cast<unsigned*>(info + offset) = 1;
+        for (const auto offset : {12u, 16u}) *reinterpret_cast<unsigned*>(info + offset) = saved->team;
+        const auto model_string = [&](unsigned offset, unsigned model)
+        {
+            const auto* name = model ? get_configstring(1240 + model) : "";
+            if (std::strlen(name) >= 64) throw std::runtime_error("Converted corpse model name exceeds native character storage");
+            if (std::strcmp(reinterpret_cast<const char*>(info + offset), name) == 0) return;
+            std::memset(info + offset, 0, 64); std::memcpy(info + offset, name, std::strlen(name));
+            *reinterpret_cast<unsigned*>(info + 1160) = 1;
+        };
+        model_string(36, saved->body);
+        for (unsigned i = 0; i < 8; ++i)
+        {
+            model_string(100 + i * 64, i < saved->attachments.size() ? saved->attachments[i] : 0);
+            const auto* tag = get_configstring(3898);
+            if (std::strlen(tag) >= 64) throw std::runtime_error("Converted corpse attachment tag exceeds native storage");
+            auto* output = reinterpret_cast<char*>(info + 612 + i * 64);
+            if (std::strcmp(output, tag) == 0) continue;
+            std::memset(output, 0, 64); std::memcpy(output, tag, std::strlen(tag));
+            *reinterpret_cast<unsigned*>(info + 1160) = 1;
+        }
     }
     void set_model_bindings(const std::map<unsigned, std::string>& bindings,
         const std::map<unsigned, std::string>& animations)
@@ -2206,8 +2375,8 @@ namespace cod4_camera
         state.seconds = static_cast<float>(playhead);
         const auto sample = track.sample(track.frames.front().time + playhead * 1000.0);
         for (int i = 0; i < 3; ++i) { pose.pos[i] = sample.origin[i]; pose.angles[i] = sample.angles[i]; }
-        const auto& player = player_at(track.frames.front().time + playhead * 1000.0);
-        pose.pos[2] += player.real("viewHeightCurrent") + state.eye_height - 60.0f;
+        pose.pos[2] += cod4::interpolate_view_height(players, track.frames.front().time + playhead * 1000.0)
+            + state.eye_height - 60.0f;
         return true;
     }
 
@@ -2269,6 +2438,7 @@ namespace cod4_camera
         void post_unpack() override
         {
             if (!game::environment::is_mp() || game::environment::is_dedi()) return;
+            expand_skeleton_buffers();
             facial_heads = dvars::register_bool("cod4_facialHeads", true, 0,
                 "Use native lobby head rigs for new COD4 conversions (experimental)");
             const cod4::face::expression_strength defaults;

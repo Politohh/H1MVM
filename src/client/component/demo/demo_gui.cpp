@@ -29,16 +29,7 @@ namespace demo_gui
 {
 	namespace
 	{
-		struct demo_entry
-		{
-			std::filesystem::path path;
-			std::string display_name;
-			std::filesystem::file_time_type write_time;
-		};
-
 		bool window_open = false;
-		std::vector<demo_entry> demo_files;
-		std::size_t selected_index = 0;
 		int selected_kf = -1;   // currently selected marker in the editor (-1 = none)
 		float g_desired_timescale = 1.0f; // sticky playback speed (see persist_timescale)
 		ImFont* g_font_header = nullptr;  // Segoe UI Semibold for section headers (null = default)
@@ -132,37 +123,6 @@ namespace demo_gui
 
 			const auto total_seconds = ms / 1000;
 			return std::format("{:02}:{:02}", total_seconds / 60, total_seconds % 60);
-		}
-
-		void refresh_demo_list()
-		{
-			demo_files.clear();
-			selected_index = 0;
-
-			const auto dir = demo_utils::create_directory_auto_demo();
-			if (!dir)
-			{
-				return;
-			}
-
-			std::error_code ec;
-			for (const auto& entry : std::filesystem::directory_iterator(*dir, ec))
-			{
-				if (!entry.is_regular_file() || entry.path().extension() != demo_utils::DEMO_EXTENSION)
-				{
-					continue;
-				}
-
-				const auto write_time = entry.last_write_time(ec);
-				demo_files.push_back({entry.path(), entry.path().filename().string(), write_time});
-			}
-
-			// most-recently-modified first -- filenames are mapname + a per-map incrementing
-			// number, so they don't sort meaningfully once more than one map has been recorded.
-			std::sort(demo_files.begin(), demo_files.end(), [](const demo_entry& a, const demo_entry& b)
-			{
-				return a.write_time > b.write_time;
-			});
 		}
 
 		// seek demo playback to an absolute demo serverTime (reuses demoforward/demorewind).
@@ -792,95 +752,13 @@ namespace demo_gui
 			ImGui::TextDisabled("Output: demos/avi/<demo>_NNN. Assemble at your target fps for slow-mo.");
 		}
 
-		void render_cod4_controls()
-        {
-            if (!ImGui::CollapsingHeader("Convert COD4 demo")) return;
-            static char path[1024]{};
-            ImGui::SetNextItemWidth(-1.0f);
-            ImGui::InputTextWithHint("##cod4path", "Full path to a COD4 .dm_1 demo", path, sizeof(path));
-            if (ImGui::Button("Convert to .dm_h1") && path[0] && !std::strpbrk(path, "\"\r\n"))
-                command::execute(std::format("cod4convert \"{}\"", path));
-            const auto status = cod4_camera::get_status();
-            if (!status.message.empty()) ImGui::TextWrapped("%s", status.message.c_str());
-            ImGui::TextDisabled("After conversion, refresh the demo list and use the normal Play button.");
-        }
-
 		void render_demo_controls()
 		{
-			if (demo_files.empty())
-			{
-				refresh_demo_list();
-			}
-
-			ImGui::SetNextWindowSize(ImVec2(620, 780), ImGuiCond_FirstUseEver); // a touch bigger for the Segoe UI face
-			ImGui::SetNextWindowSizeConstraints(ImVec2(500, 420), ImVec2(1200, 2000));
-			if (!ImGui::Begin("Demo Controls", &window_open))
-			{
-				ImGui::End();
-				return;
-			}
-
-			if (ImGui::Button("Refresh"))
-			{
-				refresh_demo_list();
-			}
-
-			ImGui::SameLine();
-
-			const auto* preview = demo_files.empty()
-				? "(no demos found)"
-				: demo_files[std::min(selected_index, demo_files.size() - 1)].display_name.c_str();
-
-			ImGui::SetNextItemWidth(-1.0f);
-			if (ImGui::BeginCombo("##demo_select", preview))
-			{
-				for (std::size_t i = 0; i < demo_files.size(); ++i)
-				{
-					const auto is_selected = (i == selected_index);
-					if (ImGui::Selectable(demo_files[i].display_name.c_str(), is_selected))
-					{
-						selected_index = i;
-					}
-
-					if (is_selected)
-					{
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-
-				ImGui::EndCombo();
-			}
-
-			ImGui::BeginDisabled(demo_files.empty());
-			if (ImGui::Button("Play"))
-			{
-				// Queue the normal demoplay command for the next game command pump. Running it
-				// synchronously here enters party::start_map from inside the ImGui render frame,
-				// where the map transition can block the frame that must complete it.
-				const auto& path = demo_files[selected_index].path;
-				command::execute(std::format(R"(demoplay "{}" fullpath)", path.string()));
-			}
-			ImGui::EndDisabled();
-
-			ImGui::SameLine();
-			ImGui::BeginDisabled(!demo_playback::playing());
-			if (ImGui::Button("Stop"))
-			{
-				demo_playback::stopplay();
-			}
-			ImGui::EndDisabled();
-
-			ImGui::Separator();
-
-			render_cod4_controls();
-
-			if (!demo_playback::playing())
-			{
-				ImGui::TextDisabled("No demo playing.");
-				ImGui::End();
-				return;
-			}
-
+            if (!demo_playback::playing()) { window_open = false; return; }
+            ImGui::SetNextWindowSize(ImVec2(620, 780), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSizeConstraints(ImVec2(500, 420), ImVec2(1200, 2000));
+            if (!ImGui::Begin("Advanced Demo Controls", &window_open))
+            { ImGui::End(); return; }
 			ImGui::Text("Playing: %s", demo_playback::current_path().filename().string().c_str());
 
 			// IWXMVM-style timeline + playback (scrub, play/pause, speed)

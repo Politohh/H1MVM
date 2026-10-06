@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026.10.06
+
+[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.06)
+
+- Added the native **Play Online → Theater** library for H1 and COD4 recordings, with map previews, recording titles, paging, import, conversion and playback actions.
+- Restricted library scanning to the game's `demos` folder and saved newly converted recordings directly there.
+- Added the native timeline and Theater editor, HUD and control toggles, camera tools, graphics controls, color pickers, sky selection and reset actions.
+- Added COD4 facial playback using native facial head models, with tuned expressions and smoother release to idle.
+- Fixed demos that use more distinct player slots than MWR supports, preserved corpse identities and increased the demo animation bone budget.
+- Smoothed recorded crouch, prone and airborne camera-height transitions.
+
+Release/x64 build and offline Theater, metadata, facial, player-slot and camera regressions passed. Native Theater rendering was checked in H1; the crouch and bone-budget fixes were confirmed in playback. Import, conversion and playback actions from the new library still need a complete interactive check. Reconvert original COD4 recordings to use converter changes.
+
 ## 2026.10.03
 
 [Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.03) · [Source revision](https://github.com/Politohh/h1-cod4-demo/tree/7242c58d70af0a4bb59cb5f1305c99640fe5c56e)

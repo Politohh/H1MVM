@@ -601,3 +601,58 @@ assert(hud.experienceBar.widget.style.alpha == 0 and passive.style.alpha == 1)
 data.playing = false; tick()
 hud:processEvent({name = "menu_close"}); assert(passive.closed)
 print("PASS parent-first mouse down/up arrows, disabled/cancelled clicks, bounded slider capture/release, left-anchored fill/thumb, elevation/clock display, Reset All, stale acknowledgements, HSV picker, HUD/timeline and editor lifecycle")
+
+-- Frontend library selection must survive ordinary polls without rebuilding
+-- its focused buttons; page changes must rebuild only the nine visible cards.
+Engine.Localize=function(value) return value end
+Engine.ToUpperCase=string.upper
+luiglobals.GetTextDimensions=function(value,font,height) return 0,0,#value*height*.55 end
+LUI.UIVerticalList={build=function(_,definition) return Element.new(definition.defaultState) end}
+LUI.UIHorizontalList={new=Element.new}
+LUI.UITimer={new=function(interval,event) return Element.new({interval=interval,event=event}) end}
+local libraryEntries={}
+for i=1,12 do
+    libraryEntries[i]={id="demo_"..i,name="recording_"..i..".dm_h1",map="mp_crash",mapTitle="Crash",
+        modeTitle="Team Deathmatch",date="06/10/2026  21:00",duration=61000,material="preview_mp_crash",source=i%2==0,error=""}
+end
+libraryEntries[2].name="a_very_long_recording_title_that_should_fit_the_card.dm_1"
+local libraryRevision=1
+local libraryActions={}
+function game:gettheaterlibrary(page,filter)
+    local visible={}
+    for _,entry in ipairs(libraryEntries) do
+        if filter=="all" or (filter=="ready" and not entry.source) or (filter=="source" and entry.source) then visible[#visible+1]=entry end
+    end
+    local pages=math.max(1,math.ceil(#visible/9)); page=math.max(1,math.min(page,pages))
+    local entries={}; for i=(page-1)*9+1,math.min(page*9,#visible) do entries[#entries+1]=visible[i] end
+    return {revision=libraryRevision,busy=false,converting=false,message="Library ready",entries=entries,page=page,pages=pages,total=#visible}
+end
+function game:theaterlibraryaction(name,id) libraryActions[#libraryActions+1]={name,id}; return true end
+dofile("data/cdata/ui_scripts/theater/library.lua")
+root.menu=menus.h1_theater_library({type="h1_theater_library"})
+local library=root.menu
+assert(#library.cards==9 and library.selected=="demo_1" and library.snapshot.pages==2)
+assert(find(library.cards[1].element,"card_title").text=="recording_1","card heading uses the demo title without its extension")
+local longTitle=find(library.cards[2].element,"card_title")
+assert(longTitle.text:sub(-3)=="..." and #longTitle.text*longTitle.style.height*.55<=210,"long titles fit without shrinking below a readable size")
+find(library,"library_convert"):processEvent({name="button_action"})
+assert(libraryActions[#libraryActions][1]=="convertfile","conversion picker stays visible for H1 selections")
+local fifth=library.cards[5].element
+local previousGrid=library.grid
+fifth:processEvent({name="button_over"})
+assert(library.selected=="demo_5" and find(library,"preview_filename").text=="recording_5.dm_h1")
+library:refresh()
+assert(library.cards[5].element==fifth and library.selected=="demo_5","poll must not replace focus/selection")
+libraryRevision=2; library:refresh()
+assert(previousGrid.closed and library.selected=="demo_5","metadata refresh preserves selected recording")
+find(library,"library_next"):processEvent({name="button_action"})
+assert(#library.cards==3 and library.page==2 and library.selected=="demo_10")
+find(library,"library_cod4"):processEvent({name="button_action"})
+assert(library.page==1 and #library.cards==6 and library.cards[1].item.source)
+find(library,"library_play"):processEvent({name="button_action"})
+assert(libraryActions[#libraryActions][1]=="convert")
+find(library,"library_h1"):processEvent({name="button_action"})
+assert(#library.cards==6 and not library.cards[1].item.source)
+find(library,"library_play"):processEvent({name="button_action"})
+assert(libraryActions[#libraryActions][1]=="play" and root.menu==nil)
+print("PASS nine-card native Theater library, stable focus/selection, paging, H1/COD4 filters and correct Convert/Play routing")

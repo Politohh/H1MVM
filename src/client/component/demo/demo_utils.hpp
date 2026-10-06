@@ -29,6 +29,7 @@ namespace demo_utils
 			gen_header = 5,
             gen_footer = 6,
             facial_data = 7,
+            corpse_data = 8,
 
 			eof = 31,
 

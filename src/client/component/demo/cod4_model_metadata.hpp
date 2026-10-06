@@ -1,5 +1,6 @@
 #pragma once
 #include <charconv>
+#include <array>
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -9,6 +10,10 @@
 
 namespace cod4
 {
+    struct obituary_identity
+    {
+        unsigned attacker{}, victim{}, attacker_name{}, victim_name{}, attacker_team{}, victim_team{};
+    };
     inline bool valid_model_name(std::string_view name)
     {
         if (name.empty() || name.size() > 128) return false;
@@ -27,6 +32,7 @@ namespace cod4
         std::map<unsigned, std::string> fx_bindings;
         std::map<unsigned, std::string> animation_bindings;
         std::map<unsigned, std::string> agent_names;
+        std::map<unsigned, obituary_identity> obituaries;
     };
     inline model_metadata parse_model_metadata(const std::vector<std::string>& entries)
     {
@@ -34,6 +40,27 @@ namespace cod4
         model_metadata result;
         for (const auto& entry : entries)
         {
+            if (entry.starts_with("@obit:"))
+            {
+                const std::string_view text(entry);
+                std::array<unsigned, 7> values{};
+                std::size_t start = 6;
+                for (unsigned i = 0; i < values.size(); ++i)
+                {
+                    const auto end = i + 1 == values.size() ? text.size() : text.find(':', start);
+                    if (end == text.npos) throw std::runtime_error("Incomplete recorded obituary identity");
+                    const auto parsed = std::from_chars(text.data() + start, text.data() + end, values[i]);
+                    if (parsed.ec != std::errc{} || parsed.ptr != text.data() + end)
+                        throw std::runtime_error("Invalid recorded obituary identity");
+                    start = end + 1;
+                }
+                const auto [entity, attacker, victim, aname, vname, ateam, vteam] = values;
+                if (entity < 1024 || entity >= 2046 || (attacker >= 42 && attacker != 2046) || victim >= 42
+                    || (attacker != 2046 && (!aname || aname >= 1024)) || !vname || vname >= 1024 || ateam > 3 || vteam > 3
+                    || !result.obituaries.emplace(entity, obituary_identity{attacker,victim,aname,vname,ateam,vteam}).second)
+                    throw std::runtime_error("Invalid recorded obituary identity");
+                continue;
+            }
             if (entry.starts_with("@agentname:"))
             {
                 const std::string_view text(entry);
@@ -104,6 +131,10 @@ namespace cod4
             result.names.emplace(name);
         }
         if (result.names.size() > 512) throw std::runtime_error("Too many converted model names");
+        for (const auto& [entity, value] : result.obituaries)
+            if (!result.agent_names.contains(value.victim_name)
+                || (value.attacker != 2046 && !result.agent_names.contains(value.attacker_name)))
+                throw std::runtime_error("Missing recorded obituary name");
         if (!result.car_fx_times.empty() && result.fx_bindings.empty())
             throw std::runtime_error("Converted car FX has no native binding");
         return result;

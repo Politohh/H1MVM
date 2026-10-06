@@ -1438,6 +1438,7 @@ namespace demo_utils
 				case demo_data_id::gen_header:
 				case demo_data_id::gen_footer:
 				case demo_data_id::facial_data:
+				case demo_data_id::corpse_data:
 					continue;
 				}
 

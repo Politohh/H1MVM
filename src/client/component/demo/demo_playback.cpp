@@ -43,6 +43,7 @@ namespace // demo class
             << " time=" << (cl ? cl->serverTime : -1)
             << " snap=" << (cl ? cl->snap.serverTime : -1)
             << " draws=" << converted_draws << " blockedPackets=" << converted_packets_blocked
+            << " skeletonBytes=" << *reinterpret_cast<const unsigned*>(0x2ED2F90_b)
             << std::endl;
     }
 
@@ -419,10 +420,12 @@ namespace // demo class
         std::ifstream input(path_, std::ios::binary);
         std::vector<std::uint8_t> initial;
         std::vector<std::uint8_t> facial_data;
+        std::vector<std::uint8_t> corpse_data;
         std::vector<std::string> model_names;
         std::map<unsigned, std::string> model_bindings;
 		std::map<unsigned, std::string> animation_bindings;
 		std::map<unsigned, std::string> agent_names;
+        std::map<unsigned, cod4::obituary_identity> obituaries;
         for (int guard = 0; guard < 136 && input && initial.empty(); ++guard)
         {
             std::uint8_t id{}; std::uint32_t size{};
@@ -438,6 +441,11 @@ namespace // demo class
                     throw std::runtime_error("Oversized converted facial data");
                 facial_data.insert(facial_data.end(), data.begin(), data.end());
             }
+            if ((id & 31) == 8)
+            {
+                if (corpse_data.size() + data.size() > 16 * 1024 * 1024) throw std::runtime_error("Oversized converted corpse data");
+                corpse_data.insert(corpse_data.end(), data.begin(), data.end());
+            }
             if ((id & 31) == 5)
             {
                 std::vector<std::string> fields;
@@ -450,7 +458,7 @@ namespace // demo class
                 }
                 converted_ = fields.size() >= 9 && (fields[1] == "H1 COD4 conversion v1"
                     || fields[1] == "H1 COD4 conversion v2" || fields[1] == "H1 COD4 conversion v3"
-                    || fields[1] == "H1 COD4 conversion v4");
+                    || fields[1] == "H1 COD4 conversion v4" || fields[1] == "H1 COD4 conversion v5");
                 legacy_obituaries_ = converted_ && fields[1] == "H1 COD4 conversion v2";
                 if (cod4_playback_hud) cod4_playback_hud->current.enabled = converted_;
                 if (converted_)
@@ -460,6 +468,7 @@ namespace // demo class
                     model_bindings = models.bindings;
                     animation_bindings = models.animation_bindings;
                     agent_names = models.agent_names;
+                    obituaries = models.obituaries;
                     grenade_times_ = models.grenade_times;
                     grenade_times_.insert(models.car_fx_times.begin(), models.car_fx_times.end());
                     grenade_times_.insert(models.bullet_times.begin(), models.bullet_times.end());
@@ -491,6 +500,8 @@ namespace // demo class
         cod4_camera::set_model_bindings(model_bindings, animation_bindings);
         cod4_camera::set_facial_data(facial_data);
         cod4_camera::set_agent_names(agent_names);
+        cod4_camera::set_corpse_data(corpse_data);
+        cod4_camera::set_obituary_identities(obituaries);
         cod4_camera::bootstrap_demo(*mapname, initial);
         trace_converted("bootstrap complete");
         cod4_camera::validate_model_budget({model_names.begin(), model_names.end()});
@@ -701,6 +712,69 @@ namespace // hooks
     utils::hook::detour CG_CreatePlayerAnimTrees_hook;
     utils::hook::detour XAnimFreeSmallTree_hook;
     utils::hook::detour CL_GetAgentName_hook;
+    utils::hook::detour CL_GetClientName_hook;
+    utils::hook::detour CG_Obituary_hook;
+    utils::hook::detour CG_Corpse_hook;
+    thread_local std::optional<cod4::obituary_identity> obituary_context;
+
+    bool obituary_name(unsigned client, char* output, int size)
+    {
+        if (!obituary_context || !output || size <= 0) return false;
+        const auto& value = *obituary_context;
+        const unsigned token = client == value.victim ? value.victim_name : client == value.attacker ? value.attacker_name : 0;
+        const auto name = cod4_camera::recorded_name(token);
+        if (!name) return false;
+        const auto count = std::min(name->size(), static_cast<std::size_t>(size - 1));
+        std::memcpy(output, name->data(), count); output[count] = '\0'; return true;
+    }
+    int recorded_client_name(int local_client, unsigned char client, char* output, int size)
+    {
+        if (obituary_name(client, output, size)) return 1;
+        return CL_GetClientName_hook.invoke<int>(local_client, client, output, size);
+    }
+    void recorded_obituary(int local_client, const std::uint8_t* entity, int parameter)
+    {
+        std::uint16_t number{}; if (entity) std::memcpy(&number, entity, 2);
+        const auto identity = demo.is_converted() ? cod4_camera::obituary_identity(number) : std::nullopt;
+        auto* cg = reinterpret_cast<std::uint8_t*>(game::CG_GetLocalClientGlobals());
+        if (!identity || !cg || local_client != 0)
+        { CG_Obituary_hook.invoke<void>(local_client, entity, parameter); return; }
+        const auto old_context = obituary_context; obituary_context = identity;
+        std::map<unsigned, std::array<unsigned, 3>> saved;
+        std::map<std::uint8_t*, std::uint8_t> saved_presence;
+        const auto participant = [&](unsigned client, unsigned team)
+        {
+            if (client >= 42) return;
+            auto* info = cg + 0x161D28 + client * 0x740;
+            saved.emplace(client, std::array<unsigned, 3>{*reinterpret_cast<unsigned*>(info + 4),
+                *reinterpret_cast<unsigned*>(info + 12), *reinterpret_cast<unsigned*>(info + 16)});
+            *reinterpret_cast<unsigned*>(info + 4) = 1;
+            *reinterpret_cast<unsigned*>(info + 12) = team; *reinterpret_cast<unsigned*>(info + 16) = team;
+            if (client >= 18)
+            {
+                auto* centity = utils::hook::invoke<std::uint8_t*>(0x6BFF0_b, local_client, client);
+                if (centity) { saved_presence.emplace(centity + 572, centity[572]); centity[572] |= 1; }
+            }
+        };
+        participant(identity->attacker, identity->attacker_team); participant(identity->victim, identity->victim_team);
+        const auto restore = gsl::finally([&]
+        {
+            for (const auto& [client, fields] : saved)
+            {
+                auto* info = cg + 0x161D28 + client * 0x740;
+                *reinterpret_cast<unsigned*>(info + 4) = fields[0];
+                *reinterpret_cast<unsigned*>(info + 12) = fields[1]; *reinterpret_cast<unsigned*>(info + 16) = fields[2];
+            }
+            obituary_context = old_context;
+            for (const auto& [field, value] : saved_presence) *field = value;
+        });
+        CG_Obituary_hook.invoke<void>(local_client, entity, parameter);
+    }
+    void recorded_corpse(int local_client, const std::uint8_t* entity)
+    {
+        if (demo.is_converted()) cod4_camera::prepare_corpse(local_client, entity);
+        CG_Corpse_hook.invoke<void>(local_client, entity);
+    }
     std::mutex replay_agent_tree_mutex;
     std::set<void*> replay_agent_trees;
     utils::hook::detour CG_PlaySound_hook;
@@ -812,6 +886,7 @@ namespace // hooks
 
     int recorded_agent_name(int local_client, unsigned char client, unsigned short owner, char* output, int size)
     {
+        if (obituary_name(client, output, size)) return 1;
         if (output && size > 0)
             if (const auto name = cod4_camera::agent_name(client))
             {
@@ -2007,6 +2082,9 @@ namespace demo_playback
             CG_CreatePlayerAnimTrees_hook.create(0x31C890_b, create_player_animation_trees);
             XAnimFreeSmallTree_hook.create(0x5CB830_b, free_small_animation_tree);
             CL_GetAgentName_hook.create(0x3439D0_b, recorded_agent_name);
+            CL_GetClientName_hook.create(0x343EA0_b, recorded_client_name);
+            CG_Obituary_hook.create(0x10B750_b, recorded_obituary);
+            CG_Corpse_hook.create(0xF28C0_b, recorded_corpse);
             CG_PlaySound_hook.create(0x31D040_b, grenade_play_sound);
             FX_PlayOrientedEffectWithMarkEntity_hook.create(0x3D66D0_b, bullet_play_oriented_effect);
             CG_ShouldCullImpactFX_hook.create(0xF36B0_b, bullet_should_cull_impact);

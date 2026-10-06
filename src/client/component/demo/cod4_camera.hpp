@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <optional>
+#include "cod4_model_metadata.hpp"
 
 namespace cod4_camera
 {
@@ -21,6 +22,11 @@ namespace cod4_camera
         const std::map<unsigned, std::string>& animations = {});
     void clear_model_bindings();
     void set_facial_data(const std::vector<std::uint8_t>& bytes);
+    void set_corpse_data(const std::vector<std::uint8_t>& bytes);
+    void set_obituary_identities(const std::map<unsigned, cod4::obituary_identity>& identities);
+    std::optional<cod4::obituary_identity> obituary_identity(unsigned entity);
+    std::optional<std::string> recorded_name(unsigned token);
+    void prepare_corpse(int local_client, const std::uint8_t* entity);
     void set_agent_names(const std::map<unsigned, std::string>& names);
     bool has_replay_agents();
     std::optional<std::string> agent_name(unsigned client);

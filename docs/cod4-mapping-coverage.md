@@ -1,8 +1,8 @@
 # COD4 to H1 mapping coverage
 
 Updated 2026-09-29. Conversion produces a native `.dm_h1` recording using the
-installed MWR models, attachments and animation clips. Use **F9 → Convert COD4
-demo → Refresh → Play**. Play Online remains the ordinary multiplayer entry.
+installed MWR models, attachments and animation clips. Use **Play Online → Theater →
+Import Demos → Convert Demo**, then **Refresh → H1 Demos → Play Demo**.
 
 ## M16 M203 model requests (2026-10-04)
 

@@ -41,12 +41,12 @@ The symbols ZIP is optional and contains crash-debugging information. It is not 
 ## Convert a CoD4 demo
 
 1. Open H1 multiplayer and let **Play Online** initialization finish.
-2. Press **F9** to open **Demo Controls**.
-3. Expand **Convert COD4 demo** and enter the full path to the original `.dm_1` file.
-4. Click **Convert to .dm_h1** and wait for the saved-file message.
-5. Click **Refresh**, select the converted demo and press **Play**.
+2. Open **THEATER**, directly below **Private Match**.
+3. Choose **Import Demos** and select the original `.dm_1` file (multiple selection is supported).
+4. Select its thumbnail and choose **Convert Demo**. Wait for conversion to finish.
+5. Return to **Theater**, choose **Refresh → H1 Demos**, select the converted recording and choose **Play Demo**.
 
-Converted files are saved under `demos/client/auto/` in the game directory. Conversion also produces a `.conversion.txt` report beside the output demo, including any omitted models or unsupported data.
+Converted files are saved directly under `demos/` in the game directory. Conversion also produces a `.conversion.txt` report beside the output demo, including any omitted models or unsupported data. **Convert COD4 Demo** is always available in Theater and opens a file picker directly.
 
 **Reconvert the original `.dm_1` after converter updates.** An existing `.dm_h1` retains the data produced by the version that converted it. Keep the original recording.
 
@@ -60,7 +60,7 @@ cod4convert "C:\Demos\example.dm_1"
 
 In an H1 multiplayer match, `demostart` enables automatic recording and `demostop` disables it. Files are named automatically; these commands do not take a custom recording name. Recording locations use `demos/client/auto/`, or a mod-specific subdirectory when a mod is active.
 
-Use **F9** to browse demos when playback is stopped. During playback, the native timeline starts visible. **F1** toggles the game HUD, **F3** opens/closes the native editor, **F4** hides/shows the timeline, and **F2** cycles camera modes. **F9** switches between cursor controls and camera input. The XP bar and its rank icons are hidden during demos. Click the track to seek, or use the shortcuts below.
+Open **Play Online → Theater → H1 Demos** to browse native H1 recordings and converted demos. The library scans all demos subfolders and shows map previews, modes, dates and durations. Use **Import Demos** for recordings stored elsewhere. During playback, the native timeline starts visible. **F1** toggles the game HUD, **F3** opens/closes the native editor, **F4** hides/shows the timeline, and **F2** cycles camera modes. **F9** switches between cursor controls and camera input. The XP bar and its rank icons are hidden during demos. Click the track to seek, or use the shortcuts below.
 
 | Key | During demo playback |
 | --- | --- |

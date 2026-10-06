@@ -23,6 +23,7 @@
 #include "party.hpp"
 #include "demo/theater_ui.hpp"
 #include "demo/theater_editor.hpp"
+#include "demo/theater_library.hpp"
 
 #include "game/ui_scripting/execution.hpp"
 #include "game/ui_scripting/json_conversion.hpp"
@@ -236,6 +237,10 @@ namespace ui_scripting
 			lua["game"] = game_type;
 
 			game_type["theaterready"] = [](const game&, bool value) { theater_ui::set_ready(value); };
+			game_type["gettheaterlibrary"] = [](const game&, int page, const std::string& filter)
+			{ return json_to_lua(theater_library::state(page, filter)); };
+			game_type["theaterlibraryaction"] = [](const game&, const std::string& name, const std::string& id)
+			{ return theater_library::action(name, id); };
 			game_type["theaterkeyboard"] = [](const game&, bool value) { theater_ui::set_keyboard_available(value); };
 			game_type["gettheaterstate"] = [](const game&, int cached_revision, int cached_keys)
 			{ return json_to_lua(theater_ui::state(cached_revision, cached_keys)); };

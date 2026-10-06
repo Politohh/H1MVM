@@ -87,8 +87,8 @@ namespace cod4
         const auto native_event = native_bullet_event(event.source_event);
         if (!native_event || number < 1024 || number >= 2046 || !(weapon & 255u)
             || weapon >= (1u << 27) || event.time < 0 || event.surface >= 29
-            || (event.source_event == 41 && event.parameter >= 162) || event.client >= 42
-            || event.impact_flags > 128 || recorded_client >= 42)
+            || (event.source_event == 41 && event.parameter >= 162) || event.client >= 64
+            || event.impact_flags > 128 || recorded_client >= (slots ? 64u : 42u))
             throw std::runtime_error("Invalid native bullet impact event");
         for (const auto& vector : {event.origin, event.start})
             for (const auto coordinate : vector)

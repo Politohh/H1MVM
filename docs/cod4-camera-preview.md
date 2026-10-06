@@ -1,15 +1,15 @@
 # Current workflow: convert to native H1 demo
 
 The earlier separate `cod4cam` preview is superseded for the user workflow.
-Use F9 -> Convert COD4 demo -> Convert to .dm_h1, then Refresh the regular demo
-list, select the generated file and press the regular Play button. Normal H1
+Use Play Online -> Theater -> Import Demos -> Convert Demo, then Refresh -> H1 Demos,
+select the generated file and press Play Demo. Normal H1
 demo controls own pause, speed, seek, replay and theater camera controls.
 An existing demo is preserved: subsequent conversions use the first unused
 numbered filename, such as `cod4_to_H1.0001.dm_h1`. Existing temporary files are
 also preserved. The conversion status shows the filename that was saved.
 Ordinary .dm_1 launch arguments no longer queue playback on Play Online.
 The startup conversion shortcut has been removed. Launch H1 normally and complete
-Play Online initialization, then explicitly convert using F9 or `cod4convert`.
+Play Online initialization, then explicitly convert using Theater or `cod4convert`.
 Conversion requires completed online initialization, initializes H1's map/assets
 as a client, writes the file, then disconnects.
 It does not play the source recording or start a local match. The source file is

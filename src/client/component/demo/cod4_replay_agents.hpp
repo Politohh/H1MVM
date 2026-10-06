@@ -23,9 +23,11 @@ namespace cod4
     {
         std::map<std::string, unsigned> names;
         for (const auto& frame : world.frames)
+        {
+            const auto current = slots.at(frame.time);
             for (const auto& [number, client] : frame.clients)
             {
-                if (!client.get(8) || !agent_slot(slots.client(number))) continue;
+                if (!client.get(8) || (!slots.dynamic() && !agent_slot(current.client(number)))) continue;
                 const auto full = frame.client_names.find(number);
                 const auto name = recorded_actor_name(client,
                     full == frame.client_names.end() ? std::string_view{} : std::string_view(full->second));
@@ -33,6 +35,7 @@ namespace cod4
                 if (names.size() >= 1023) throw std::runtime_error("Too many recorded agent names");
                 names.emplace(name, static_cast<unsigned>(names.size() + 1));
             }
+        }
         return names;
     }
 

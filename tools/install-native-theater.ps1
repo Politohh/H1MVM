@@ -14,7 +14,9 @@ $files = @(
     @{ Source = Join-Path $build 'h1-mod.pdb'; Target = Join-Path $GameDirectory 'h1-mod.pdb'; Backup = 'h1-mod.pdb' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\__init__.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\__init__.lua'; Backup = 'theater\__init__.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\timeline.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\timeline.lua'; Backup = 'theater\timeline.lua' },
-    @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\editor.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\editor.lua'; Backup = 'theater\editor.lua' }
+    @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\editor.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\editor.lua'; Backup = 'theater\editor.lua' },
+    @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\library.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\library.lua'; Backup = 'theater\library.lua' },
+    @{ Source = Join-Path $repository 'data\cdata\ui_scripts\server_list\lobby.lua'; Target = Join-Path $DataDirectory 'ui_scripts\server_list\lobby.lua'; Backup = 'server_list\lobby.lua' }
 )
 $skyManifest = Join-Path $SkySourceDirectory 'manifest.json'
 if (Test-Path -LiteralPath $skyManifest -PathType Leaf) {
