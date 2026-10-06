@@ -27,7 +27,8 @@ namespace demo_utils
 			predicted_data = 3,
 			update_gamestate_data = 4,
 			gen_header = 5,
-			gen_footer = 6,
+            gen_footer = 6,
+            facial_data = 7,
 
 			eof = 31,
 

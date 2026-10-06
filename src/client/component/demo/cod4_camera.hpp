@@ -20,6 +20,7 @@ namespace cod4_camera
     void set_model_bindings(const std::map<unsigned, std::string>& bindings,
         const std::map<unsigned, std::string>& animations = {});
     void clear_model_bindings();
+    void set_facial_data(const std::vector<std::uint8_t>& bytes);
     void set_agent_names(const std::map<unsigned, std::string>& names);
     bool has_replay_agents();
     std::optional<std::string> agent_name(unsigned client);

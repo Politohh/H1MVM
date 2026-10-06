@@ -18,6 +18,7 @@ local colors = {
 }
 local speeds = {0.025, 0.1, 0.25, 0.5, 1, 2, 4}
 local cameras = {"FIRST PERSON", "THIRD PERSON", "FREE CAMERA", "DOLLY"}
+local gameHud, hudSuppressed, xpWidget, xpSuppressed = nil, false, nil, false
 local hudPanel, menuRoot, requestOpen = nil, nil, false
 local latest = {playing = false, open = false, elapsed = 0, duration = 0, speed = 1, camera = 0, events = {}, keys = {}}
 
@@ -130,8 +131,22 @@ local function move(element, x, width)
     element:animateToState("theater_position", 0)
 end
 
+-- A display-only native frame has no UIButton or hit regions. It cannot take
+-- mouse/focus ownership while flying, but matches the interactive transport row.
+local function displayButton(parent, id, label, x, y, w)
+    local element = LUI.H1ButtonBackground.new()
+    element.id = id
+    element:registerAnimationState("theater_layout", state(x, y, w, 26))
+    element:animateToState("theater_layout", 0)
+    local fill = element:getChildById("fill")
+    if fill then fill:setup9SliceImage(LUI.H1ButtonBackground.EdgeW, 0, LUI.H1ButtonBackground.EdgeU, 0) end
+    element.label = text(element, id .. "_label", label, 5, (26 - TEXT_HEIGHT) / 2, w - 10, TEXT_HEIGHT, colors.muted)
+    parent:addElement(element)
+    return element
+end
+
 local function buildPanel(interactive)
-    local height = interactive and 82 or 46
+    local height = 82
     local panel = LUI.UIElement.new({leftAnchor = false, rightAnchor = false, topAnchor = false,
         bottomAnchor = true, left = -WIDTH / 2, right = WIDTH / 2, top = -18 - height, bottom = -18})
     panel.id = interactive and "H1TheaterInteractive" or "H1TheaterTimeline"
@@ -144,6 +159,12 @@ local function buildPanel(interactive)
     background:registerAnimationState("theater_panel_layout", state(0, 0, WIDTH, height))
     background:animateToState("theater_panel_layout", 0)
     panel:addElement(background)
+    panel.hudHint = text(panel, "theater_hud_hint", "F1 Toggle Hud", 0, -15, 220, 9, colors.text)
+    panel.controlsHint = text(panel, "theater_controls_hint", "F4 Toggle Controls", 260, -15, 220, 9, colors.text)
+    panel.controlsHint:registerAnimationState("theater_hint_align", {alignment = LUI.Alignment.Right})
+    panel.controlsHint:animateToState("theater_hint_align", 0)
+    panel.flightHint = text(panel, "theater_flight_hint", "WASD Move / Mouse Look / E-Q Up-Down / Shift Faster", INSET, -42, TRACK, 8.5)
+    panel.cameraHint = text(panel, "theater_camera_hint", "Shift+Scroll Zoom / Scroll Roll / MMB-K Marker / J Dolly / L Clear (stopped)", INSET, -29, TRACK, 8.5)
     panel.status = text(panel, "theater_status", "", INSET, 8, 300, TEXT_HEIGHT, colors.muted)
     panel.time = text(panel, "theater_time", "00:00 / 00:00", 357, 8, 111, TEXT_HEIGHT)
     panel.time:registerAnimationState("theater_time_align", {alignment = LUI.Alignment.Right})
@@ -166,34 +187,37 @@ local function buildPanel(interactive)
                 TRACK / 80, function() return action("seek", math.floor(fraction * latest.duration)) end, true)
             hit:makeNotFocusable()
         end
-        panel.pause = button(panel, "theater_pause", "PAUSE", 65, 49, 56, function() return action("pause") end)
-        button(panel, "theater_rewind", "<< 5s", INSET, 49, 48, function() return action("skip", -5000) end)
-        button(panel, "theater_forward", "5s >>", 126, 49, 48, function() return action("skip", 5000) end)
-        panel.speed = button(panel, "theater_speed", "1x", 179, 49, 46, function()
-            local index = 1
-            for i, speed in ipairs(speeds) do if speed <= latest.speed + 0.001 then index = i end end
-            return action("speed", math.floor(speeds[index % #speeds + 1] * 1000))
-        end)
-        panel.camera = button(panel, "theater_camera", "FIRST PERSON", 230, 49, 110,
-            function() return action("camera", (latest.camera + 1) % 4) end)
-        button(panel, "theater_editor", "EDITOR", 345, 49, 60, function() return action("editor") end)
-        button(panel, "theater_close", "CLOSE", 410, 49, 58, function() action("close") end)
     end
+    local transport = interactive and button or displayButton
+    panel.pause = transport(panel, "theater_pause", "PAUSE", 65, 49, 56, function() return action("pause") end)
+    transport(panel, "theater_rewind", "<< 5s", INSET, 49, 48, function() return action("skip", -5000) end)
+    transport(panel, "theater_forward", "5s >>", 126, 49, 48, function() return action("skip", 5000) end)
+    panel.speed = transport(panel, "theater_speed", "1x", 179, 49, 46, function()
+        local index = 1
+        for i, speed in ipairs(speeds) do if speed <= latest.speed + 0.001 then index = i end end
+        return action("speed", math.floor(speeds[index % #speeds + 1] * 1000))
+    end)
+    panel.camera = transport(panel, "theater_camera", "FIRST PERSON", 230, 49, 110,
+        function() return action("camera", (latest.camera + 1) % 4) end)
+    transport(panel, "theater_editor", "EDITOR", 345, 49, 60, function() return action("editor") end)
+    transport(panel, "theater_close", "CLOSE", 410, 49, 58, function() action("close") end)
     panel.interactive = interactive
     return panel
 end
 
 local function updatePanel(panel, data)
-    local visible = data.playing and data.enabled and
+    local visible = data.playing and data.enabled and data.visible ~= false and
         (panel.editor and data.editor or not data.editor and (panel.interactive or not data.open))
     setAlpha(panel, visible and 1 or 0)
     if not visible then return end
+    setAlpha(panel.flightHint, data.camera == 2 and not data.editor and 1 or 0)
+    setAlpha(panel.cameraHint, data.camera == 2 and not data.editor and 1 or 0)
     panel.time:setText(clock(data.elapsed) .. " / " .. clock(data.duration))
     local progress = ratio(data.elapsed, data.duration)
     move(panel.fill, INSET, TRACK * progress)
     move(panel.head, INSET + TRACK * progress, 1)
     local busy = data.seeking and "SEEKING..." or ""
-    if panel.interactive then
+    if panel.pause then
         panel.pause.label:setText(data.paused and "PLAY" or "PAUSE")
         panel.speed.label:setText(string.format("%.3gx", data.speed))
         panel.camera.label:setText(cameras[data.camera + 1] or cameras[1])
@@ -275,14 +299,28 @@ local function updateTheater(root)
     latest = game:gettheaterstate(previous.revision or -1, previous.keyRevision or -1)
     latest.events, latest.keys = latest.events or previous.events or {}, latest.keys or previous.keys or {}
     local desired = latest.playing and latest.enabled and
-        (latest.editor and EDITOR or latest.open and MENU) or nil
+        (latest.editor and EDITOR or latest.open and latest.visible ~= false and MENU) or nil
     -- Camera switching (button or F2) must hand input back to freecam. Keep
-    -- the passive timeline visible; F1/F9 can explicitly reopen the controls.
+    -- the timeline visible; F4 hides/shows it and F9 can recapture the controls.
     -- Do this on entry only, so reopening controls while flying still works.
     if desired == MENU and latest.camera == 2 and previous.camera ~= 2 then
         action("close")
         latest.open = false
         desired = nil
+    end
+    -- cg_draw2D/hud_* only suppress some MWR data/legacy drawing. The complete
+    -- native HUD (map frame/icons, scores, killstreaks, weapon/grenade frames,
+    -- popups and crosshair) must also be hidden at its common mp_hud parent.
+    -- Theater is attached to the LUI root as a sibling, never below this parent.
+    local hideHud = latest.playing and latest.hudHidden == true
+    if gameHud and (hideHud or hudSuppressed) then setAlpha(gameHud, hideHud and 0 or 1) end
+    hudSuppressed = hideHud
+    -- Native experienceBar_root includes both rank emblems and the XP track.
+    -- Hide the widget itself, beneath the stock HUD visibility wrapper, so
+    -- normal hud_on/round/player-state events cannot bring it back during replay.
+    if xpWidget and xpSuppressed ~= (latest.playing == true) then
+        xpSuppressed = latest.playing == true
+        setAlpha(xpWidget, xpSuppressed and 0 or 1)
     end
     if hudPanel then updatePanel(hudPanel, latest) end
     if menuRoot and menuRoot.theaterMenu ~= desired then
@@ -309,6 +347,9 @@ end
 LUI.onmenuopen("mp_hud", function(hud)
     if Engine.InFrontend() then return end
     if hudPanel then hudPanel:close() end
+    gameHud, hudSuppressed = hud, false
+    xpWidget = hud.experienceBar and hud.experienceBar.widget or nil
+    xpSuppressed = false
     local root = Engine.GetLuiRoot()
     local panel = buildPanel(false)
     hudPanel = panel
@@ -318,6 +359,8 @@ LUI.onmenuopen("mp_hud", function(hud)
     root:addElement(panel)
     hud:addEventHandler("menu_close", function()
         panel:close()
+        if gameHud == hud then gameHud = nil end
+        if xpWidget == (hud.experienceBar and hud.experienceBar.widget) then xpWidget = nil end
         if hudPanel == panel then hudPanel = nil end
     end)
     game:theaterready(true)

@@ -19,7 +19,8 @@ namespace theater_ui
 {
     namespace
     {
-        std::atomic_bool ready{}, opened{}, editor{}, pending{}, keyboard{}, controls_hidden{};
+        std::atomic_bool ready{}, opened{}, editor{}, pending{}, keyboard{};
+        std::atomic_bool visible{true};
         std::mutex mutex;
         nlohmann::json snapshot = {{"playing", false}, {"open", false}};
         std::vector<demo_timeline::event> observed, recorded;
@@ -49,7 +50,7 @@ namespace theater_ui
                 session_path = path;
                 std::lock_guard lock(mutex);
                 observed.clear(); ++revision; session = demo_playback::session_id();
-                selected_key = -1; opened = false; editor = false; pending = false; controls_hidden = false;
+                selected_key = -1; opened = false; editor = false; pending = false; visible = true;
             }
             if (!playing || demo_avidemo::is_capturing()) close();
             const auto now = demo_playback::current_time().value_or(0);
@@ -67,8 +68,10 @@ namespace theater_ui
                 else if (desired_speed != 1.f) speed->current.value = desired_speed;
             }
             nlohmann::json data = {{"playing", playing}, {"open", opened && available()}, {"editor", editor_open()},
-                {"enabled", (!native_timeline || native_timeline->current.enabled) && !controls_hidden && !demo_avidemo::is_capturing() && !demo_gui::is_open()}, {"session", session},
-                {"paused", demo_playback::paused()}, {"seeking", pending.load() || demo_playback::seeking()},
+                {"enabled", (!native_timeline || native_timeline->current.enabled) && !demo_avidemo::is_capturing()}, {"session", session},
+                {"visible", visible.load()},
+                {"paused", demo_playback::paused()}, {"hudHidden", theater_camera::is_hud_hidden()},
+                {"seeking", pending.load() || demo_playback::seeking()},
                 {"name", playing ? demo_playback::current_path().filename().string() : ""},
                 {"elapsed", std::clamp(presented - first, 0, duration)}, {"duration", duration},
                 {"speed", speed ? speed->current.value : 1.f}, {"camera", static_cast<int>(theater_camera::get_mode())},
@@ -112,7 +115,7 @@ namespace theater_ui
     bool toggle()
     {
         if (!available() || !demo_playback::playing()) return false;
-        controls_hidden = false; editor = false; opened = !opened.load(); return true;
+        editor = false; opened = !opened.load(); if (opened) visible = true; return true;
     }
     void close() { opened = false; editor = false; }
     bool handle_key_event(int key, int down)
@@ -121,7 +124,9 @@ namespace theater_ui
         if (key >= 'A' && key <= 'Z') key += 'a' - 'A';
         struct binding { int key; const char* action; int value; };
         static constexpr std::array bindings{
-            binding{game::K_F1, "controls", 0}, binding{game::K_F2, "camerastep", 0},
+            binding{game::K_F1, "hud", 0}, binding{game::K_F4, "controls", 0},
+            binding{game::K_F2, "camerastep", 0},
+            binding{game::K_F3, "editortoggle", 0},
             binding{'k', "add", 0}, binding{'j', "cinematic", 0}, binding{'l', "clear", 0},
             binding{game::K_LEFTARROW, "skip", -5000}, binding{game::K_RIGHTARROW, "skip", 5000},
             binding{game::K_UPARROW, "speedstep", 1}, binding{game::K_DOWNARROW, "speedstep", -1}};
@@ -130,18 +135,12 @@ namespace theater_ui
         {
             if (key != bindings[i].key) continue;
             // Arrow keys belong to the native editor's category navigation.
-            const bool allowed = ready && !editor_open() && demo_playback::playing() && demo_playback::is_replay_armed() &&
+            const bool allowed = ready && (!editor_open() || key == game::K_F1 || key == game::K_F3 || key == game::K_F4) && demo_playback::playing() && demo_playback::is_replay_armed() &&
                 demo_input::pause_allowed(*game::keyCatchers, keyboard_available(), demo_gui::is_open());
             const auto result = keys[i].event(down != 0, allowed);
             if (result == demo_input::shortcut_key::result::toggle)
             {
-                if (key == game::K_F1)
-                {
-                    const bool show = controls_hidden || (native_timeline && !native_timeline->current.enabled);
-                    if (show && native_timeline) native_timeline->current.enabled = true;
-                    controls_hidden = !show; opened = show;
-                }
-                else (void)action(bindings[i].action, bindings[i].value);
+                (void)action(bindings[i].action, bindings[i].value);
             }
             return result != demo_input::shortcut_key::result::pass;
         }
@@ -161,13 +160,27 @@ namespace theater_ui
     {
         if (name == "close") { close(); return true; }
         if (!demo_playback::playing() || !demo_playback::is_replay_armed()) return false;
+        if (name == "controls")
+        {
+            if (!available()) return false;
+            visible = !visible.load();
+            opened = visible && !editor.load();
+            return true;
+        }
+        if (name == "editortoggle")
+        {
+            if (!available()) return false;
+            editor = !editor.load(); opened = !editor.load() && visible.load();
+            return true;
+        }
         if (name == "editor" || name == "timeline")
         {
             if (!available()) return false;
-            controls_hidden = false; editor = name == "editor"; opened = name == "timeline";
+            editor = name == "editor"; opened = name == "timeline";
+            if (opened) visible = true;
             return true;
         }
-        static const std::set<std::string> commands{"pause", "seek", "skip", "speed", "speedstep", "camera", "camerastep", "add", "select",
+        static const std::set<std::string> commands{"hud", "pause", "seek", "skip", "speed", "speedstep", "camera", "camerastep", "add", "select",
             "delete", "edit", "retime", "clear", "cinematic", "advanced", "stop"};
         if (!commands.contains(name)) return false;
         if (name == "clear" && theater_camera::is_cinematic_playing()) return false;
@@ -182,7 +195,8 @@ namespace theater_ui
             const auto bounds = demo_playback::time_bounds();
             const auto current = demo_playback::current_time();
             const auto& keys = theater_camera::get_keyframes();
-            if (name == "pause" && !demo_playback::seeking()) demo_playback::toggle_pause();
+            if (name == "hud") theater_camera::toggle_hud();
+            else if (name == "pause" && !demo_playback::seeking()) demo_playback::toggle_pause();
             else if ((name == "seek" || name == "skip") && bounds && current)
             {
                 const auto target = name == "seek" ? static_cast<std::int64_t>(bounds->first) + value
@@ -246,7 +260,7 @@ namespace theater_ui
         {
             if (!game::environment::is_mp() || game::environment::is_dedi()) return;
             native_timeline = dvars::register_bool("demo_native_timeline", true, game::DVAR_FLAG_SAVED,
-                "Native MWR theater timeline (F9); F10 opens the advanced editor");
+                "Native MWR theater timeline; F1 toggles HUD, F3 opens editor, F4 hides/shows controls");
             scheduler::loop(update, scheduler::main, 50ms);
             // Wall-clock scheduler: unlike replay-scaled LUI timers it runs during pause.
             scheduler::loop([]

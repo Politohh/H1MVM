@@ -23,6 +23,7 @@
 #include "cod4_transient_budget.hpp"
 #include "cod4_weapon_models.hpp"
 #include "cod4_model_translation.hpp"
+#include "cod4_facial_models.hpp"
 #include "demo_playback.hpp"
 #include "demo_game.hpp"
 #include "demo_utils.hpp"
@@ -35,6 +36,7 @@
 #include "component/gsc/script_loading.hpp"
 #include "game/dvars.hpp"
 #include <mutex>
+#include "cod4_facial_runtime.hpp"
 
 namespace cod4_camera
 {
@@ -83,6 +85,8 @@ namespace cod4_camera
         std::map<unsigned, cod4::part_mapping> source_parts;
         std::map<unsigned, std::string> model_bindings;
         std::map<std::string, std::uint16_t> bound_models;
+        game::dvar_t* facial_heads{};
+        bool use_facial_heads{};
         using character_key = std::array<unsigned, 7>;
         struct native_character_models
         {
@@ -258,7 +262,25 @@ namespace cod4_camera
                 std::array<std::string_view, 6> attachments{};
                 for (unsigned i = 0; i < attachments.size(); ++i)
                     if (key[i + 1]) attachments[i] = track.configstrings.at(830 + key[i + 1]);
-                const auto mapped = cod4::map_character_models(body, attachments, track.map);
+                auto mapped = cod4::map_character_models(body, attachments, track.map);
+                if (use_facial_heads)
+                {
+                    const auto* table = game::DB_FindXAssetHeader(game::ASSET_TYPE_STRINGTABLE,
+                        "mp/costumemodeltable.csv", false).stringTable;
+                    if (!table) throw std::runtime_error("Native costume table unavailable for facial head playback");
+                    for (auto& attachment : mapped.attachments)
+                    {
+                        if (!attachment.starts_with("head_")) continue;
+                        const auto lobby = cod4::lobby_head_for(attachment, table->rowCount, table->columnCount,
+                            [&](int row, int column) { return game::StringTable_GetColumnValueForRow(
+                                const_cast<game::StringTable*>(table), row, column); });
+                        if (!lobby) continue; // Custom heads retain their installed native identity.
+                        if (!model_available(*lobby))
+                            throw std::runtime_error("Native lobby head has no resident asset or transient zone: " + *lobby);
+                        lifecycle << "facial head " << attachment << " -> " << *lobby << std::endl;
+                        attachment = *lobby;
+                    }
+                }
                 native.body = bind_model(mapped.body);
                 for (unsigned i = 0; i < native.attachments.size(); ++i)
                     if (!mapped.attachments[i].empty()) native.attachments[i] = bind_model(mapped.attachments[i]);
@@ -1441,6 +1463,7 @@ namespace cod4_camera
 
         void stop_locked(const std::string& message)
         {
+            facial::publish({});
             state.active = state.loading = false;
             replay_asset_pool = false;
             for (const auto& name : acquired_models)
@@ -1554,7 +1577,8 @@ namespace cod4_camera
             std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
             output.exceptions(std::ios::badbit | std::ios::failbit);
             std::string header;
-            for (const auto& item : std::vector<std::string>{"", "H1 COD4 conversion v3", "v0.0.3",
+            for (const auto& item : std::vector<std::string>{"", use_facial_heads ? "H1 COD4 conversion v4" : "H1 COD4 conversion v3",
+                use_facial_heads ? "v0.0.4" : "v0.0.3",
                 std::to_string(PROTOCOL), "", "COD4 conversion", "", track.map, "war"})
             { header += item; header.push_back('\0'); }
             for (const auto& model : requested_models) { header += model; header.push_back('\0'); }
@@ -1581,6 +1605,20 @@ namespace cod4_camera
             const auto map_header = track.map + std::string("\0war\0", 5);
             demo_utils::write_id_and_size(output, map_header.size(), demo_utils::demo_data_id::map_header);
             output.write(map_header.data(), map_header.size());
+            if (use_facial_heads)
+            {
+                const auto face = cod4::face::build_session(world, players, track.configstrings, client_slots, facial::asset);
+                if (face.actors.empty()) throw std::runtime_error("No verified facial curves found in cod4_facial source data");
+                const auto bytes = cod4::face::encode_session(face);
+                for (std::size_t offset = 0; offset < bytes.size(); offset += demo_utils::globals::MAX_SIZE)
+                {
+                    const auto size = std::min<std::size_t>(demo_utils::globals::MAX_SIZE, bytes.size() - offset);
+                    demo_utils::write_id_and_size(output, size, demo_utils::demo_data_id::facial_data);
+                    output.write(reinterpret_cast<const char*>(bytes.data() + offset), size);
+                }
+                lifecycle << "facial curves saved rigs=" << face.rigs.size() << " clips=" << face.clips.size()
+                    << " actors=" << face.actors.size() << " bytes=" << bytes.size() << std::endl;
+            }
             const auto compressed = utils::compression::zlib::compress(std::span<const std::uint8_t>(initial_gamestate), 4096);
             demo_utils::write_id_and_size(output, compressed.size() + 8, demo_utils::demo_data_id::network_data);
             const std::uint32_t sequence = 1, flags = 0x80000000u;
@@ -1739,6 +1777,10 @@ namespace cod4_camera
             try
             {
                 converting = convert;
+                // Capture once: a mid-conversion dvar change must not mix rigs.
+                use_facial_heads = facial_heads && facial_heads->current.enabled;
+                if (use_facial_heads && !facial::supported)
+                    throw std::runtime_error("Facial playback is unavailable for this H1 animation ABI");
                 conversion_output = std::filesystem::path("demos/client/auto") / (path.stem().string() + ".dm_h1");
                 if (convert)
                 {
@@ -1941,9 +1983,14 @@ namespace cod4_camera
 
     void clear_model_bindings()
     {
+        facial::publish({});
         model_bindings.clear(); animation_bindings.clear(); converted_bindings = false;
         recorded_agent_names.clear();
         replay_asset_pool = false;
+    }
+    void set_facial_data(const std::vector<std::uint8_t>& bytes)
+    {
+        facial::publish(bytes.empty() ? nullptr : std::make_shared<const cod4::face::session>(cod4::face::decode_session(bytes)));
     }
     void set_model_bindings(const std::map<unsigned, std::string>& bindings,
         const std::map<unsigned, std::string>& animations)
@@ -2082,6 +2129,13 @@ namespace cod4_camera
             resolve_airstrikes();
             resolve_helicopters();
             if (!resolve_body_assets()) return true;
+            if (!converting && use_facial_heads && !facial::current.load())
+            {
+                auto face = std::make_shared<const cod4::face::session>(
+                    cod4::face::build_session(world, players, track.configstrings, client_slots, facial::asset));
+                if (face->actors.empty()) throw std::runtime_error("No verified source facial curves in cod4_facial");
+                facial::publish(std::move(face));
+            }
             if (converting)
             {
                 for (const auto& name : requested_models)
@@ -2215,6 +2269,45 @@ namespace cod4_camera
         void post_unpack() override
         {
             if (!game::environment::is_mp() || game::environment::is_dedi()) return;
+            facial_heads = dvars::register_bool("cod4_facialHeads", true, 0,
+                "Use native lobby head rigs for new COD4 conversions (experimental)");
+            const cod4::face::expression_strength defaults;
+            const auto jaw = dvars::register_float("cod4_facialJaw", defaults.values[1], 0, 1, 0, "COD4 facial jaw strength");
+            const auto eyes = dvars::register_float("cod4_facialEyes", defaults.values[2], 0, 1, 0, "COD4 facial eye strength");
+            const auto lids = dvars::register_float("cod4_facialEyelids", defaults.values[3], 0, 1, 0, "COD4 facial eyelid strength");
+            const auto brows = dvars::register_float("cod4_facialBrows", defaults.values[4], 0, 1, 0, "COD4 facial brow strength");
+            const auto cheeks = dvars::register_float("cod4_facialCheeks", defaults.values[5], 0, 1, 0, "COD4 facial cheek strength");
+            const auto lips = dvars::register_float("cod4_facialLips", defaults.values[6], 0, 1, 0, "COD4 facial lip/corner/chin strength");
+            const auto blend = dvars::register_float("cod4_facialBlendTime", defaults.blend_seconds, 0, 1, 0,
+                "Seconds to blend COD4 shooting expressions back to idle");
+            scheduler::loop([jaw, eyes, lids, brows, cheeks, lips, blend]
+            {
+                // Publish on the main thread; animation workers never read
+                // mutable dvars or retain native engine dvar pointers.
+                cod4::face::expression_strength expression;
+                expression.values = {1, jaw->current.value, eyes->current.value, lids->current.value,
+                    brows->current.value, cheeks->current.value, lips->current.value};
+                expression.blend_seconds = blend->current.value;
+                if (expression != *facial::strengths.load())
+                    facial::strengths.store(std::make_shared<const cod4::face::expression_strength>(expression));
+            }, scheduler::main);
+            // Fail closed on a different executable's local animation ABI.
+            constexpr std::array<std::uint8_t, 11> prologue{0x40, 0x57, 0x41, 0x54, 0x41, 0x56, 0x48, 0x83, 0xEC, 0x50, 0x8B};
+            facial::supported = std::memcmp(reinterpret_cast<const void*>(0x5CFBA0_b), prologue.data(), prologue.size()) == 0;
+            if (facial::supported) facial::evaluate_hook.create(0x5CFBA0_b, facial::evaluate);
+            else console::warn("COD4 facial playback disabled: unsupported native animation boundary\n");
+            command::add("cod4_facial_status", []
+            {
+                const auto face = facial::current.load();
+                console::info("COD4 face: session=%d actors=%zu clips=%zu applied=%llu rejected=%llu\n", bool(face),
+                    face ? face->actors.size() : 0, face ? face->clips.size() : 0,
+                    facial::applied.load(), facial::rejected.load());
+                const auto expression = facial::strengths.load();
+                console::info("COD4 face strength: jaw=%.2f eyes=%.2f eyelids=%.2f brows=%.2f cheeks=%.2f lips=%.2f\n",
+                    expression->values[1], expression->values[2], expression->values[3],
+                    expression->values[4], expression->values[5], expression->values[6]);
+                console::info("COD4 face release: %.3fs\n", expression->blend_seconds);
+            });
             get_configstring_hook.create(0x33B820_b, get_configstring);
             utils::hook::call(0x7445D_b, reserve_view_weapon_pool);
             command::add("cod4cam", [](const command::params& args)

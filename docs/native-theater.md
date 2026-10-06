@@ -1,11 +1,13 @@
 # Native theater timeline
 
-The playback timeline uses MWR LUI widgets and its native title font. Transport buttons use the same `UIGenericButton`/`H1ButtonBackground` factory and style as MWR's pause menu, with compact layout dimensions and labels. The panel also uses the native background frame and MWR green, with a thin track, left-aligned playback status and timecode aligned to the far-right inset. The compact panel shows elapsed time, duration, playhead and event/camera-key markers. The passive panel is 480 by 46 virtual UI units; opening controls increases its height to 82. Timeline text heights are 10.5 units, including button labels in all focus states. The panel sits at the bottom center, with no filename, repeated shortcut instructions or camera-editing rows.
+The playback timeline uses MWR LUI widgets and its native title font. Transport buttons use the same `UIGenericButton`/`H1ButtonBackground` factory and style as MWR's pause menu, with compact layout dimensions and labels. The panel also uses the native background frame and MWR green, with a thin track, left-aligned playback status and timecode aligned to the far-right inset. The compact panel shows elapsed time, duration, playhead and event/camera-key markers. The panel stays 480 by 82 virtual UI units, with every transport button visible whether controls own the cursor or the mouse drives freecam. Timeline text heights are 10.5 units, including button labels in all focus states. The panel sits at the bottom center, with no filename or camera-editing rows. Small F1/F4 labels sit above the whole frame; two compact native hint lines appear above those in freecam.
 
 ## Controls
 
 - **Space:** pause/resume in gameplay and the native theater menu. Holding Space toggles once. Console, chat, other native menus and the advanced editor retain keyboard input.
-- **F1:** hide the whole native panel, or show it with its controls enabled. The passive bar is hidden as well.
+- **F1:** toggle the game HUD without hiding the timeline. The choice is independent of camera mode and restores the original HUD settings on stop.
+- **F3:** open/close the native Theater editor, including when the timeline is hidden.
+- **F4:** hide/show the entire timeline and its transport buttons. Hiding releases the cursor; showing enables the clickable controls outside the editor.
 - **F2:** cycle first person → third person → free camera → dolly → first person.
 - **K:** capture a dolly marker from the current camera and demo time.
 - **J:** start/stop dolly playback (starting needs at least two markers).
@@ -16,14 +18,15 @@ The playback timeline uses MWR LUI widgets and its native title font. Transport 
 - **Editor:** native MWR editor with Main, Camera, Misc, Bone Camera, SSAO, Fog, DOF, Sun, Lights, Streams, Weapon and Sliders. All category buttons are visible without scrolling. Back returns to the timeline.
 - **F10:** existing browser, converter and advanced camera/capture editor.
 - Click the track or a camera-key marker to seek. Skip buttons move five seconds. Speed and camera buttons cycle the available values.
-- Entering Free Camera through the camera button or F2 closes the interactive controls and leaves the passive bar visible, releasing keyboard and mouse input for flight. F1/F9 reopen the controls; while those controls are open, close them to resume flying.
+- Entering Free Camera through the camera button or F2 releases keyboard and mouse input for flight while retaining the visible timeline. F9 switches cursor ownership; Close releases the cursor while retaining the bar. F4 hides/shows the bar itself.
+- Freecam uses WASD/mouse, E/Q for height, Shift for boost, **Shift + scroll for zoom**, plain scroll for roll, MMB/K for markers, J for dolly and L to clear markers while stopped. The old ImGui help panel is replaced by small native hints.
 - `demotimeline` toggles panel visibility; `demo_native_timeline` stores the visibility preference. `demotheaterstatus` prints playback/UI diagnostics.
 
 ## Implementation
 
 `theater_ui.cpp` publishes a playback snapshot on the main scheduler and sends a separate LUI update event at 20 Hz. This event uses wall-clock scheduling, so the panel continues updating while the replay and normal HUD clocks are paused. UI actions run on the main pipeline and carry the playback session ID to reject actions left over from another demo.
 
-`ui_scripts/theater/timeline.lua` attaches to the root when `mp_hud` is constructed, after MWR creates the in-game root and fonts. FlowManager owns the interactive menu. The native menu and advanced overlay are mutually exclusive. F10 is handled at the Windows message layer because upstream reserves the game-level F10 event and Windows also treats it as a system key.
+`ui_scripts/theater/timeline.lua` attaches to the root when `mp_hud` is constructed, after MWR creates the in-game root and fonts. FlowManager owns the interactive menu. With cursor capture released, the transport row uses display-only native `H1ButtonBackground` frames and text, with no buttons or seek hitboxes that could steal camera input. F1 also gates the complete `mp_hud` parent; native HUD dvars alone only hide part of MWR's drawing. The theater timeline and hints are siblings under the LUI root, so hiding this parent leaves them visible and interactive. Child HUD visibility states continue running and normal visibility is restored on show or playback stop. The native `experienceBar_root` widget (XP track plus rank emblems) is hidden during playback and restored when playback stops; its stock HUD wrapper retains visibility ownership outside demos. The native menu and advanced overlay are mutually exclusive. F10 is handled at the Windows message layer because upstream reserves the game-level F10 event and Windows also treats it as a system key.
 
 New conversions and recordings can append a `TUI1` event index to the existing general footer, after its null-terminated duration string. The optional index stores the remapped POV and obituary timestamps/client IDs, with a 10,000-event limit. Old footers remain readable. Malformed indexes are ignored rather than preventing playback. Older files accumulate markers as obituary events play; reconvert an original CoD4 recording for an index available from the start.
 
@@ -31,7 +34,7 @@ New conversions and recordings can append a `TUI1` event index to the existing g
 
 Timeline transport uses `MenuBuilder.BuildAddChild`, which installs action properties used by the native button event handler. `BuildRegisteredType` alone draws a button but does not attach those properties. Compact labels are created with the native `ButtonLabelFactory` font-size argument, so default and focused states share the same size.
 
-Compact timeline, category and settings buttons share `editor.fitButtonBackground`. It retains the native horizontal texture caps and uses a continuous vertical texture range instead of compressing the stock top/bottom slices. It applies to the fill, contour, stroke and overlay glow, including images recreated by native focus and lock handlers. The twelve editor categories retain their compact rows and do not use a scrollbar.
+Compact timeline, category and settings buttons share `editor.fitButtonBackground`. It retains the native horizontal texture caps and uses a continuous vertical texture range instead of compressing the stock top/bottom slices. It applies to the fill, contour, stroke and overlay glow, including images recreated by native focus and lock handlers. The twelve editor categories retain their compact rows and do not use a scrollbar. Settings keep native button shells and slider textures, with explicit compact mouse hit areas and one action per click/key. Dragging sends the latest value per setting to the main pipeline, where it is applied and acknowledged. Pending local edits survive older snapshots; unchanged values are not continuously refreshed.
 
 ## Editor pages
 
@@ -39,20 +42,32 @@ The editor follows the T6MVM category structure and exposes supported H1 control
 
 | Page | Available controls and limits |
 | --- | --- |
-| Main | Playback summary and eight numeric-setting presets saved as CFG files |
-| Camera | Flight speed, sensitivity, boost/precision, FOV, dolly offsets, marker actions and camera-path import/export |
-| Misc | Native HUD, effects and film settings |
-| Bone Camera | Availability information; bone attachment needs an additional world-tag camera hook |
+| Main | Playback summary and eight CFG presets including settings, custom sliders and placed point lights |
+| Camera | Flight speed, sensitivity, boost/precision, FOV, freeze freecam, deterministic shake, dolly offsets, marker actions and camera-path import/export |
+| Misc | Full game HUD toggle, player/corpse hiding, effects, bloom, film settings and near clip |
+| Bone Camera | Native world-tag attachment, actor/bone selection, local offsets, optional rotation following and detach to freecam |
 | SSAO | Native SSAO modes, overrides and tweak values |
-| Fog | Native fog and sky-fog settings; T6 height/color presets are not portable |
+| Fog | Copy map atmosphere, override distance/height density, haze, scattering direction, colors and sky-fog controls |
 | DOF | Native physical and Gaussian depth-of-field settings |
-| Sun | Sun-flare and shadow settings; changing map sun direction/color is not implemented |
-| Lights | Existing lighting/light-grid settings; custom light placement is not implemented |
-| Streams | Single beauty-video capture range, encoder settings and capture actions; FFmpeg required |
-| Weapon | Registered viewmodel settings; T6 camo, holdgun and animation hooks are not implemented |
-| Sliders | A custom palette of supported scalar float settings, saved with a preset |
+| Sun | Directional-light color, intensity, elevation/azimuth and Time Of Day; native flare and shadow settings |
+| Lights | Selected map-light color/intensity, up to 16 placed point lights with position/color/radius/intensity, native light-grid and shadow settings |
+| Streams | Capture current settings or omit players/corpses, In/Out range, encoder settings and capture actions; FFmpeg required |
+| Weapon | Native viewmodel visibility; offsets, sway, custom camo, holdgun and animation replacement require further H1 viewmodel/asset hooks |
+| Sliders | Up to 20 controls from registered H1 render/camera/effect float/vector controls and color pickers, saved with a preset |
 
-Capture hides the native panel. The advanced editor remains available for file browsing, conversion and detailed camera-key editing. Multi-pass capture, depth/greenscreen streams and custom spawned lights are not implemented.
+Large settings pages use native Previous/Next buttons. All twelve categories remain visible and no scrollbar is added. RGB settings use a color picker with a saturation/brightness square, hue strip, preview, HSV adjustment and preset swatches. Native RGBA alpha is preserved and remains separately editable. Noncolor vector channels preserve the other components when edited. Only registered settings with a usable native type/domain appear; latched and read-only settings are available through the demo console where applicable, rather than advertised as immediate menu controls.
+
+Editor rows own their mouse input: native MWR dispatches mouse release to a parent before its children, so nested arrow buttons could lose clicks. Decorative arrows now share the row's hit testing, while keyboard left/right remains supported. Sliders have a solid fill anchored at the left, a moving thumb and absolute pointer dragging with capture until mouse release. Headers and Main controls share the center of the settings area; labels, arrows, values and tracks use a consistent vertical center.
+
+**Reset This Tab** restores that category. **Reset All Editor Settings**, available in Main and every settings page, restores all exposed tab settings and selected custom sliders, shows the game HUD, detaches Bone Camera and clears editor point lights. It keeps the demo, dolly markers, custom palette selection and saved preset files. Queued edits are acknowledged/discarded before Reset/Load, so an earlier drag cannot reapply after resetting.
+
+**Time Of Day** selects a continuous 24-hour dynamic sun arc in ten-minute steps: sunrise at 06:00, noon at 12:00, sunset at 18:00. It sets elevation and azimuth together; manual direction edits remain available without an active clock fighting them. Intensity and color remain separate. This is a lighting-direction control, not a sky replacement or a rebake of the map. A hook at the native sun-direction resolver (`0x6503D0`, called by `R_UpdateSunLight` at `0x1C71B0`) supplies the same ray before the shadow direction is calculated. Native sun-shadow caching is temporarily disabled while the override is active and restored when it ends, so moving the sun does not reuse static map shadows. The verified setup call at `0x1C2852` is guarded against incompatible engine builds.
+
+Scene hooks run only during an armed replay. Atmosphere changes go through native `R_SetFog`; sun/map-light edits affect the renderer's per-frame primary-light copy; placed points use native `R_AddOmniLightToScene`. Player/corpse filtering checks the actual native entity pose and type at `R_AddDObjToScene`, leaving props intact. Bone Camera uses the current DObj world-tag matrix, preserves the initial camera offset and detaches if the target disappears. It does not automatically switch from a living player to a separately allocated corpse. Shake uses demo time, so pause and seek remain deterministic.
+
+Sun Light Override and other ON/OFF settings work from the row, arrows or keyboard selection. Direct edits to sun, map-light, fog and supported renderer tweak values automatically enable their corresponding override; loading a preset or resetting a page preserves the saved/default override state. Use **Copy Map Atmosphere** before adjusting fog. Place a point at the current camera, then edit it or cycle to another point. Point lights are cleared when a new replay starts and can be restored from a Main preset. The renderer may admit fewer than 16 editor points when gameplay lights occupy its native 32-light capacity. Sun edits affect dynamic illumination; baked lighting remains baked.
+
+Capture hides the native panel. The advanced editor remains available for file browsing, conversion and detailed camera-key editing. Automatic multiple-pass exports, depth/chroma material streams, custom spotlights, custom weapon camos and T6 shader/animation replacements are not implemented. They require separate H1 renderer/asset work; T6's offsets and shaders cannot be reused.
 
 Armed demo playback allows console changes to dvars whose permission flags would normally block editing, including cheat-protected, replicated and read-only settings. Native type/domain validation and latch behavior still apply. Recorded `sv_cheats` updates cannot disable editing during replay. Stopping playback restores normal permission checks and disables `sv_cheats` through the native setter. The native editor itself exposes a curated settings list rather than every console dvar.
 
@@ -60,4 +75,42 @@ Armed demo playback allows console changes to dvars whose permission flags would
 
 Run `tests/test-native-theater.cmd` from the repository after building the Lua dependency. The tests cover footer compatibility and validation, seek bounds, Space input ownership/repeat handling, in-game UI initialization order, paused panel updates and control action wiring.
 
-The Lua contract harness is a mock of LUI, not an MWR renderer or mouse-input test. It also checks all twelve categories without a scrollbar and background mapping after native focus layers are recreated. Release x64 compilation and the regression checks pass. Live screenshots confirmed the duration and playhead, and the compact button-background correction was confirmed in playback after `lui_restart`. Full in-game acceptance of every settings page, capture operation and dvar permission path remains pending.
+The Lua contract harness is a mock of LUI, not an MWR renderer or mouse-input test. It checks all twelve categories without a scrollbar, settings pagination, timeline hiding and editor routing, plus background mapping after native focus layers are recreated. It also checks mouse/keyboard override toggles, single-dispatch arrows, bounded pointer dragging, stale/partial acknowledgements, RGB/HSV conversion including HDR brightness, color selection and restoration. These checks do not establish real engine mouse behavior or scene acceptance. A separate test exercises the production JSON-to-Lua converter with populated controls, choices, custom sliders, events and camera keys, using one-based table indices. Release x64 compilation and the regression checks pass. Live screenshots confirmed duration/playhead and the compact button-background correction; startup was checked for the scene build. The earlier bridge array defect explains the empty settings pages and is corrected. Full in-game acceptance of the current scene/settings controls and capture operations remains with the user.
+
+## Native skybox selection
+
+Sun > Skybox opens a native button grid of extracted stock HDR cubemaps,
+including multiplayer and campaign skies. Original Map Sky restores the active
+map texture. The override changes only sky image bindings during demo playback;
+map materials, reflection probes, baked lightmaps and fog remain intact. Use the
+Sun and Fog controls to match the selected sky. A new replay resets to Original.
+The first selection uploads that texture; textures stay alive until client exit
+because native command buffers retain image pointers.
+
+Prepare the local catalog with Python and `lz4`:
+
+```
+python tools/prepare-theater-skies.py "<MWR game directory>" "F:/Dev/h1-theater-skies"
+```
+
+The extraction validates stock signed/unsigned v66 streams, inline cube headers,
+face/mip byte counts, and duplicate image hashes. Its manifest identifies each
+source zone and SHA-256. The installer copies only verified `.h1sky` files into
+`demos/theater/skies` with rollback and file parity. Game textures are local
+generated artifacts and are not included in source releases.
+
+`tests/test-native-theater.cmd` covers format validation and selector/picker
+lifecycle. `tests/test-theater-skies.cmd F:/Dev/h1-theater-skies` additionally
+creates every native texture and shader view on a hardware D3D11 device. These
+checks do not replace visual demo acceptance.
+
+Color-picker images retain explicit bounds in each tint/position state. The
+selection marker is created once and closed with the picker; no closed native
+image is reattached to the menu.
+
+Editor settings, sky selection and color-picker content share an upward offset
+so paging, reset/restore and back buttons stay above the bottom timeline hints.
+Category and picker headings use the same native `H1TitleFont` size and
+`MW1Title` text style as THEATER EDITOR, with a native green divider. The Lua
+contract checks heading/description spacing and content separation from the
+timeline; final appearance still requires in-game inspection.

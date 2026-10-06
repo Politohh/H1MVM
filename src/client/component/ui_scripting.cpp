@@ -25,6 +25,7 @@
 #include "demo/theater_editor.hpp"
 
 #include "game/ui_scripting/execution.hpp"
+#include "game/ui_scripting/json_conversion.hpp"
 #include "game/scripting/execution.hpp"
 
 #include "ui_scripting.hpp"
@@ -223,48 +224,7 @@ namespace ui_scripting
 
 		script_value json_to_lua(const nlohmann::json& json)
 		{
-			if (json.is_object())
-			{
-				table object;
-				for (const auto& [key, value] : json.items())
-				{
-					object[key] = json_to_lua(value);
-				}
-				return object;
-			}
-
-			if (json.is_array())
-			{
-				table array;
-				auto index = 1;
-				for (const auto& value : json.array())
-				{
-					array[index++] = json_to_lua(value);
-				}
-				return array;
-			}
-
-			if (json.is_boolean())
-			{
-				return json.get<bool>();
-			}
-
-			if (json.is_number_integer())
-			{
-				return json.get<int>();
-			}
-
-			if (json.is_number_float())
-			{
-				return json.get<float>();
-			}
-
-			if (json.is_string())
-			{
-				return json.get<std::string>();
-			}
-
-			return {};
+			return convert_json<script_value, table>(json);
 		}
 
 		void setup_functions()
@@ -285,6 +245,8 @@ namespace ui_scripting
 			{ return json_to_lua(theater_editor::state(revision)); };
 			game_type["theatereditorset"] = [](const game&, const std::string& name, double value)
 			{ return theater_editor::set(name, value); };
+			game_type["theatereditorcolor"] = [](const game&, const std::string& name, double red, double green, double blue)
+			{ return theater_editor::set_color(name, red, green, blue); };
 			game_type["theatereditoraction"] = [](const game&, const std::string& name, const std::string& argument)
 			{ return theater_editor::action(name, argument); };
 

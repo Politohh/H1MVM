@@ -60,11 +60,13 @@ cod4convert "C:\Demos\example.dm_1"
 
 In an H1 multiplayer match, `demostart` enables automatic recording and `demostop` disables it. Files are named automatically; these commands do not take a custom recording name. Recording locations use `demos/client/auto/`, or a mod-specific subdirectory when a mod is active.
 
-Use **F9** to browse demos when playback is stopped. During playback, **F1** shows or hides the native Theater controls, and **F2** cycles camera modes. **F9** also opens the native controls. Click the track to seek, or use the shortcuts below.
+Use **F9** to browse demos when playback is stopped. During playback, the native timeline starts visible. **F1** toggles the game HUD, **F3** opens/closes the native editor, **F4** hides/shows the timeline, and **F2** cycles camera modes. **F9** switches between cursor controls and camera input. The XP bar and its rank icons are hidden during demos. Click the track to seek, or use the shortcuts below.
 
 | Key | During demo playback |
 | --- | --- |
-| **F1** | Show/hide Theater controls |
+| **F1** | Toggle game HUD (timeline stays visible) |
+| **F3** | Open/close native Theater editor |
+| **F4** | Hide/show timeline and transport controls |
 | **F2** | Cycle first person, third person, free camera and dolly |
 | **K** | Add dolly marker |
 | **J** | Start/stop dolly playback |
@@ -73,7 +75,9 @@ Use **F9** to browse demos when playback is stopped. During playback, **F1** sho
 | **← / →** | Seek backward/forward five seconds |
 | **↑ / ↓** | Increase/decrease playback speed |
 
-**EDITOR** opens the native MWR editor with camera, visual settings, preset, capture and custom-slider pages. All twelve category buttons remain visible without scrolling. Each page exposes supported H1 settings; features that need additional engine hooks show their current limitations. Back returns to the timeline. **F10** retains the existing browser and advanced camera/capture editor. `demotimeline` shows or hides the native panel. Kill/death markers are indexed in newly converted demos; older files collect them during playback. See [Native theater timeline](docs/native-theater.md).
+Free camera uses WASD and mouse look, E/Q for height, Shift for faster flight, **Shift + scroll for zoom**, and scroll for camera roll. Compact native hints appear above the timeline. Space, seek and speed shortcuts remain available while flying.
+
+**EDITOR** opens the native MWR editor with camera, visual settings, preset, capture and custom-slider pages. All twelve category buttons remain visible without scrolling. Pages expose H1 settings plus native hooks for bone attachment, atmosphere, directional lighting, placed point lights and actor hiding. Large pages use Previous/Next buttons. Back returns to the timeline. **F10** retains the existing browser and advanced camera/capture editor. `demotimeline` shows or hides the native panel. Kill/death markers are indexed in newly converted demos; older files collect them during playback. See [Native theater timeline](docs/native-theater.md).
 
 Useful console commands:
 

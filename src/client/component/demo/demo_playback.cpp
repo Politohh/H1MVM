@@ -418,11 +418,12 @@ namespace // demo class
         // that client connection directly; no loopback server or match is needed.
         std::ifstream input(path_, std::ios::binary);
         std::vector<std::uint8_t> initial;
+        std::vector<std::uint8_t> facial_data;
         std::vector<std::string> model_names;
         std::map<unsigned, std::string> model_bindings;
 		std::map<unsigned, std::string> animation_bindings;
 		std::map<unsigned, std::string> agent_names;
-        for (int guard = 0; guard < 8 && input && initial.empty(); ++guard)
+        for (int guard = 0; guard < 136 && input && initial.empty(); ++guard)
         {
             std::uint8_t id{}; std::uint32_t size{};
             input.read(reinterpret_cast<char*>(&id), 1);
@@ -431,6 +432,12 @@ namespace // demo class
             std::vector<std::uint8_t> data(size);
             input.read(reinterpret_cast<char*>(data.data()), size);
             if (!input) break;
+            if ((id & 31) == 7)
+            {
+                if (facial_data.size() + data.size() > 16 * 1024 * 1024)
+                    throw std::runtime_error("Oversized converted facial data");
+                facial_data.insert(facial_data.end(), data.begin(), data.end());
+            }
             if ((id & 31) == 5)
             {
                 std::vector<std::string> fields;
@@ -442,7 +449,8 @@ namespace // demo class
                     offset = static_cast<std::size_t>(end - data.begin()) + 1;
                 }
                 converted_ = fields.size() >= 9 && (fields[1] == "H1 COD4 conversion v1"
-                    || fields[1] == "H1 COD4 conversion v2" || fields[1] == "H1 COD4 conversion v3");
+                    || fields[1] == "H1 COD4 conversion v2" || fields[1] == "H1 COD4 conversion v3"
+                    || fields[1] == "H1 COD4 conversion v4");
                 legacy_obituaries_ = converted_ && fields[1] == "H1 COD4 conversion v2";
                 if (cod4_playback_hud) cod4_playback_hud->current.enabled = converted_;
                 if (converted_)
@@ -481,6 +489,7 @@ namespace // demo class
         converted_trace_time = {};
         trace_converted("bootstrap begin");
         cod4_camera::set_model_bindings(model_bindings, animation_bindings);
+        cod4_camera::set_facial_data(facial_data);
         cod4_camera::set_agent_names(agent_names);
         cod4_camera::bootstrap_demo(*mapname, initial);
         trace_converted("bootstrap complete");

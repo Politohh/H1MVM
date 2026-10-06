@@ -1,7 +1,8 @@
 param(
     [string]$GameDirectory = 'C:\Program Files (x86)\Steam\steamapps\common\Call of Duty Modern Warfare Remastered',
     [string]$DataDirectory = "$env:LOCALAPPDATA\h1-mod\cdata",
-    [string]$BackupRoot = 'F:\Dev\h1-releases\install-backups'
+    [string]$BackupRoot = 'F:\Dev\h1-releases\install-backups',
+    [string]$SkySourceDirectory = 'F:\Dev\h1-theater-skies'
 )
 $ErrorActionPreference = 'Stop'
 if (Get-Process h1-mod -ErrorAction SilentlyContinue) { throw 'Close H1 before installing.' }
@@ -15,6 +16,16 @@ $files = @(
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\timeline.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\timeline.lua'; Backup = 'theater\timeline.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\editor.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\editor.lua'; Backup = 'theater\editor.lua' }
 )
+$skyManifest = Join-Path $SkySourceDirectory 'manifest.json'
+if (Test-Path -LiteralPath $skyManifest -PathType Leaf) {
+    $skies = Get-Content -LiteralPath $skyManifest -Raw | ConvertFrom-Json
+    foreach ($sky in $skies.assets) {
+        if ($sky.name -notmatch '^[a-zA-Z0-9_]+$' -or $sky.zone -notmatch '^[a-zA-Z0-9_]+$') { throw 'Invalid sky manifest path' }
+        $source = Join-Path $SkySourceDirectory "$($sky.zone)\$($sky.name).h1sky"
+        if (!(Test-Path -LiteralPath $source -PathType Leaf) -or (Get-FileHash -LiteralPath $source).Hash -ne $sky.sha256) { throw "Sky provenance mismatch: $($sky.name)" }
+        $files += @{ Source=$source; Target=(Join-Path $GameDirectory "demos\theater\skies\$($sky.name).h1sky"); Backup="skies\$($sky.name).h1sky" }
+    }
+}
 foreach ($file in $files) {
     if (!(Test-Path -LiteralPath $file.Source -PathType Leaf)) { throw "Missing build input: $($file.Source)" }
     $file.NewHash = (Get-FileHash -LiteralPath $file.Source -Algorithm SHA256).Hash

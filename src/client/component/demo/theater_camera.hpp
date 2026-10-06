@@ -43,6 +43,9 @@ namespace theater_camera
 
 	[[nodiscard]] camera_mode get_mode();
 	void set_mode(camera_mode mode);
+	// HUD choice is independent of camera mode and restored when playback ends.
+	void toggle_hud();
+	[[nodiscard]] bool is_hud_hidden();
 
 	// ---- dolly keyframe editing (used by the F9 GUI + console commands) --------
 	// Snapshot the CURRENT render camera pose at the current demo time as a new
@@ -65,7 +68,7 @@ namespace theater_camera
 	[[nodiscard]] float get_freecam_fov();
 	void set_freecam_fov(float fov);
 
-	// Mouse-wheel input while flying the freecam: wheel = camera roll, Alt+wheel = FOV. The
+	// Mouse-wheel input while flying the freecam: wheel = camera roll, Shift+wheel = FOV. The
 	// wheel comes in as K_MWHEELUP/DOWN key events, so the input hook forwards them here.
 	// Both roll + FOV are captured per-marker, so they're dynamic along the dolly path.
 	// Returns true if the wheel was consumed.

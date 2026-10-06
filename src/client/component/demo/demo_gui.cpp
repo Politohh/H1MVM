@@ -239,84 +239,6 @@ namespace demo_gui
 		}
 
 
-		// Always-on freecam controls HUD (top-left), shown while flying with the F9 editor closed.
-		// Lists every key + live marker/FOV/roll info so you never need the editor open to fly.
-		void draw_freecam_hud()
-		{
-			if (!demo_playback::playing()
-				|| theater_camera::get_mode() != theater_camera::THEATER_CAMERA_FREECAM
-				|| window_open) // the editor already shows this; don't double up / overlap
-			{
-				return;
-			}
-
-			struct row_t { const char* key; const char* desc; };
-			static const row_t rows[] = {
-				{ "WASD",       "Move" },
-				{ "Mouse",      "Look" },
-				{ "E / Q",      "Up / Down" },
-				{ "Shift",      "Fly faster" },
-				{ "Scroll",     "Camera roll" },
-				{ "Alt+Scroll", "Field of view" },
-				{ "MMB / K",    "Place marker" },
-				{ "J",          "Start / stop campath" },
-				{ "L",          "Clear markers (path stopped)" },
-				{ "Space",      "Pause / play" },
-				{ "F1",         "Show / hide controls" },
-				{ "F2",         "Cycle camera modes" },
-				{ "F10",        "Open editor" },
-			};
-			constexpr int n = static_cast<int>(sizeof(rows) / sizeof(rows[0]));
-
-			auto* dl = ImGui::GetForegroundDrawList();
-			const float pad_x = 14.0f, pad_y = 11.0f;
-			const float ox = 20.0f, oy = 20.0f;
-			const float line_h = ImGui::GetTextLineHeightWithSpacing();
-			const float key_col_w = 96.0f;
-
-			float max_desc = 0.0f;
-			for (const auto& r : rows) { max_desc = std::max(max_desc, ImGui::CalcTextSize(r.desc).x); }
-			const float panel_w = pad_x * 2.0f + key_col_w + max_desc;
-			const float panel_h = pad_y * 2.0f + line_h * (n + 3.0f) + 16.0f; // header + rows + sep + 2 info
-
-			const ImVec2 p0(ox, oy);
-			const ImVec2 p1(ox + panel_w, oy + panel_h);
-			dl->AddRectFilled(p0, p1, IM_COL32(14, 14, 18, 212), 9.0f);
-			dl->AddRect(p0, p1, IM_COL32(245, 168, 46, 190), 9.0f, 0, 1.5f);
-
-			const float x_key = ox + pad_x;
-			const float x_desc = x_key + key_col_w;
-			float y = oy + pad_y;
-
-			dl->AddText(ImVec2(x_key, y), IM_COL32(245, 168, 46, 255), "FREECAM CONTROLS");
-			y += line_h + 5.0f;
-			for (const auto& r : rows)
-			{
-				dl->AddText(ImVec2(x_key, y), IM_COL32(255, 236, 150, 255), r.key);
-				dl->AddText(ImVec2(x_desc, y), IM_COL32(206, 206, 214, 255), r.desc);
-				y += line_h;
-			}
-
-			y += 5.0f;
-			dl->AddLine(ImVec2(x_key, y), ImVec2(p1.x - pad_x, y), IM_COL32(90, 90, 105, 170), 1.0f);
-			y += 7.0f;
-
-			const auto& kfs = theater_camera::get_keyframes();
-			const auto pose = theater_camera::get_freecam_pose();
-			const auto info = std::format("Markers: {}    FOV: {:.0f}    Roll: {:.0f}",
-				kfs.size(), pose.fov, pose.angles[2]);
-			dl->AddText(ImVec2(x_key, y), IM_COL32(206, 206, 214, 255), info.c_str());
-			y += line_h;
-			if (kfs.size() < 2)
-			{
-				dl->AddText(ImVec2(x_key, y), IM_COL32(255, 150, 120, 255), "Place 2+ markers, then press J");
-			}
-			else
-			{
-				dl->AddText(ImVec2(x_key, y), IM_COL32(150, 220, 150, 255), "Press J to play the campath");
-			}
-		}
-
 		// IWXMVM-style timeline: a zoomable bar (Ctrl+scroll) showing the campath range,
 		// draggable keyframe diamonds and a scrubbable playhead, plus a full-demo overview
 		// strip below it (drag to slide the zoomed view across the whole demo).
@@ -1134,7 +1056,7 @@ namespace demo_gui
 			draw_markers_overlay();
 
 			// always-on freecam controls + marker info (top-left), while flying with F9 closed
-			draw_freecam_hud();
+
 
 			if (toggled && window_open)
 			{

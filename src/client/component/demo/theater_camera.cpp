@@ -2,6 +2,7 @@
 #include "loader/component_loader.hpp"
 
 #include "theater_camera.hpp"
+#include "theater_scene.hpp"
 #include "cod4_camera.hpp"
 #include "demo_game.hpp"     // game::refdef, game::CG_CalcViewValues, game::AxisToAngles, demo_compat::register_enum
 #include "demo_playback.hpp" // demo_playback::playing()/is_replay_armed()/current_time()
@@ -71,10 +72,12 @@ namespace theater_camera
 		camera_mode g_last_mode = THEATER_CAMERA_FIRST_PERSON;
 		int saved_thirdperson = -1;                // prior cg_thirdPerson value to restore
 
-		// HUD toggle dvars saved/restored around the movie modes. MWR's HUD is LUI, so
+		// F1 HUD toggle dvars saved/restored around demo playback. MWR's HUD is LUI, so
 		// cg_draw2D alone (the old 2D layer) doesn't hide it -- hud_enable/hud_drawHud do.
 		const char* const hud_dvar_names[] = { "hud_enable", "hud_drawHud", "cg_draw2D" };
 		int saved_hud[3] = { -1, -1, -1 };
+		bool hud_hidden = false;
+		unsigned hud_session = 0;
 		int saved_cheats = -1;                     // sv_cheats original (cg_draw2D is cheat-locked)
 
 		// The exact render view applied THIS frame (cached at the end of the CG_CalcView
@@ -558,9 +561,7 @@ namespace theater_camera
 			// third/freecam/dolly all want the player body visible; first-person doesn't.
 			set_thirdperson(mode != THEATER_CAMERA_FIRST_PERSON);
 
-			// hide the 2D HUD for the "movie" modes (freecam + dolly) for a clean frame;
-			// keep it in first/third-person spectating.
-			set_hud_hidden(mode == THEATER_CAMERA_FREECAM || mode == THEATER_CAMERA_DOLLY);
+
 		}
 
 		// =========================================================================
@@ -599,11 +600,21 @@ namespace theater_camera
 			const auto result = cg_calc_view_values_hook.invoke<std::uint64_t>(local_client_num, a2);
 			if (replay_fov_multiplier) *replay_fov_multiplier = saved_fov_multiplier;
 
+			// Keep F1 independent of camera/input changes, including first-person playback.
+			const bool replay = demo_playback::playing() && demo_playback::is_replay_armed();
+			if (!replay || hud_session != demo_playback::session_id())
+			{
+				set_hud_hidden(false);
+				hud_hidden = false;
+				hud_session = demo_playback::session_id();
+			}
+			set_hud_hidden(replay && hud_hidden);
+
 			camera_pose_t cod4_pose{};
 			if (cod4_camera::view(cod4_pose))
 			{
 				set_thirdperson(false);
-				set_hud_hidden(true);
+				if (!replay) set_hud_hidden(true);
 				g_last_mode = THEATER_CAMERA_DOLLY; // restore saved dvars when the track stops
 				if (auto* rd = get_refdef(); rd && rd->view.tanHalfFovY > 0)
 				{
@@ -645,15 +656,15 @@ namespace theater_camera
 				g_last_mode = mode;
 			}
 
-			// keep the HUD hidden every frame while in a movie mode (freecam/dolly)
-			set_hud_hidden(mode == THEATER_CAMERA_FREECAM || mode == THEATER_CAMERA_DOLLY);
 
 			// J/K/L are handled once by the game key-event bridge, including while
 			// native theater controls are open. Keep middle-mouse capture below.
 
 			if (mode == THEATER_CAMERA_FREECAM)
 			{
-				update_freecam();
+				const auto* frozen = game::Dvar_FindVar("demo_camera_frozen");
+				if (!frozen || !frozen->current.enabled) update_freecam();
+				else { last_update_ms = 0; g_mouse_dx = g_mouse_dy = 0; }
 
 				// middle-mouse drops a marker while flying (edge-detected) -- no need to
 				// open the F9 panel mid-flight.
@@ -683,6 +694,13 @@ namespace theater_camera
 			}
 			// first_person / third_person: leave the engine's computed view as-is
 			// (third_person is driven by the cg_thirdPerson chase cam set in on_mode_changed).
+
+            camera_pose_t scene_pose{};
+            if (read_current_pose(scene_pose))
+            {
+                theater_scene::camera(scene_pose);
+                apply_pose_to_refdef(scene_pose);
+            }
 
 
 			// Cache the exact view this frame renders with, so the marker overlay projects
@@ -752,6 +770,25 @@ namespace theater_camera
 		return p;
 	}
 
+	bool is_hud_hidden()
+	{
+		return demo_playback::playing() && demo_playback::is_replay_armed() &&
+			hud_session == demo_playback::session_id() && hud_hidden;
+	}
+
+	void toggle_hud()
+	{
+		if (!demo_playback::playing() || !demo_playback::is_replay_armed()) return;
+		if (hud_session != demo_playback::session_id())
+		{
+			set_hud_hidden(false);
+			hud_hidden = false;
+			hud_session = demo_playback::session_id();
+		}
+		hud_hidden = !hud_hidden;
+		set_hud_hidden(hud_hidden);
+	}
+
 	void set_freecam_pose(const camera_pose_t& pose)
 	{
 		set_mode(THEATER_CAMERA_FREECAM);
@@ -809,7 +846,7 @@ namespace theater_camera
 	float get_freecam_fov() { return freecam_fov; }
 	void set_freecam_fov(float fov) { freecam_fov = std::clamp(fov, 1.0f, 179.0f); }
 
-	// Mouse wheel while flying the freecam: wheel = camera roll (Dutch tilt), Alt+wheel = FOV.
+	// Mouse wheel while flying the freecam: wheel = camera roll (Dutch tilt), Shift+wheel = FOV.
 	// Both are part of the captured pose, so they interpolate along the dolly path = dynamic
 	// roll + FOV per marker. The wheel arrives as K_MWHEELUP/DOWN key events (not pollable per
 	// frame), so the input hook forwards them here. Returns true if consumed.
@@ -824,7 +861,7 @@ namespace theater_camera
 			return false;
 		}
 		const bool up = (key == game::K_MWHEELUP);
-		if (GetAsyncKeyState(VK_MENU) & 0x8000) // Alt held -> FOV (up = zoom in = narrower)
+		if (GetAsyncKeyState(VK_SHIFT) & 0x8000) // Shift held -> FOV (up = zoom in = narrower)
 		{
 			freecam_fov = std::clamp(freecam_fov + (up ? -2.0f : 2.0f), 1.0f, 179.0f);
 		}

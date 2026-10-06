@@ -76,7 +76,7 @@ namespace input
 			}
 			if (theater_ui::handle_key_event(key, down)) return;
 
-			// freecam mouse-wheel: roll / Alt+FOV (wheel arrives as K_MWHEELUP/DOWN key events)
+			// freecam mouse-wheel: roll / Shift+FOV (wheel arrives as K_MWHEELUP/DOWN key events)
 			if (!theater_ui::interactive() && down && theater_camera::handle_wheel(key))
 			{
 				return;
