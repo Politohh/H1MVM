@@ -3,6 +3,7 @@
 
 #include "demo_game.hpp"
 #include "cod4_camera.hpp"
+#include "cod4_snipers.hpp"
 #include "demo_playback.hpp"
 #include "theater_ui.hpp"
 
@@ -357,6 +358,7 @@ namespace killfeed
 
 		void cg_draw2d_stub(int local_client_num)
 		{
+            cod4_snipers::draw_scope(local_client_num);
 			// The local match is only a renderer for the imported camera. Its
 			// countdown and HUD are unrelated to the recorded COD4 session.
 			// Gate the existing draw hook from the first map frame, including

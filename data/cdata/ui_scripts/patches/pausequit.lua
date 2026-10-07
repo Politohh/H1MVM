@@ -25,6 +25,9 @@ if not game:issingleplayer() then
         LUI.FlowManager.RequestAddMenu(nil, "quit_popmenu")
     end
     local addQuitButton = function(element)
+        -- Recorded playback supplies its own quit button. Script loading order
+        -- must not append a second one after the demo menu is built.
+        if game.gettheaterstate and game:gettheaterstate(-1,-1).playing then return end
         local menu = element
         menu:AddButton("@MENU_QUIT_TO_DESKTOP", quitToDesktop)
     end

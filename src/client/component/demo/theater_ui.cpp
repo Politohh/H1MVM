@@ -79,6 +79,12 @@ namespace theater_ui
                 {"keys", nlohmann::json::array()}, {"events", nlohmann::json::array()}};
             if (playing)
             {
+                const auto* map = game::Dvar_FindVar("mapname");
+                const auto* mode = game::Dvar_FindVar("ui_gametype");
+                const auto* map_title = map && map->current.string ? game::UI_GetMapDisplayName(map->current.string) : nullptr;
+                const auto* mode_title = mode && mode->current.string ? game::UI_GetGameTypeDisplayName(mode->current.string) : nullptr;
+                data["mapTitle"] = map_title ? map_title : "";
+                data["modeTitle"] = mode_title ? mode_title : "";
                 const auto& keys = theater_camera::get_keyframes();
                 std::string signature;
                 for (std::size_t i = 0; i < keys.size(); ++i)
@@ -265,7 +271,7 @@ namespace theater_ui
             // Wall-clock scheduler: unlike replay-scaled LUI timers it runs during pause.
             scheduler::loop([]
             {
-                if (ready && ui_scripting::lui_running()) ui_scripting::notify("h1_theater_update", {});
+                if (ui_scripting::lui_running()) ui_scripting::notify("h1_theater_update", {});
             }, scheduler::lui, 50ms);
             command::add("demotheater", [] { (void)toggle(); });
             command::add("demotimeline", []

@@ -4,6 +4,7 @@
 #include "theater_camera.hpp"
 #include "theater_scene.hpp"
 #include "cod4_camera.hpp"
+#include "cod4_snipers.hpp"
 #include "demo_game.hpp"     // game::refdef, game::CG_CalcViewValues, game::AxisToAngles, demo_compat::register_enum
 #include "demo_playback.hpp" // demo_playback::playing()/is_replay_armed()/current_time()
 
@@ -507,11 +508,11 @@ namespace theater_camera
 				if (hidden)
 				{
 					if (saved_cheats < 0) saved_cheats = cheats->current.enabled ? 1 : 0;
-					cheats->current.enabled = true;
+					if (!cheats->current.enabled) game::Dvar_SetFromStringFromSource(cheats, "1", game::DVAR_SOURCE_INTERNAL);
 				}
 				else if (saved_cheats >= 0)
 				{
-					cheats->current.enabled = (saved_cheats != 0);
+					game::Dvar_SetFromStringFromSource(cheats, saved_cheats ? "1" : "0", game::DVAR_SOURCE_INTERNAL);
 					saved_cheats = -1;
 				}
 			}
@@ -530,11 +531,11 @@ namespace theater_camera
 					{
 						saved_hud[i] = d->current.enabled ? 1 : 0;
 					}
-					d->current.enabled = false;
+					if (d->current.enabled) game::Dvar_SetFromStringFromSource(d, "0", game::DVAR_SOURCE_INTERNAL);
 				}
 				else if (saved_hud[i] >= 0)
 				{
-					d->current.enabled = (saved_hud[i] != 0);
+					game::Dvar_SetFromStringFromSource(d, saved_hud[i] ? "1" : "0", game::DVAR_SOURCE_INTERNAL);
 					saved_hud[i] = -1;
 				}
 			}
@@ -569,6 +570,7 @@ namespace theater_camera
 		// =========================================================================
         std::uint64_t calc_view_values_stub(int local_client_num, void* a2)
         {
+            cod4_snipers::prepare_pose();
             if (demo_playback::converted() && !game::VirtualLobby_Loaded())
             {
                 // Repair v1 converted files created with a zeroed linked-view
@@ -607,6 +609,10 @@ namespace theater_camera
 				set_hud_hidden(false);
 				hud_hidden = false;
 				hud_session = demo_playback::session_id();
+				// Each recording opens with a visible HUD, even if old config or a
+				// previous VM left the stock visibility dvars disabled.
+				if (replay) for (const auto* name : hud_dvar_names)
+					if (auto* d = game::Dvar_FindVar(name)) game::Dvar_SetFromStringFromSource(d, "1", game::DVAR_SOURCE_INTERNAL);
 			}
 			set_hud_hidden(replay && hud_hidden);
 
@@ -620,7 +626,11 @@ namespace theater_camera
 				{
 					// Keep the client's native FOV, including its configured scale and ADS.
 					for (int i = 0; i < 3; ++i) rd->view.org[i] = cod4_pose.pos[i];
-					angles_to_axis(cod4_pose.angles, rd->view.axis);
+                    // Preview snapshots already feed the recorded angles to
+                    // CG_CalcViewValues. Keep its recoil/view animation for
+                    // original sniper presentation instead of erasing them.
+                    if (!cod4_snipers::preserve_camera_motion())
+                        angles_to_axis(cod4_pose.angles, rd->view.axis);
 					cod4_camera::record_applied(rd->view.org, 2.0f * std::atan(rd->view.tanHalfFovX) * RAD2DEG);
 				}
 				return result;

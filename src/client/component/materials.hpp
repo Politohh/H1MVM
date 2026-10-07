@@ -5,6 +5,6 @@
 namespace materials
 {
 	bool setup_material_image(game::Material* material, const std::string& data);
-	game::Material* create_material(const std::string& name);
+	game::Material* create_material(const std::string& name, const game::Material* base = nullptr);
 	void free_material(game::Material* material);
 }

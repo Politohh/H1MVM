@@ -344,13 +344,15 @@ local function updateTheater(root)
     game:theaterkeyboard(menuRoot ~= nil or not root:AnyActiveMenusInStack())
 end
 
-LUI.onmenuopen("mp_hud", function(hud)
+local getRoot = Engine.GetLuiRoot
+local function attachHud(hud, root)
     if Engine.InFrontend() then return end
+    if gameHud == hud and hudPanel then return end
     if hudPanel then hudPanel:close() end
     gameHud, hudSuppressed = hud, false
     xpWidget = hud.experienceBar and hud.experienceBar.widget or nil
     xpSuppressed = false
-    local root = Engine.GetLuiRoot()
+    root = root or getRoot()
     local panel = buildPanel(false)
     hudPanel = panel
     -- The root does not exist yet when the in-game HKS VM loads scripts.
@@ -365,5 +367,17 @@ LUI.onmenuopen("mp_hud", function(hud)
     end)
     game:theaterready(true)
     print("[theater] Native MWR timeline attached to HUD")
-end)
+end
+LUI.onmenuopen("mp_hud", function(hud) attachHud(hud) end)
+-- HUD construction may precede extension loading on a map transition. The
+-- wall-clock bridge gets the current root even before theaterready, so recover
+-- that HUD once instead of requiring a user-issued lui_restart.
+Engine.GetLuiRoot = function(...)
+    local root = getRoot(...)
+    if root and not Engine.InFrontend() and CoD and CoD.TextSettings and CoD.TextSettings.TitleFontTiny then
+        local hud = root:getFirstDescendentById("mp_hud")
+        if hud and (hud ~= gameHud or not hudPanel) then attachHud(hud, root) end
+    end
+    return root
+end
 print("[theater] Native MWR timeline script loaded")

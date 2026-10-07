@@ -1101,7 +1101,7 @@ namespace cod4_camera
             packet.integer(0); // reliable command sequence
             packet.string(map);
             packet.integer(0);
-            packet.string("war");
+            packet.string(cod4::recorded_gametype(track.configstrings));
             packet.integer(0);
             packet.bits(1, 3); // configstring section
             packet.word(static_cast<int>(initial_configs.size()));
@@ -1118,6 +1118,18 @@ namespace cod4_camera
             initial_gamestate.assign(packet.bytes.begin(), packet.bytes.begin() + packet.msg.cursize);
         }
 
+        void replay_connection_limits(unsigned flags)
+        {
+            // CL_ConnectFromParty initializes all snapshot rings via 0x12BCD0.
+            // Its ordinary MP flags allocate no agent ring. Converted recordings
+            // can contain native ET_AGENT actors beyond the 18 player slots;
+            // use the engine's 18-player/24-agent configuration before allocation.
+            // The scope is the replay bootstrap, so ordinary connections retain
+            // their native flags and the engine owns and frees the ring storage.
+            if (bootstrapping && !recorded_agent_names.empty()) flags |= 2u;
+            utils::hook::invoke<void>(0x12BCD0_b, flags);
+        }
+
         void bootstrap_client(const std::string& map)
         {
             replay_asset_pool = true;
@@ -1127,7 +1139,7 @@ namespace cod4_camera
             game::netadr_s address{};
             address.type = game::NA_BAD; // replay has no network destination
             std::array<char, 0x100> session{};
-            utils::hook::invoke<void>(0x12DFF0_b, 0, session.data(), &address, map.c_str(), "war");
+            utils::hook::invoke<void>(0x12DFF0_b, 0, session.data(), &address, map.c_str(), cod4::recorded_gametype(track.configstrings).c_str());
             *game::mp::connstate = game::CA_CONNECTED;
             if (game::SV_Loaded()) throw std::runtime_error("Replay initialization unexpectedly started a server");
 
@@ -1137,7 +1149,7 @@ namespace cod4_camera
                 serverinfo += std::format("\\0x{:08X}\\{}", static_cast<unsigned>(dvars::generate_hash(name)), value);
             };
             field("mapname", map);
-            field("g_gametype", "war");
+            field("g_gametype", cod4::recorded_gametype(track.configstrings));
             field("sv_maxclients", "18");
             field("sv_hostname", "COD4 demo replay");
             field("sv_running", "0");
@@ -1145,6 +1157,10 @@ namespace cod4_camera
             std::map<int, std::string> configs{{0, serverinfo}, {1, ""}, {3, "0"}, {6, "0"}, {9, "0000000000000000"}, {10, "0 0 0 1"}};
             if (const auto center = track.configstrings.find(12); center != track.configstrings.end()) configs[8] = center->second;
             cod4::translate_minimap_configstrings(track.configstrings, configs);
+            const auto mode = cod4::recorded_gametype(track.configstrings);
+            configs[1] = "\\ui_gametype\\" + mode;
+            const auto scores = cod4::collect_team_scores(world);
+            if (!scores.empty()) configs[1] += "\\ui_scorelimit\\" + std::to_string(scores.front().limit);
             initial_configs = std::move(configs);
             save_initial_gamestate(map);
             replay_message packet;
@@ -1646,8 +1662,10 @@ namespace cod4_camera
             std::string header;
             for (const auto& item : std::vector<std::string>{"", client_slots.dynamic() ? "H1 COD4 conversion v5" : use_facial_heads ? "H1 COD4 conversion v4" : "H1 COD4 conversion v3",
                 client_slots.dynamic() ? "v0.0.5" : use_facial_heads ? "v0.0.4" : "v0.0.3",
-                std::to_string(PROTOCOL), "", "COD4 conversion", "", track.map, "war"})
+                std::to_string(PROTOCOL), "", "COD4 conversion", "", track.map, cod4::recorded_gametype(track.configstrings)})
             { header += item; header.push_back('\0'); }
+            for (const auto& score : cod4::collect_team_scores(world))
+            { header += std::format("@teamscore:{}:{}:{}:{}", score.time, score.axis, score.allies, score.limit); header.push_back('\0'); }
             for (const auto& model : requested_models) { header += model; header.push_back('\0'); }
             for (const auto& [index, model] : model_bindings)
             { header += std::format("@model:{}:{}", index, model); header.push_back('\0'); }
@@ -1675,7 +1693,7 @@ namespace cod4_camera
             { header += std::format("@fx:{}:{}", car_effect_index, car_effect_name); header.push_back('\0'); }
             demo_utils::write_id_and_size(output, header.size(), demo_utils::demo_data_id::gen_header);
             output.write(header.data(), header.size());
-            const auto map_header = track.map + std::string("\0war\0", 5);
+            const auto map_header = track.map + std::string(1, '\0') + cod4::recorded_gametype(track.configstrings) + std::string(1, '\0');
             demo_utils::write_id_and_size(output, map_header.size(), demo_utils::demo_data_id::map_header);
             output.write(map_header.data(), map_header.size());
             if (client_slots.dynamic())
@@ -2182,7 +2200,7 @@ namespace cod4_camera
         converted_bindings = true;
     }
 
-    void bootstrap_demo(const std::string& map, const std::vector<std::uint8_t>& gamestate)
+    void bootstrap_demo(const std::string& map, const std::vector<std::uint8_t>& gamestate, const std::string& gametype)
     {
         replay_asset_pool = true;
         bootstrapping = true;
@@ -2191,7 +2209,7 @@ namespace cod4_camera
         game::netadr_s address{};
         address.type = game::NA_BAD;
         std::array<char, 0x100> session{};
-        utils::hook::invoke<void>(0x12DFF0_b, 0, session.data(), &address, map.c_str(), "war");
+        utils::hook::invoke<void>(0x12DFF0_b, 0, session.data(), &address, map.c_str(), gametype.c_str());
         *game::mp::connstate = game::CA_CONNECTED;
         if (game::SV_Loaded()) throw std::runtime_error("Demo bootstrap unexpectedly started a server");
         replay_message packet;
@@ -2479,6 +2497,7 @@ namespace cod4_camera
                 console::info("COD4 face release: %.3fs\n", expression->blend_seconds);
             });
             get_configstring_hook.create(0x33B820_b, get_configstring);
+            utils::hook::call(0x12E136_b, replay_connection_limits);
             utils::hook::call(0x7445D_b, reserve_view_weapon_pool);
             command::add("cod4cam", [](const command::params& args)
             {

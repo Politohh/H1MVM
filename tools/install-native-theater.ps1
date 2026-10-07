@@ -2,7 +2,9 @@ param(
     [string]$GameDirectory = 'C:\Program Files (x86)\Steam\steamapps\common\Call of Duty Modern Warfare Remastered',
     [string]$DataDirectory = "$env:LOCALAPPDATA\h1-mod\cdata",
     [string]$BackupRoot = 'F:\Dev\h1-releases\install-backups',
-    [string]$SkySourceDirectory = 'F:\Dev\h1-theater-skies'
+    [string]$SkySourceDirectory = 'F:\Dev\h1-theater-skies',
+    [string]$SniperSourceDirectory = 'F:\Dev\h1-sniper-source',
+    [string]$ScopeImage = ''
 )
 $ErrorActionPreference = 'Stop'
 if (Get-Process h1-mod -ErrorAction SilentlyContinue) { throw 'Close H1 before installing.' }
@@ -16,9 +18,29 @@ $files = @(
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\timeline.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\timeline.lua'; Backup = 'theater\timeline.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\editor.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\editor.lua'; Backup = 'theater\editor.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\library.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\library.lua'; Backup = 'theater\library.lua' },
+    @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\match_hud.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\match_hud.lua'; Backup = 'theater\match_hud.lua' },
+    @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\pause_menu.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\pause_menu.lua'; Backup = 'theater\pause_menu.lua' },
+    @{ Source = Join-Path $repository 'data\cdata\ui_scripts\patches\pausequit.lua'; Target = Join-Path $DataDirectory 'ui_scripts\patches\pausequit.lua'; Backup = 'patches\pausequit.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\server_list\lobby.lua'; Target = Join-Path $DataDirectory 'ui_scripts\server_list\lobby.lua'; Backup = 'server_list\lobby.lua' }
 )
 $skyManifest = Join-Path $SkySourceDirectory 'manifest.json'
+$sniperManifest = Join-Path $SniperSourceDirectory 'manifest.json'
+if (Test-Path -LiteralPath $sniperManifest -PathType Leaf) {
+    $sniperInputs = Get-Content -LiteralPath $sniperManifest -Raw | ConvertFrom-Json
+    foreach ($inputFile in $sniperInputs.files) {
+        if ($inputFile.name -notmatch '^(viewmodel_[a-z0-9_]+|view(model_[a-z0-9_]+|hands_usmc3)\.rig|animations\.json|scope\.png)$') { throw 'Unexpected sniper asset path' }
+        $source = Join-Path $SniperSourceDirectory $inputFile.name
+        if ((Get-FileHash -LiteralPath $source).Hash -ne $inputFile.sha256) { throw 'Sniper source provenance mismatch' }
+        if ($inputFile.name -eq 'scope.png') {
+            # Keep the authenticated original intact; install a local custom
+            # scope verbatim and record its own source/hash in the manifest.
+            $customScope = if ($ScopeImage) { $ScopeImage } else { Join-Path $SniperSourceDirectory 'scope_upscale.png' }
+            if ($ScopeImage -and !(Test-Path -LiteralPath $customScope -PathType Leaf)) { throw 'Missing custom scope image' }
+            if (Test-Path -LiteralPath $customScope -PathType Leaf) { $source = $customScope }
+        }
+        $files += @{ Source=$source; Target=(Join-Path $GameDirectory "cod4_snipers\$($inputFile.name)"); Backup="cod4_snipers\$($inputFile.name)" }
+    }
+}
 if (Test-Path -LiteralPath $skyManifest -PathType Leaf) {
     $skies = Get-Content -LiteralPath $skyManifest -Raw | ConvertFrom-Json
     foreach ($sky in $skies.assets) {

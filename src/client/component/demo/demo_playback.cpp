@@ -7,6 +7,7 @@
 #include "demo_gui.hpp"
 #include "theater_ui.hpp"
 #include "cod4_camera.hpp"
+#include "cod4_snipers.hpp"
 #include "cod4_model_metadata.hpp"
 #include "cod4_obituary_events.hpp"
 #include "cod4_replay_agents.hpp"
@@ -68,6 +69,13 @@ namespace // demo class
         bool is_converted() const { return converted_; }
         bool has_legacy_obituaries() const { return legacy_obituaries_; }
         const std::map<unsigned, int>& grenade_times() const { return grenade_times_; }
+        std::optional<int> team_score(unsigned team) const
+        {
+            const auto time = get_current_time();
+            const auto* scores = time && converted_ ? cod4::team_scores_at(team_scores_, *time) : nullptr;
+            if (!scores || (team != 1 && team != 2)) return std::nullopt;
+            return team == 1 ? scores->axis : scores->allies;
+        }
         const std::map<unsigned, std::string>& fx_bindings() const { return fx_bindings_; }
         void reset_grenade_fx();
         bool claim_bullet_event(unsigned number) { return fired_bullet_events_.insert(number).second; }
@@ -115,6 +123,7 @@ namespace // demo class
 		bool converted_{}, bootstrapping_{}, legacy_obituaries_{};
         std::set<std::string> converted_models_;
         std::map<unsigned, int> grenade_times_;
+        std::vector<cod4::team_score_frame> team_scores_;
         std::map<unsigned, std::string> fx_bindings_;
         std::set<unsigned> fired_bullet_events_;
         bool rebuilding_grenade_fx_{};
@@ -422,6 +431,7 @@ namespace // demo class
         std::vector<std::uint8_t> facial_data;
         std::vector<std::uint8_t> corpse_data;
         std::vector<std::string> model_names;
+        std::string recorded_mode = "war";
         std::map<unsigned, std::string> model_bindings;
 		std::map<unsigned, std::string> animation_bindings;
 		std::map<unsigned, std::string> agent_names;
@@ -463,6 +473,7 @@ namespace // demo class
                 if (cod4_playback_hud) cod4_playback_hud->current.enabled = converted_;
                 if (converted_)
                 {
+                    recorded_mode = fields[8];
                     const auto models = cod4::parse_model_metadata({fields.begin() + 9, fields.end()});
                     model_names.assign(models.names.begin(), models.names.end());
                     model_bindings = models.bindings;
@@ -470,6 +481,7 @@ namespace // demo class
                     agent_names = models.agent_names;
                     obituaries = models.obituaries;
                     grenade_times_ = models.grenade_times;
+                    team_scores_ = models.team_scores;
                     grenade_times_.insert(models.car_fx_times.begin(), models.car_fx_times.end());
                     grenade_times_.insert(models.bullet_times.begin(), models.bullet_times.end());
                     fx_bindings_ = models.fx_bindings;
@@ -502,7 +514,7 @@ namespace // demo class
         cod4_camera::set_agent_names(agent_names);
         cod4_camera::set_corpse_data(corpse_data);
         cod4_camera::set_obituary_identities(obituaries);
-        cod4_camera::bootstrap_demo(*mapname, initial);
+        cod4_camera::bootstrap_demo(*mapname, initial, recorded_mode);
         trace_converted("bootstrap complete");
         cod4_camera::validate_model_budget({model_names.begin(), model_names.end()});
         for (const auto& name : model_names)
@@ -578,6 +590,7 @@ namespace // demo class
         for (const auto& name : converted_models_) utils::hook::invoke<void>(0x76850_b, name.c_str());
         converted_models_.clear();
         grenade_times_.clear();
+        team_scores_.clear();
         fired_bullet_events_.clear();
         fx_bindings_.clear();
         rebuilding_grenade_fx_ = false;
@@ -1472,8 +1485,10 @@ namespace // hooks
 			g_demo_view_time = frame_time;
 		}
 
+        cod4_snipers::begin_frame();
 		const auto result = CG_DrawActiveFrame_hook.invoke<std::int32_t>(
 			local_client_num, frame_time, demo_type, cubemap_shot, cubemap_size, render_screen, a7);
+        cod4_snipers::end_frame();
         if (!demo.is_converted()) converted_hud_refresh_pending = false;
         else if (converted_hud_refresh_pending && demo.is_replay_armed()
             && game::CL_IsCgameInitialized() && *game::hks::lua_state)
@@ -1971,6 +1986,7 @@ namespace // command execution
 namespace demo_playback
 {
     bool converted() { return demo.is_demo_playing() && demo.is_converted(); }
+    std::optional<int> team_score(unsigned team) { return converted() ? demo.team_score(team) : std::nullopt; }
 
 	bool playing()
 	{

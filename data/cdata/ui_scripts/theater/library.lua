@@ -73,6 +73,12 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
     menu.page,menu.filter,menu.revision=1,"all",-1
     menu.cards={}
     local function request(name,id) return game:theaterlibraryaction(name,id or "") end
+    local function activate(item)
+        if menu.snapshot.busy or menu.snapshot.converting or (item.error and item.error~="") then return end
+        if request(item.source and "convert" or "play",item.id) and not item.source then
+            LUI.FlowManager.RequestLeaveMenu(menu)
+        end
+    end
     menu.list:registerAnimationState("library_list",layout(38,136,704,434))
     menu.list:animateToState("library_list",0)
     menu.preview=LUI.UIElement.new(layout(774,136,350,440)); menu.preview.id="library_preview"; menu:addElement(menu.preview)
@@ -106,10 +112,7 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
             text(self.preview,"preview_error",item.error,0,361,350,16)
         else
             button(self.preview,"library_play",item.source and "CONVERT DEMO" or "PLAY DEMO",0,366,350,function()
-                if self.snapshot.busy or self.snapshot.converting then return end
-                if request(item.source and "convert" or "play",item.id) then
-                    if not item.source then LUI.FlowManager.RequestLeaveMenu(self) end
-                end
+                activate(item)
             end)
         end
     end
@@ -144,7 +147,14 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
                         image(card,"edge_left",0,0,1,138,green,.25),image(card,"edge_right",225,0,1,138,green,.25)}
                     self.cards[#self.cards+1]={item=item,element=card,edges=edges}
                     card:addEventHandler("button_over",function() self:select(item) end)
-                    card:registerEventHandler("button_action",function() self:select(item) end)
+                    card:registerEventHandler("button_action",function(_,event)
+                        self:select(item)
+                        if not event.mouse then activate(item); return end
+                        local now=game:theaterclock()
+                        if self.lastClickId==item.id and now>=self.lastClickTime and now-self.lastClickTime<=400 then
+                            self.lastClickId=nil; activate(item)
+                        else self.lastClickId,self.lastClickTime=item.id,now end
+                    end)
                     if item.id==self.selected then selected=item end
                 end
             end
@@ -188,3 +198,18 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
     request("refresh")
     return menu
 end)
+
+-- A demo exits into a new frontend VM. Consume the return request only after
+-- its native lobby is ready, then open the same library as the THEATER button.
+if Engine.InFrontend() and game.theaterlibraryreturn then
+    local function attachReturn(menu)
+        menu:registerEventHandler("theater_return_poll",function()
+            if game:theaterlibraryreturn() then
+                LUI.FlowManager.RequestAddMenu(nil,"h1_theater_library",true,menu.exclusiveController)
+            end
+        end)
+        menu:addElement(LUI.UITimer.new(250,"theater_return_poll"))
+    end
+    LUI.onmenuopen("mp_main_menu",attachReturn)
+    LUI.onmenuopen("menu_xboxlive",attachReturn)
+end

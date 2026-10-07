@@ -186,9 +186,13 @@ namespace materials
 		return true;
 	}
 
-	game::Material* create_material(const std::string& name)
+	game::Material* create_material(const std::string& name, const game::Material* base)
 	{
-		const auto white = game::Material_RegisterHandle("$white");
+		const auto white = base ? base : game::Material_RegisterHandle("$white");
+		if (!white || white->textureCount != 1 || !white->textureTable || !white->textureTable->u.image)
+		{
+			throw std::runtime_error("Custom material requires a single image texture");
+		}
 		const auto material = utils::memory::allocate<game::Material>();
 		const auto texture_table = utils::memory::allocate<game::MaterialTextureDef>();
 		const auto image = utils::memory::allocate<game::GfxImage>();

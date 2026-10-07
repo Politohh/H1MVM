@@ -16,7 +16,8 @@ namespace cod4_camera
     };
     status get_status();
     bool active();
-    void bootstrap_demo(const std::string& map, const std::vector<std::uint8_t>& gamestate);
+    void bootstrap_demo(const std::string& map, const std::vector<std::uint8_t>& gamestate,
+        const std::string& gametype);
     // Saved converted files bind resident remastered assets to unused model slots.
     void set_model_bindings(const std::map<unsigned, std::string>& bindings,
         const std::map<unsigned, std::string>& animations = {});

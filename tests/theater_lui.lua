@@ -1,4 +1,5 @@
 -- Contract harness for the Lua panel. Actual MWR rendering/input is tested in game.
+unpack = unpack or table.unpack -- MWR HKS uses the Lua 5.1 global.
 local Element = {}
 Element.__index = Element
 function Element.new(style) return setmetatable({style = style or {}, children = {}, childRecord = {}, handlers = {}, states = {}}, Element) end
@@ -68,6 +69,18 @@ function Element:close()
 end
 function Element:AnyActiveMenusInStack() return self.menu ~= nil end
 function Element:getChildById(id) return self.childRecord[id] end
+function Element:getFirstChild() return self.children[1] end
+function Element:getNextSibling()
+    if self.parent then
+        for i,child in ipairs(self.parent.children) do if child==self then return self.parent.children[i+1] end end
+    end
+end
+function Element:getFirstDescendentById(id)
+    for _,child in ipairs(self.children) do
+        if child.id==id then return child end
+        local found=child:getFirstDescendentById(id); if found then return found end
+    end
+end
 function Element:setup9SliceImage(w, h, u, v) self.slice = {w, h, u, v} end
 local root = Element.new()
 local menus, callbacks, commands = {}, {}, {}
@@ -150,20 +163,30 @@ function LUI.MenuTemplate.new(_, options)
     menu.nativeOptions = options
     menu.list = Element.new(); menu:addElement(menu.list)
     function menu:AddButton(label, callback, _, _, _, options)
+        options=options or {}
         options.style = LUI.MenuTemplate.ButtonStyle
         options.button_text, options.button_action_func = label, callback
-        return LUI.MenuBuilder.BuildAddChild(self.list,
+        local button=LUI.MenuBuilder.BuildAddChild(self.list,
             {type = "UIGenericButton", id = "native_" .. label, properties = options})
+        button.menu=self; return button
     end
     function menu:AddBackButton(callback)
         self:registerEventHandler("button_secondary", callback)
     end
     function menu:CreateBottomDivider() self.divider = true end
+    function menu:AddBottomDividerToList(button) self.lastDivider=button end
     return menu
 end
 function LUI.Options.InitScrollingList(list) list.scrolling = true end
-function LUI.MenuBuilder.registerType(name, callback) menus[name] = callback end
+function LUI.MenuBuilder.registerType(name, callback)
+    assert(menus[name]==nil,"native registerType rejects duplicate builder: "..name)
+    menus[name] = callback
+end
 function LUI.onmenuopen(name, callback) callbacks[name] = callback end
+function LUI.overrideMenuBuilder(name, callback)
+    local native=assert(menus[name],name)
+    menus[name]=function(...) return callback(native,...) end
+end
 function LUI.FlowManager.RequestAddMenu(_, name)
     assert(not root.menu, "duplicate native menus")
     root.menu = menus[name]({type = name, properties = {exclusiveController = 0}})
@@ -251,7 +274,10 @@ rootReady = true
 CoD = {TextSettings = {FontBold110 = {Font = "MWR_NATIVE_FONT"}, TitleFontTiny = {Font = "MWR_NATIVE_TITLE_FONT"}},
     SFX = {MenuAccept = "native_accept", MenuBack = "native_back"}, TextStyle = {MW1Title = "MWR_TITLE_GLOW"}}
 CoD.TextSettings.H1TitleFont = {Font="MWR_NATIVE_HEADING_FONT", Height=33}
-callbacks.mp_hud(hud)
+Engine.GetLuiRoot() -- Recover a HUD constructed before extension callbacks.
+assert(game.ready and find(root,"H1TheaterTimeline"),"late attachment needs no lui_restart")
+Engine.GetLuiRoot()
+callbacks.mp_hud(hud) -- Repeated root access/menu notification is idempotent.
 assert(game.ready)
 tick()
 local passive = assert(find(root, "H1TheaterTimeline"))
@@ -618,6 +644,8 @@ end
 libraryEntries[2].name="a_very_long_recording_title_that_should_fit_the_card.dm_1"
 local libraryRevision=1
 local libraryActions={}
+local libraryClock=1000
+function game:theaterclock() return libraryClock end
 function game:gettheaterlibrary(page,filter)
     local visible={}
     for _,entry in ipairs(libraryEntries) do
@@ -632,6 +660,13 @@ dofile("data/cdata/ui_scripts/theater/library.lua")
 root.menu=menus.h1_theater_library({type="h1_theater_library"})
 local library=root.menu
 assert(#library.cards==9 and library.selected=="demo_1" and library.snapshot.pages==2)
+local sourceCard=library.cards[2].element
+sourceCard:processEvent({name="button_action",mouse=true})
+assert(libraryActions[#libraryActions][1]=="refresh","single click only selects")
+libraryClock=1500; sourceCard:processEvent({name="button_action",mouse=true})
+assert(libraryActions[#libraryActions][1]=="refresh","slow clicks are separate selections")
+libraryClock=1700; sourceCard:processEvent({name="button_action",mouse=true})
+assert(libraryActions[#libraryActions][1]=="convert","double-click activates the selected source")
 assert(find(library.cards[1].element,"card_title").text=="recording_1","card heading uses the demo title without its extension")
 local longTitle=find(library.cards[2].element,"card_title")
 assert(longTitle.text:sub(-3)=="..." and #longTitle.text*longTitle.style.height*.55<=210,"long titles fit without shrinking below a readable size")
@@ -656,3 +691,162 @@ assert(#library.cards==6 and not library.cards[1].item.source)
 find(library,"library_play"):processEvent({name="button_action"})
 assert(libraryActions[#libraryActions][1]=="play" and root.menu==nil)
 print("PASS nine-card native Theater library, stable focus/selection, paging, H1/COD4 filters and correct Convert/Play routing")
+
+root.menu=menus.h1_theater_library({})
+local playbackCard=root.menu.cards[1].element
+libraryClock=2000; playbackCard:processEvent({name="button_action",mouse=true})
+libraryClock=2200; playbackCard:processEvent({name="button_action",mouse=true})
+assert(libraryActions[#libraryActions][1]=="play" and root.menu==nil,"double-click loads H1 recording")
+
+local convertedHud=true
+Engine.GetDvarBool=function() return convertedHud end
+local recordedScores={[1]=3,[2]=14}
+function game:getcod4teamscore(team) return recordedScores[team] end
+Game={GetTeamScore=function() return 99 end,GetPlayerTeam=function() return 2 end,GetPlayerstateClientnum=function() return 0 end}
+local nativeBinds=0
+function Element:setupUIBindText() nativeBinds=nativeBinds+1 end
+LUI.MenuBuilder.m_types_build=menus
+menus.pointsPopup=function()
+    local popup=Element.new({left=20})
+    local points=Element.new({alignment=LUI.Alignment.Left}); points.id="points"; popup:addElement(points)
+    local flare=Element.new({left=-25}); flare.id="flareAnimation"; popup:addElement(flare)
+    return popup
+end
+menus.teamScoresHudDef=function()
+    local widget=Element.new()
+    widget:setupUIBindText("TeamScoreFriendly"); widget:setupUIBindText("TeamScoreEnemy")
+    for _,id in ipairs({"friendlyScore_id","enemyScore_id","scoreWatchFriendly","scoreWatchEnemy"}) do
+        local child=Element.new(); child.id=id; widget:addElement(child)
+        child:registerEventHandler("int_watch_alert",function(_,event) child.newValue=event.newValue end)
+    end
+    return widget
+end
+dofile("data/cdata/ui_scripts/theater/match_hud.lua")
+assert(Game.GetTeamScore(1)==3 and Game.GetTeamScore(2)==14)
+-- Fresh HUD construction queries free/spectator teams and may precede the
+-- recorded scores. An unavailable bridge result must not reach native < / >.
+local savedRecordedScore=game.getcod4teamscore
+game.getcod4teamscore=function(_,team)
+    if team==0 or team==3 then return {} end -- opaque bridge sentinel regression
+    return savedRecordedScore(game,team)
+end
+assert(Game.GetTeamScore(0)==99 and Game.GetTeamScore(3)==99,
+    "unavailable converted scores must fall back to numeric native scores")
+game.getcod4teamscore=function() return {} end
+local earlyMatchWidget=menus.teamScoresHudDef()
+assert(find(earlyMatchWidget,"friendlyScore_id").text=="--" and
+    find(earlyMatchWidget,"scoreWatchFriendly").newValue==nil,
+    "fresh HUD must construct before recorded scores are available")
+game.getcod4teamscore=savedRecordedScore
+local matchWidget=menus.teamScoresHudDef()
+assert(nativeBinds==0 and find(matchWidget,"friendlyScore_id").text=="14" and find(matchWidget,"enemyScore_id").text=="3")
+recordedScores[2]=15; matchWidget:processEvent({name="cod4_scores_update"})
+assert(find(matchWidget,"friendlyScore_id").text=="15" and find(matchWidget,"scoreWatchFriendly").newValue==15)
+recordedScores[2]=14; matchWidget:processEvent({name="cod4_scores_update"})
+assert(find(matchWidget,"friendlyScore_id").text=="14","HUD rewind restores recorded score")
+local popup=menus.pointsPopup()
+assert(popup.style.left==0 and find(popup,"points").style.alignment==LUI.Alignment.Center)
+find(popup,"points"):animateToState("default",0)
+assert(find(popup,"points").style.alignment==LUI.Alignment.Center,"native popup reset keeps centering")
+convertedHud=false
+assert(Game.GetTeamScore(1)==99 and menus.pointsPopup().style.left==20)
+menus.teamScoresHudDef(); assert(nativeBinds==2,"native matches keep their own score bindings")
+print("PASS double-click playback/conversion, centered popup reset, recorded native HUD scores and native-match isolation")
+
+local nativePauseClosed,optionsOpened=0,0
+LUI.MenuTemplate.OnOptions=function() optionsOpened=optionsOpened+1 end
+menus.mp_pause_menu=function()
+    local menu=LUI.MenuTemplate.new({type="mp_pause_menu"},{})
+    menu.title=Element.new(); menu.title:setText("MULTIPLAYER MENU"); menu:addElement(menu.title)
+    menu.map=Element.new(); menu.map.id="stock_pause_map"; menu:addElement(menu.map)
+    local mode=Element.new(); mode.id="gamemode_Id"; menu:addElement(mode)
+    local helper=Element.new(); helper.id="native_back_helper"; menu.list:addElement(helper)
+    menu:AddButton("CHANGE LOADOUT",function() error("live match action called") end)
+    menu:AddButton("CHANGE TEAM",function() error("live match action called") end)
+    menu:AddButton("MUTE PLAYERS",function() error("live match action called") end)
+    menu:registerEventHandler("menu_close",function() nativePauseClosed=nativePauseClosed+1 end)
+    return menu
+end
+dofile("data/cdata/ui_scripts/theater/pause_menu.lua")
+data.playing=false
+local stockPause=menus.mp_pause_menu()
+assert(stockPause.title.text=="MULTIPLAYER MENU" and not stockPause.map.closed)
+assert(find(stockPause,"native_CHANGE LOADOUT"),"live match menu remains native")
+data.playing=true; data.paused=true; data.name=string.rep("long_demo_",30)..".dm_h1"
+data.elapsed=38000; data.duration=47000; data.speed=.5; data.camera=2
+data.mapTitle="Crash"; data.modeTitle="Search and Destroy"
+root.menu=menus.mp_pause_menu()
+local demoPause=root.menu
+assert(demoPause.title.text=="DEMO PLAYBACK" and demoPause.map.closed)
+assert(not find(demoPause,"native_CHANGE LOADOUT") and not find(demoPause,"gamemode_Id"))
+assert(find(demoPause,"native_back_helper"),"native back helper survives button rebuild")
+assert(find(demoPause,"demo_pause_filename").text:sub(-3)=="...","long recording title fits details panel")
+assert(find(demoPause,"demo_pause_map").text=="Crash" and find(demoPause,"demo_pause_mode").text=="Search and Destroy")
+assert(find(demoPause,"demo_pause_status").text=="PAUSED   00:38 / 00:47   0.5x   FREE CAMERA")
+local beforeBack=#commands
+find(demoPause,"native_BACK TO DEMO"):processEvent({name="button_action"})
+assert(root.menu==nil and data.paused and #commands==beforeBack and nativePauseClosed==1,
+    "Back preserves playback pause and the native close handler")
+for _,entry in ipairs({{"PLAY DEMO","pause"},{"PLAYBACK CONTROLS","timeline"},{"THEATER EDITOR","editor"},{"RESTART DEMO","seek"}}) do
+    root.menu=menus.mp_pause_menu()
+    find(root.menu,"native_"..entry[1]):processEvent({name="button_action"})
+    assert(root.menu==nil and commands[#commands][1]==entry[2],"demo action must close the native pause menu")
+    if entry[2]=="seek" then assert(commands[#commands][2]==0,"restart seeks to the beginning") end
+end
+root.menu=menus.mp_pause_menu()
+find(root.menu,"native_@MENU_OPTIONS"):processEvent({name="button_action"})
+assert(optionsOpened==1 and root.menu,"Options uses its native route and retains the pause menu")
+find(root.menu,"native_RETURN TO THEATER"):processEvent({name="button_action"})
+assert(root.menu==nil and libraryActions[#libraryActions][1]=="return")
+data.paused=false
+root.menu=menus.mp_pause_menu()
+assert(find(root.menu,"native_PAUSE DEMO"),"playing recordings offer Pause")
+root.menu:processEvent({name="demo_pause_poll"})
+assert(find(root.menu,"demo_pause_status").text:sub(1,7)=="PLAYING")
+root.menu=nil
+print("PASS demo-only Escape menu, preserved native helpers/options/close, playback actions, recording details and return routing")
+
+function game:issingleplayer() return false end
+dofile("data/cdata/ui_scripts/patches/pausequit.lua")
+local noExtraQuit=menus.mp_pause_menu()
+local pauseButtonCount=#noExtraQuit.list.children
+callbacks.mp_pause_menu(noExtraQuit)
+assert(#noExtraQuit.list.children==pauseButtonCount,"patch load order must not append duplicate demo quit buttons")
+data.playing=false
+local liveQuit=menus.mp_pause_menu(); callbacks.mp_pause_menu(liveQuit)
+assert(find(liveQuit,"native_@MENU_QUIT_TO_DESKTOP"),"live matches retain the normal quit patch")
+
+Engine.InFrontend=function() return true end
+local returnPending,frontendReady=true,false
+function game:theaterlibraryreturn()
+    if not frontendReady then return false end
+    local requested=returnPending; returnPending=false; return requested
+end
+menus.h1_theater_library=nil
+dofile("data/cdata/ui_scripts/theater/library.lua")
+local frontend=Element.new()
+callbacks.mp_main_menu(frontend)
+frontend:processEvent({name="theater_return_poll"})
+assert(not root.menu and returnPending,"return waits for the native frontend lobby")
+frontendReady=true; frontend:processEvent({name="theater_return_poll"})
+assert(root.menu and root.menu.id=="h1_theater_library" and not returnPending)
+frontend:processEvent({name="theater_return_poll"})
+assert(root.menu.id=="h1_theater_library","return request is consumed once")
+print("PASS script-order-safe quit controls and one-shot library reopening after frontend readiness")
+
+dofile("src/client/resources/ui_scripts/common.lua")
+local lateCalls,nativeCalls=0,0
+LUI.onmenuopen("late_hud",function(menu) lateCalls=lateCalls+1; menu.attached=true end)
+LUI.overrideMenuBuilder("late_hud",function(native,...)
+    local menu=native(...); menu.patched=true; return menu
+end)
+LUI.MenuBuilder.registerType("late_hud",function()
+    nativeCalls=nativeCalls+1; return Element.new()
+end)
+local lateHud=menus.late_hud()
+assert(lateHud.attached and lateHud.patched and lateCalls==1 and nativeCalls==1,
+    "callbacks survive extension loading before native HUD registration")
+LUI.onmenuopen("late_hud",function(menu) menu.second=true end)
+lateHud=menus.late_hud()
+assert(lateHud.second and lateCalls==2 and nativeCalls==2,"late hooks do not duplicate builders")
+print("PASS existing HUD bootstrap, idempotent attachment and deferred native builder hooks")

@@ -1,4 +1,5 @@
 #pragma once
+#include "cod4_match.hpp"
 #include <charconv>
 #include <array>
 #include <map>
@@ -24,6 +25,7 @@ namespace cod4
     }
     struct model_metadata
     {
+        std::vector<team_score_frame> team_scores;
         std::set<std::string> names;
         std::map<unsigned, std::string> bindings;
         std::map<unsigned, int> grenade_times;
@@ -40,6 +42,21 @@ namespace cod4
         model_metadata result;
         for (const auto& entry : entries)
         {
+            if (entry.starts_with("@teamscore:"))
+            {
+                auto text = entry.substr(11);
+                std::replace(text.begin(), text.end(), ':', ' ');
+                std::istringstream input(text);
+                team_score_frame frame;
+                std::string extra;
+                if (!(input >> frame.time >> frame.axis >> frame.allies >> frame.limit) || (input >> extra)
+                    || frame.time < 0 || std::abs(static_cast<long long>(frame.axis)) > 1000000
+                    || std::abs(static_cast<long long>(frame.allies)) > 1000000 || frame.limit < 0 || frame.limit > 1000000
+                    || (!result.team_scores.empty() && frame.time <= result.team_scores.back().time))
+                    throw std::runtime_error("Invalid recorded team scores");
+                result.team_scores.push_back(frame);
+                continue;
+            }
             if (entry.starts_with("@obit:"))
             {
                 const std::string_view text(entry);

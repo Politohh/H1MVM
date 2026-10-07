@@ -26,7 +26,7 @@ namespace theater_library
         std::mutex mutex;
         std::vector<entry> entries;
         std::jthread worker;
-        std::atomic_bool busy{}, stopping{};
+        std::atomic_bool busy{}, stopping{}, returning{};
         int revision{};
         std::string message;
         std::filesystem::path root;
@@ -211,6 +211,19 @@ namespace theater_library
 
     bool action(const std::string& name, const std::string& id)
     {
+        if (name == "return")
+        {
+            if (!demo_playback::playing() || !demo_playback::is_replay_armed()) return false;
+            const auto session = demo_playback::session_id();
+            scheduler::once([session]
+            {
+                if (!demo_playback::playing() || demo_playback::session_id() != session) return;
+                demo_playback::stopplay();
+                returning = true;
+                command::execute("disconnect");
+            }, scheduler::main);
+            return true;
+        }
         if (name == "refresh" || name == "import") return start_scan(name == "import");
         if (name == "convertfile") return start_scan(true, true);
         if (name != "play" && name != "convert") return false;
@@ -229,6 +242,12 @@ namespace theater_library
             command::execute(std::format("{} \"{}\"{}", cmd, selected.path, name == "play" ? " fullpath" : ""));
         }, scheduler::main);
         return true;
+    }
+
+    bool consume_return()
+    {
+        // Wait for the frontend map and HKS VM before opening the library.
+        return !demo_playback::playing() && game::VirtualLobby_Loaded() && returning.exchange(false);
     }
 
     class component final : public component_interface

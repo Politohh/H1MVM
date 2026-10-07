@@ -88,7 +88,40 @@ Useful console commands:
 | `demopause` | Toggle playback pause |
 | `demoforward 5000` | Advance five seconds |
 | `demorewind 5000` | Rewind five seconds |
+| `cod4_snipers 1` / `cod4_snipers 0` | Enable / disable original COD4 sniper animations, zoom and 2D scopes on remastered models in converted demos |
+| `cod4_2dScopes 1` | Enable just the flat sniper scope overlay |
+| `cod4_snipers_status` | Show loaded-mode and native pose/overlay diagnostics |
 | `avi_ffmpeg "C:\Tools\ffmpeg.exe"` | Set the optional video encoder path |
+
+The sniper toggle is off by default. It requires the local `cod4_snipers` inputs prepared by
+`tools/prepare-cod4-sniper-source.py --full` (pinned original animations/rest rigs and weapon definitions/scope from your COD4 installation).
+It covers M40A3, R700, Barrett, M21 and Dragunov with standard scopes; ACOG optics keep their own behavior.
+ADS uses the original `tag_ads` curves with COD4's 100 ms up/down weight blend. Idle, firing, bolt cycling, segmented/magazine reloads,
+weapon switches, sprint and melee use original COD4 clips retargeted onto remastered weapons/hands.
+MWR helper bones are reset to their bind poses under the transferred animation. Unsupported/offhand
+actions keep native animation; native animation notifications/audio remain in use.
+Scene zoom starts at 95% ADS through the native camera zoom calculation, occupying only the final
+5% of the transition in either direction; weapon
+projection retains its configured hip FOV through the whole transition. The original ADS motion centers
+the authored hip pose; detachable-magazine receivers are aligned by their magazine seat, while
+bolt-action rifles use their shared scope mount. The full-ADS
+endpoint is centered using the native optic's reticle anchor, with correction blended by ADS amount.
+Native hand bind geometry preserves arm lengths even when stored tag positions are zero. Gun-part
+translation channels are sampled as offsets from their bind pivots. Mechanical parts rotate about
+their own remastered pivots and follow the authored movement relative to their shared parent,
+preserving bolt and cartridge placement; the separate bolt cap follows the original bolt control.
+Detached magazines transfer the authored hand contact through rotation after receiver alignment.
+Original hip/ADS recoil parameters are applied for the native frame and restored afterward; COD4
+preview keeps the engine's calculated camera rotation so recoil/view animation survives. The Barrett's
+original scoped firing slot is idle and relies on camera kick rather than an ADS firing clip.
+The 2D scope replaces the 3D viewmodel at COD4's reticle handoff (just after 95% ADS); it cuts away
+immediately when leaving full ADS, with no opacity fade. Playback clock and recorded action timers
+drive original clip sampling, including paused/slow playback and seeks. Sprint loops start after the
+recorded sprint-in duration instead of including that duration in their phase. Timed actions use COD4's
+clip-length/action-time rate; fire and bolt cycling retain their authored rate. Visual parity still requires
+playback validation for each remastered rig.
+The local installer uses `F:\Dev\h1-sniper-source\scope_upscale.png` as the default scope when present,
+preserving its RGBA pixels; `-ScopeImage` selects another PNG. The scope uses native alpha blending.
 
 ## Current limitations
 

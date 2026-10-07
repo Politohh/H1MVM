@@ -1,5 +1,6 @@
 #pragma once
 #include "cod4_facial_playback.hpp"
+#include "cod4_snipers.hpp"
 #include <memory>
 
 namespace cod4_camera::facial
@@ -57,10 +58,10 @@ namespace cod4_camera::facial
         const auto data = current.load();
         const auto expression = strengths.load();
         std::array<std::uint32_t, 8> fresh{};
-        if (data)
-            for (unsigned i = 0; i < 8; ++i)
-                fresh[i] = requested[i] & ~field<std::uint32_t>(object, 32 + i * 4);
+        for (unsigned i = 0; i < 8; ++i)
+            fresh[i] = requested[i] & ~field<std::uint32_t>(object, 32 + i * 4);
         evaluate_hook.invoke<void>(object, requested, context);
+        cod4_snipers::apply_pose(object, fresh.data());
         if (!data || !game::CL_IsCgameInitialized() || game::VirtualLobby_Loaded() || !game::mp::cl.get()) return;
         try
         {

@@ -104,7 +104,7 @@ namespace cod4::face
     // only authored face controls; body curves and animation tags never enter
     // the layer. The optional v17 two-component delta root is consumed before
     // the bone tracks and is never applied to a facial control.
-    inline clip decode(std::span<const std::uint8_t> bytes)
+    inline clip decode(std::span<const std::uint8_t> bytes, bool retain_all_bones = false)
     {
         if (bytes.size() > 16*1024*1024) throw std::runtime_error("Oversized CoD4 facial animation");
         reader r(bytes);
@@ -184,7 +184,7 @@ namespace cod4::face
         {
             auto t = read_track((half[i/8] & (1u << (i%8))) != 0, (flip[i/8] & (1u << (i%8))) != 0);
             t.bone = names[i];
-            if (facial_bone(t.bone)) result.tracks.push_back(std::move(t));
+            if (retain_all_bones || facial_bone(t.bone)) result.tracks.push_back(std::move(t));
         }
         const auto notifications = r.read<std::uint8_t>();
         for (unsigned i = 0; i < notifications; ++i)

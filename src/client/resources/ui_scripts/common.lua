@@ -1,6 +1,32 @@
 local menucallbacks = {}
 local originalmenus = {}
 local stack = {}
+local builderoverrides = {}
+
+-- A fresh in-game VM can load extension scripts before stock HUD types.
+-- Keep pending overrides until the native builder is registered.
+local function applybuilderoverrides(name)
+	local native = LUI.MenuBuilder.m_types_build[name]
+	local callbacks = builderoverrides[name]
+	if not native or not callbacks then return end
+	builderoverrides[name] = nil
+	for _, callback in ipairs(callbacks) do
+		local previous = native
+		native = function(...) return callback(previous, ...) end
+	end
+	LUI.MenuBuilder.m_types_build[name] = native
+end
+local registertype = LUI.MenuBuilder.registerType
+LUI.MenuBuilder.registerType = function(name, ...)
+	local result = registertype(name, ...)
+	applybuilderoverrides(name)
+	return result
+end
+LUI.overrideMenuBuilder = function(name, callback)
+	if not builderoverrides[name] then builderoverrides[name] = {} end
+	table.insert(builderoverrides[name], callback)
+	applybuilderoverrides(name)
+end
 
 function getchildren(element)
 	local children = {}
@@ -86,10 +112,6 @@ LUI.MenuBuilder.m_types_build["generic_confirmation_popup_"] = function()
 end
 
 LUI.onmenuopen = function(name, callback)
-	if (not LUI.MenuBuilder.m_types_build[name]) then
-		return
-	end
-
 	if (not menucallbacks[name]) then
 		menucallbacks[name] = {}
 	end
@@ -97,17 +119,17 @@ LUI.onmenuopen = function(name, callback)
 	table.insert(menucallbacks[name], callback)
 
 	if (not originalmenus[name]) then
-		originalmenus[name] = LUI.MenuBuilder.m_types_build[name]
-		LUI.MenuBuilder.m_types_build[name] = function(...)
+		originalmenus[name] = true
+		LUI.overrideMenuBuilder(name, function(native, ...)
 			local args = {...}
-			local menu = originalmenus[name](unpack(args))
+			local menu = native(unpack(args))
 
 			for k, v in next, menucallbacks[name] do
 				v(menu, unpack(args))
 			end
 
 			return menu
-		end
+		end)
 	end
 end
 

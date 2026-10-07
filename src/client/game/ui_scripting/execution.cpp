@@ -4,6 +4,7 @@
 #include "component/console.hpp"
 
 #include <utils/string.hpp>
+#include <utils/io.hpp>
 
 namespace ui_scripting
 {
@@ -130,6 +131,14 @@ namespace ui_scripting
 		catch (const std::exception& e)
 		{
 			console::error("Error processing event '%s' %s\n", name.data(), e.what());
+			// A failed 50ms Theater poll must not fill the disk with the same error.
+			static std::string previous_error;
+			const auto message = name + ": " + e.what();
+			if (message != previous_error)
+			{
+				previous_error = message;
+				utils::io::write_file("h1-lui-errors.log", message + "\n", true);
+			}
 		}
 
 		return false;

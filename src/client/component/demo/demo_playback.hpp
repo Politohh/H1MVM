@@ -5,6 +5,7 @@ namespace demo_playback
 {
 	[[nodiscard]] bool playing();
     bool converted();
+    std::optional<int> team_score(unsigned team);
 	[[nodiscard]] bool is_replay_armed();
 	[[nodiscard]] bool startplay(std::string_view file_name, bool repeat = true);
 	[[nodiscard]] bool startplay(std::filesystem::path& file_path, bool repeat = true);

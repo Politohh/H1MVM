@@ -24,6 +24,7 @@
 #include "demo/theater_ui.hpp"
 #include "demo/theater_editor.hpp"
 #include "demo/theater_library.hpp"
+#include "demo/demo_playback.hpp"
 
 #include "game/ui_scripting/execution.hpp"
 #include "game/ui_scripting/json_conversion.hpp"
@@ -79,6 +80,7 @@ namespace ui_scripting
 
 		void print_error(const std::string& error)
 		{
+			utils::io::write_file("h1-lui-errors.log", error + "\n", true);
 			console::error("************** LUI script execution error **************\n");
 			console::error("%s\n", error.data());
 			console::error("********************************************************\n");
@@ -239,8 +241,18 @@ namespace ui_scripting
 			game_type["theaterready"] = [](const game&, bool value) { theater_ui::set_ready(value); };
 			game_type["gettheaterlibrary"] = [](const game&, int page, const std::string& filter)
 			{ return json_to_lua(theater_library::state(page, filter)); };
+            game_type["theaterclock"] = [](const game&) { return ::game::Sys_Milliseconds(); };
+            game_type["getcod4teamscore"] = [](const game&, unsigned team) -> script_value
+            {
+                const auto value = demo_playback::team_score(team);
+                // TNONE is the bridge's uninitialized sentinel, not Lua nil.
+                // HUD construction asks for free/spectator teams before the
+                // recorded scores exist; never pass that sentinel into Lua.
+                return value ? script_value(*value) : script_value(::game::hks::HksObject{::game::hks::TNIL, {}});
+            };
 			game_type["theaterlibraryaction"] = [](const game&, const std::string& name, const std::string& id)
 			{ return theater_library::action(name, id); };
+            game_type["theaterlibraryreturn"] = [](const game&) { return theater_library::consume_return(); };
 			game_type["theaterkeyboard"] = [](const game&, bool value) { theater_ui::set_keyboard_available(value); };
 			game_type["gettheaterstate"] = [](const game&, int cached_revision, int cached_keys)
 			{ return json_to_lua(theater_ui::state(cached_revision, cached_keys)); };
@@ -656,6 +668,7 @@ namespace ui_scripting
 
 		void start()
 		{
+			utils::io::write_file("h1-lui-errors.log", "--- LUI VM start ---\n", true);
 			theater_ui::set_ready(false);
 			globals = {};
 
@@ -682,6 +695,7 @@ namespace ui_scripting
 				}
 
 				console::info("%s\n", buffer.data());
+				if (buffer.starts_with("[theater]")) utils::io::write_file("h1-lui-errors.log", buffer + "\n", true);
 			};
 
 			lua["table"]["unpack"] = lua["unpack"];
@@ -727,6 +741,7 @@ namespace ui_scripting
 			catch (const std::exception& e)
 			{
 				console::error("Failed to load LUI scripts: %s\n", e.what());
+				utils::io::write_file("h1-lui-errors.log", std::string("Failed to load LUI scripts: ") + e.what() + "\n", true);
 			}
 		}
 
