@@ -76,7 +76,7 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
     local function activate(item)
         if menu.snapshot.busy or menu.snapshot.converting or (item.error and item.error~="") then return end
         if request(item.source and "convert" or "play",item.id) and not item.source then
-            LUI.FlowManager.RequestLeaveMenu(menu)
+            menu.playRequested=true
         end
     end
     menu.list:registerAnimationState("library_list",layout(38,136,704,434))
@@ -167,6 +167,11 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
     function menu:refresh()
         local data=game:gettheaterlibrary(self.page,self.filter)
         self.snapshot=data
+        if self.playRequested and data.playing then
+            self.playRequested=false
+            LUI.FlowManager.RequestLeaveMenu(self)
+            return
+        end
         if data.revision~=self.revision or data.page~=self.page or self.redraw then
             self.redraw=false; self:render(data)
         end

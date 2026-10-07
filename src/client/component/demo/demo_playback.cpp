@@ -11,6 +11,7 @@
 #include "cod4_model_metadata.hpp"
 #include "cod4_obituary_events.hpp"
 #include "cod4_replay_agents.hpp"
+#include "demo_file_footer.hpp"
 
 #include "component/command.hpp"
 #include "component/console.hpp"
@@ -354,6 +355,11 @@ namespace // demo class
 		}
 
 		const auto restore_pos = file_.tellg();
+		if (const auto footer = demo_file::read_footer(file_))
+		{
+			timeline_index_ = demo_timeline::decode(footer->bytes, footer->first, footer->last);
+			return std::make_pair(footer->first, footer->last);
+		}
 		file_.clear();
 		file_.seekg(0, std::ios::beg);
 

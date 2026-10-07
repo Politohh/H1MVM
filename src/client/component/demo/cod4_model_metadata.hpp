@@ -1,5 +1,6 @@
 #pragma once
 #include "cod4_match.hpp"
+#include "cod4_event_entities.hpp"
 #include <charconv>
 #include <array>
 #include <map>
@@ -72,7 +73,7 @@ namespace cod4
                     start = end + 1;
                 }
                 const auto [entity, attacker, victim, aname, vname, ateam, vteam] = values;
-                if (entity < 1024 || entity >= 2046 || (attacker >= 42 && attacker != 2046) || victim >= 42
+                if (!valid_event_entity(entity) || (attacker >= 42 && attacker != 2046) || victim >= 42
                     || (attacker != 2046 && (!aname || aname >= 1024)) || !vname || vname >= 1024 || ateam > 3 || vteam > 3
                     || !result.obituaries.emplace(entity, obituary_identity{attacker,victim,aname,vname,ateam,vteam}).second)
                     throw std::runtime_error("Invalid recorded obituary identity");
@@ -123,7 +124,7 @@ namespace cod4
                 int time{};
                 const auto entity = std::from_chars(text.data() + prefix, text.data() + separator, number);
                 const auto clock = std::from_chars(text.data() + separator + 1, text.data() + text.size(), time);
-                if (entity.ec != std::errc{} || entity.ptr != text.data() + separator || number < 1024 || number >= 2046
+                if (entity.ec != std::errc{} || entity.ptr != text.data() + separator || !valid_event_entity(number)
                     || clock.ec != std::errc{} || clock.ptr != text.data() + text.size() || time < 0
                     || result.grenade_times.contains(number) || result.car_fx_times.contains(number) || result.bullet_times.contains(number)
                     || !times.emplace(number, time).second)

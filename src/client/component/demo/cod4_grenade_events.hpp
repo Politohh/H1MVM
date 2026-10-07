@@ -1,5 +1,6 @@
 #pragma once
 #include "cod4_world_translation.hpp"
+#include "cod4_event_entities.hpp"
 
 namespace cod4
 {
@@ -111,7 +112,7 @@ namespace cod4
     inline h1_entity translate_grenade_event(const grenade_event& event, unsigned number, unsigned weapon)
     {
         const auto native_event = native_grenade_event(event.source_event);
-        if (!native_event || number < 1024 || number >= 2046 || !(weapon & 255u)
+        if (!native_event || !valid_event_entity(number) || !(weapon & 255u)
             || weapon >= (1u << 27) || event.time < 0 || event.parameter >= 162 || event.surface >= 29)
             throw std::runtime_error("Invalid native grenade event");
         for (const auto coordinate : event.origin)

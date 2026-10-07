@@ -16,6 +16,8 @@ Only the game's `demos` folder and its subfolders are scanned. External folders,
 the old import registry and symlink targets outside this folder are excluded.
 
 Double-click a recording to play it or begin conversion, according to its type.
+Theater stays open until playback starts. A blocked launch is reported in the
+library status instead of silently returning to the online menu.
 The frontend no longer opens the old conversion overlay with F9. During playback,
 F9 switches between cursor controls and camera input; F10 retains the advanced camera/export controls.
 F1, F3 and F4 keep their existing HUD, editor and controls functions.
@@ -30,7 +32,9 @@ converted demos. The adjacent `.conversion.txt` report lists omitted or
 unsupported data.
 
 Metadata is read on a background worker and cached by path and modification time.
-H1 chunk headers are scanned without decompressing network packets; COD4 source
+Current H1 recordings use the metadata prefix and a bounded footer read, so
+duration lookup does not walk every packet of a large recording. Older layouts
+fall back to scanning chunk headers without decompressing network packets. COD4 source
 metadata uses the existing bounded decoder. Invalid/incomplete recordings remain
 visible with an error and cannot be played or converted from the library.
 Thumbnails use resident native map materials; unavailable thumbnails keep a

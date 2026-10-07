@@ -1,5 +1,6 @@
 #pragma once
 #include "cod4_world_translation.hpp"
+#include "cod4_event_entities.hpp"
 
 namespace cod4
 {
@@ -69,7 +70,7 @@ namespace cod4
 
     inline h1_entity translate_car_fx(const car_fx_event& event, unsigned number, unsigned native_effect)
     {
-        if (number < 1024 || number >= 2046 || !native_effect || native_effect >= 512 || event.time < 0)
+        if (!valid_event_entity(number) || !native_effect || native_effect >= 512 || event.time < 0)
             throw std::runtime_error("Invalid native car FX event");
         for (const auto coordinate : event.origin)
             if (!std::isfinite(coordinate)) throw std::runtime_error("Invalid car FX position");

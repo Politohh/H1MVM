@@ -71,7 +71,7 @@ int main(int argc, char** argv)
         check(cod4::grenade_effect_available(49,true,false), "Concussion weapon FX rejected");
         const auto metadata = cod4::parse_model_metadata({"@model:768:body", "@grenade:1500:1050"});
         check(metadata.names.size() == 1 && metadata.grenade_times.at(1500) == 1050, "Grenade metadata became a model request");
-        for (const auto entry : {"@grenade:1023:1", "@grenade:2046:1", "@grenade:2047:1", "@grenade:1500:-1", "@grenade:1500:1x", "@grenade:1500:"})
+        for (const auto entry : {"@grenade:71:1", "@grenade:2046:1", "@grenade:2047:1", "@grenade:1500:-1", "@grenade:1500:1x", "@grenade:1500:"})
             rejects([&] { cod4::parse_model_metadata({entry}); }, "Malformed grenade metadata accepted");
         rejects([&] { cod4::parse_model_metadata({"@grenade:1500:1", "@grenade:1500:2"}); }, "Duplicate FX clock accepted");
         auto corrupt = events[0]; corrupt.parameter = 255;

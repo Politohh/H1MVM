@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cod4_world_translation.hpp"
+#include "cod4_event_entities.hpp"
 
 namespace cod4
 {
@@ -72,7 +73,7 @@ namespace cod4
     inline h1_entity translate_obituary_event(const obituary_event& event, unsigned number,
         unsigned attacker, unsigned victim, unsigned native_weapon, bool alternate = false)
     {
-        if (number < 1024 || number >= 2046 || (attacker >= 42 && attacker != 2046)
+        if (!valid_event_entity(number) || (attacker >= 42 && attacker != 2046)
             || victim >= 42 || native_weapon >= (1u << 27) || event.event_parameter > 255)
             throw std::runtime_error("Invalid H1 obituary client or entity number");
         h1_entity result{};

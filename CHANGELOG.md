@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026.10.07.2
+
+[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07.2)
+
+- Fixed Theater dropping a queued Play request back to the online menu when the client is disconnected and its frontend lobby is unloaded. Theater now remains open until playback starts and reports a deferred launch.
+- Read duration/timeline metadata from the bounded native footer, avoiding a packet-by-packet scan of large recordings at library refresh and playback startup.
+- Reduced converter compression work using fast, compatible zlib packets while preserving every camera sample and native packet payload.
+- Fixed long COD4 conversions exhausting the reserved event entity range and aborting with `Invalid H1 obituary client or entity number`. The converter now allocates additional unique event IDs from slots unused throughout the recording, preserving actor/prop ownership and seek metadata.
+
+Release/x64 build and offline metadata, compression, Theater UI and event allocation checks passed. The reported Crash recording covers 1,042 unique events with zero actor/prop collisions. Conversion previously completed locally with 137,738 snapshots; the latest playback-launch changes and end-to-end conversion speed still need in-game confirmation. Retry failed conversions from the original `.dm_1`; existing completed recordings can use the playback and library fixes without reconversion.
+
 ## 2026.10.07.1
 
 [Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07.1)

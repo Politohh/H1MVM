@@ -1,5 +1,6 @@
 #pragma once
 #include "cod4_demo_reader.hpp"
+#include "demo_file_footer.hpp"
 #include <limits>
 #include <climits>
 
@@ -20,7 +21,8 @@ namespace theater_library
         return result;
     }
 
-    // Skip network payloads rather than decompressing a recording to list it.
+    // Read the metadata prefix and bounded footer for current native recordings.
+    // Older layouts skip network payloads without decompressing them.
     // Validate chunk lengths against the actual remaining file before seeking.
     inline metadata read_native(std::istream& file)
     {
@@ -28,6 +30,7 @@ namespace theater_library
         file.seekg(0, std::ios::end);
         const auto end = file.tellg();
         file.seekg(0);
+        const auto tail = demo_file::read_footer(file);
         bool footer = false;
         for (unsigned guard = 0; guard < 1'000'000; ++guard)
         {
@@ -65,6 +68,12 @@ namespace theater_library
                 }
             }
             else file.seekg(size, std::ios::cur);
+            if (tail && !result.map.empty())
+            {
+                const auto difference = static_cast<std::int64_t>(tail->last) - tail->first;
+                if (difference > INT_MAX) throw std::runtime_error("Invalid demo duration");
+                result.duration = static_cast<int>(difference); footer = true; break;
+            }
         }
         if (result.map.empty() || !footer) throw std::runtime_error("Recording is incomplete or unsupported");
         return result;

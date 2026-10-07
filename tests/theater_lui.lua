@@ -645,6 +645,7 @@ libraryEntries[2].name="a_very_long_recording_title_that_should_fit_the_card.dm_
 local libraryRevision=1
 local libraryActions={}
 local libraryClock=1000
+local libraryPlaying=false
 function game:theaterclock() return libraryClock end
 function game:gettheaterlibrary(page,filter)
     local visible={}
@@ -653,7 +654,7 @@ function game:gettheaterlibrary(page,filter)
     end
     local pages=math.max(1,math.ceil(#visible/9)); page=math.max(1,math.min(page,pages))
     local entries={}; for i=(page-1)*9+1,math.min(page*9,#visible) do entries[#entries+1]=visible[i] end
-    return {revision=libraryRevision,busy=false,converting=false,message="Library ready",entries=entries,page=page,pages=pages,total=#visible}
+    return {revision=libraryRevision,busy=false,converting=false,playing=libraryPlaying,message="Library ready",entries=entries,page=page,pages=pages,total=#visible}
 end
 function game:theaterlibraryaction(name,id) libraryActions[#libraryActions+1]={name,id}; return true end
 dofile("data/cdata/ui_scripts/theater/library.lua")
@@ -689,14 +690,21 @@ assert(libraryActions[#libraryActions][1]=="convert")
 find(library,"library_h1"):processEvent({name="button_action"})
 assert(#library.cards==6 and not library.cards[1].item.source)
 find(library,"library_play"):processEvent({name="button_action"})
-assert(libraryActions[#libraryActions][1]=="play" and root.menu==nil)
+assert(libraryActions[#libraryActions][1]=="play" and root.menu==library,"queued Play must retain Theater until playback starts")
+library:refresh()
+assert(root.menu==library,"a deferred or failed Play request must not drop the user into the online menu")
+libraryPlaying=true; library:refresh()
+assert(root.menu==nil,"confirmed playback closes Theater")
+libraryPlaying=false
 print("PASS nine-card native Theater library, stable focus/selection, paging, H1/COD4 filters and correct Convert/Play routing")
 
 root.menu=menus.h1_theater_library({})
 local playbackCard=root.menu.cards[1].element
 libraryClock=2000; playbackCard:processEvent({name="button_action",mouse=true})
 libraryClock=2200; playbackCard:processEvent({name="button_action",mouse=true})
-assert(libraryActions[#libraryActions][1]=="play" and root.menu==nil,"double-click loads H1 recording")
+assert(libraryActions[#libraryActions][1]=="play" and root.menu,"double-click queues H1 recording without leaving before launch")
+libraryPlaying=true; root.menu:refresh(); libraryPlaying=false
+assert(root.menu==nil,"double-click leaves Theater once playback starts")
 
 local convertedHud=true
 Engine.GetDvarBool=function() return convertedHud end

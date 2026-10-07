@@ -11,6 +11,7 @@
 #include "cod4_grenade_events.hpp"
 #include "cod4_bullet_events.hpp"
 #include "cod4_obituary_events.hpp"
+#include "cod4_conversion_compression.hpp"
 #include "demo_timeline.hpp"
 #include "cod4_gun_events.hpp"
 #include "cod4_actor_translation.hpp"
@@ -1512,8 +1513,8 @@ namespace cod4_camera
             if (converted_file)
             {
                 if (packet.msg.overflowed) throw std::runtime_error("Converted H1 snapshot overflow");
-                const auto compressed = utils::compression::zlib::compress(
-                    std::span(reinterpret_cast<const std::uint8_t*>(packet.bytes.data()), packet.msg.cursize), 4096);
+                const auto compressed = cod4::compress_conversion_packet(
+                    std::span(reinterpret_cast<const std::uint8_t*>(packet.bytes.data()), packet.msg.cursize));
                 demo_utils::write_id_and_size(*converted_file, compressed.size() + 8, demo_utils::demo_data_id::network_data);
                 const std::uint32_t sequence = ++snapshot_sequence, flags = 0x80000000u;
                 converted_file->write(reinterpret_cast<const char*>(&sequence), 4);
@@ -1586,50 +1587,55 @@ namespace cod4_camera
             bullet_entities.clear(); bullet_times.clear();
             obituary_entities.clear();
             obituary_identities.clear(); corpse_data = {};
-            unsigned fx_entity_number = map_models.empty() ? 1024u : map_models.rbegin()->first + 1;
+            auto event_entities = cod4::make_event_entity_pool(world, map_models);
             for (const auto& event : grenade_track.events)
             {
+                const auto fx_entity_number = event_entities.allocate();
                 grenade_entities.push_back(cod4::translate_grenade_event(event, fx_entity_number, weapons.at(event.weapon)));
-                grenade_times.emplace(fx_entity_number++, event.time);
+                grenade_times.emplace(fx_entity_number, event.time);
                 lifecycle << "grenade event time=" << event.time << " source_entity=" << event.entity
                     << " source_event=" << event.source_event << " native_event=" << cod4::native_grenade_event(event.source_event)
-                    << " native_entity=" << fx_entity_number - 1 << " source_weapon=" << event.weapon
+                    << " native_entity=" << fx_entity_number << " source_weapon=" << event.weapon
                     << " normal=" << event.parameter << " surface=" << event.surface
                     << " origin=" << event.origin[0] << ',' << event.origin[1] << ',' << event.origin[2] << std::endl;
             }
             for (const auto& event : car_effects.events)
             {
+                const auto fx_entity_number = event_entities.allocate();
                 car_effect_entities.push_back(cod4::translate_car_fx(event, fx_entity_number, car_effect_index));
-                car_effect_times.emplace(fx_entity_number++, event.time);
+                car_effect_times.emplace(fx_entity_number, event.time);
                 lifecycle << "car FX time=" << event.time << " source_entity=" << event.entity
-                    << " native_entity=" << fx_entity_number - 1 << " native_event=111 effect=" << car_effect_name
+                    << " native_entity=" << fx_entity_number << " native_event=111 effect=" << car_effect_name
                     << " index=" << car_effect_index << " origin=" << event.origin[0] << ',' << event.origin[1]
                     << ',' << event.origin[2] << " angles=" << event.angles[0] << ',' << event.angles[1]
                     << ',' << event.angles[2] << std::endl;
             }
             for (const auto& event : airstrikes.bursts)
             {
+                const auto fx_entity_number = event_entities.allocate();
                 airstrike_entities.push_back(cod4::translate_car_fx(event, fx_entity_number, cod4::airstrike_burst_index));
-                airstrike_times.emplace(fx_entity_number++, event.time);
+                airstrike_times.emplace(fx_entity_number, event.time);
                 lifecycle << "airstrike burst time=" << event.time << " source_entity=" << event.entity
-                    << " native_entity=" << fx_entity_number - 1 << " effect=" << cod4::native_airstrike_burst << std::endl;
+                    << " native_entity=" << fx_entity_number << " effect=" << cod4::native_airstrike_burst << std::endl;
             }
             for (const auto& event : bullet_track)
             {
+                const auto fx_entity_number = event_entities.allocate();
                 const auto event_slots = client_slots.at(event.time);
                 bullet_entities.push_back(cod4::translate_bullet_event(event, fx_entity_number,
                     weapons.at(event.weapon), alternate_weapons.contains(event.weapon),
                     0, &event_slots));
-                bullet_times.emplace(fx_entity_number++, event.time);
+                bullet_times.emplace(fx_entity_number, event.time);
                 lifecycle << "bullet impact time=" << event.time << " source_entity=" << event.entity
                     << " source_event=" << event.source_event << " native_event=" << cod4::native_bullet_event(event.source_event)
-                    << " native_entity=" << fx_entity_number - 1 << " shooter=" << event.shooter
+                    << " native_entity=" << fx_entity_number << " shooter=" << event.shooter
                     << " target=" << event.target << " client=" << event.client << " source_weapon=" << event.weapon
                     << " normal=" << event.parameter << " surface=" << event.surface << " flags=" << event.impact_flags
                     << " origin=" << event.origin[0] << ',' << event.origin[1] << ',' << event.origin[2] << std::endl;
             }
             for (const auto& event : obituary_track)
             {
+                const auto fx_entity_number = event_entities.allocate();
                 const auto [attacker, victim] = client_slots.obituary(event.attacker, event.victim, event.time);
                 obituary_entities.push_back(cod4::translate_obituary_event(event, fx_entity_number,
                     attacker, victim,
@@ -1652,7 +1658,6 @@ namespace cod4_camera
                 lifecycle << "obituary time=" << event.time << " source_entity=" << event.entity
                     << " native_entity=" << fx_entity_number << " attacker=" << event.attacker
                     << " victim=" << event.victim << " source_parameter=" << event.event_parameter << std::endl;
-                ++fx_entity_number;
             }
             std::filesystem::create_directories(conversion_output.parent_path());
             auto temporary = conversion_output;
@@ -1733,7 +1738,7 @@ namespace cod4_camera
                 lifecycle << "facial curves saved rigs=" << face.rigs.size() << " clips=" << face.clips.size()
                     << " actors=" << face.actors.size() << " bytes=" << bytes.size() << std::endl;
             }
-            const auto compressed = utils::compression::zlib::compress(std::span<const std::uint8_t>(initial_gamestate), 4096);
+            const auto compressed = cod4::compress_conversion_packet(std::span<const std::uint8_t>(initial_gamestate));
             demo_utils::write_id_and_size(output, compressed.size() + 8, demo_utils::demo_data_id::network_data);
             const std::uint32_t sequence = 1, flags = 0x80000000u;
             output.write(reinterpret_cast<const char*>(&sequence), 4);

@@ -85,7 +85,7 @@ namespace cod4
         const client_slot_map* slots = nullptr)
     {
         const auto native_event = native_bullet_event(event.source_event);
-        if (!native_event || number < 1024 || number >= 2046 || !(weapon & 255u)
+        if (!native_event || !valid_event_entity(number) || !(weapon & 255u)
             || weapon >= (1u << 27) || event.time < 0 || event.surface >= 29
             || (event.source_event == 41 && event.parameter >= 162) || event.client >= 64
             || event.impact_flags > 128 || recorded_client >= (slots ? 64u : 42u))

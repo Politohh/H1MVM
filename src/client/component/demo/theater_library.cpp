@@ -2,6 +2,7 @@
 #include "loader/component_loader.hpp"
 #include "theater_library.hpp"
 #include "theater_library_metadata.hpp"
+#include "theater_launch.hpp"
 #include "demo_playback.hpp"
 #include "demo_utils.hpp"
 #include "cod4_camera.hpp"
@@ -192,7 +193,8 @@ namespace theater_library
             {"page", page}, {"pages", pages}, {"total", visible.size()}, {"entries", nlohmann::json::array()}};
         const auto conversion = cod4_camera::get_status();
         result["converting"] = conversion.loading || conversion.active;
-        if (!conversion.message.empty()) result["conversionMessage"] = conversion.message;
+        result["playing"] = demo_playback::playing();
+        if ((conversion.loading || conversion.active) && !conversion.message.empty()) result["conversionMessage"] = conversion.message;
         for (int i = (page - 1) * 9; i < std::min(page * 9, static_cast<int>(visible.size())); ++i)
         {
             const auto& item = *visible[i]; const auto& info = item.details;
@@ -237,9 +239,23 @@ namespace theater_library
         if (selected.path.find_first_of("\"\r\n") != std::string::npos) return false;
         scheduler::once([selected, name]
         {
-            if (demo_playback::playing() || cod4_camera::active() || !game::VirtualLobby_Loaded()) return;
+            if (!can_launch(demo_playback::playing(), cod4_camera::active(), game::CL_IsCgameInitialized(), game::VirtualLobby_Loaded()))
+            {
+                std::lock_guard lock(mutex);
+                message = "The client is still leaving the previous session. Try Play again in a moment.";
+                console::warn("Theater launch deferred: %s\n", selected.path.c_str());
+                return;
+            }
             const auto cmd = name == "convert" ? "cod4convert" : "demoplay";
-            command::execute(std::format("{} \"{}\"{}", cmd, selected.path, name == "play" ? " fullpath" : ""));
+            // Already on the main scheduler, just like command-line demo launch.
+            // Execute Play now so the result check observes the command itself,
+            // rather than inspecting playback before Cbuf executes it later.
+            command::execute(std::format("{} \"{}\"{}", cmd, selected.path, name == "play" ? " fullpath" : ""), name == "play");
+            if (name == "play" && !demo_playback::playing())
+            {
+                std::lock_guard lock(mutex);
+                message = "Playback did not start. Check the console for the reported error.";
+            }
         }, scheduler::main);
         return true;
     }
