@@ -166,4 +166,3 @@ return function(Editor, button, image, settings, request)
         if menu.category=="models" and signature()~=menu.modelSignature then menu:selectCategory("models","MODEL SWAPPER") end
     end
 end
-
