@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+Changes on `main` after the 2026.10.06 package:
+
+- Added optional classic COD4 sniper playback on remastered M40A3, R700, Barrett, M21 and Dragunov models, including original actions, recoil parameters and flat scopes.
+- Moved sniper scene zoom to the final 5% of ADS and removed the scope opacity fade on release.
+- Corrected native optic centering, magazine contact, bolt-cap movement, sprint-loop phase and R700/M40A3 pull-out cartridge placement.
+- Restored demo HUD attachment and recorded match mode/team scores while preserving native-match behavior.
+- Added a demo pause menu and improved Theater conversion/playback routing, focus and return-to-library behavior.
+- Reorganized the README, setup guides and documentation index around installation, playback and cinematic use.
+
+Release/x64 builds and offline sniper, match-data, facial and Theater UI checks passed. User playback feedback confirmed substantial improvement; complete visual parity for every native rig remains unverified. Runtime sniper/UI corrections do not require demo reconversion. Converter data changes still require reconverting the original recording.
+
 ## 2026.10.06
 
 [Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.06)

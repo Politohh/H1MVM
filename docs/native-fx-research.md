@@ -1,4 +1,7 @@
-# Next prompt: native MWR weapon and grenade FX
+# Native weapon and grenade FX research
+
+Historical implementation notes and validation evidence from September 2026.
+For current features and setup, see the [documentation index](README.md).
 
 Status on 2026-09-29: native frag/flash/concussion and car explosion FX are
 implemented; grenade and car FX visuals were accepted. The car animation binding
@@ -17,10 +20,10 @@ Rechamber/brass map to 42/43. Do not claim bullet impacts, remote actor firing
 or aged gun smoke/brass seek reconstruction complete; this Backlot recording
 contains no recorded bullet impacts. The broader priorities below are retained
 for context, not a statement that all work is complete. Car handoff is at
-[next-prompt-car-explosions.md](next-prompt-car-explosions.md).
+[vehicle-animation-research.md](vehicle-animation-research.md).
 
-Continue the COD4-to-H1 demo converter in `F:\Dev\h1-cod4-demo`, private repository
-`https://github.com/Politohh/h1-cod4-demo`, on the current `main` branch. The verified
+The investigation used the COD4-to-H1 demo converter in `F:\Dev\h1-cod4-demo`, repository
+`https://github.com/Politohh/h1-cod4-demo`. The verified
 character mapping implementation is commit `62c5eefa315fc2cd80ea6eeee2ba75d54e029129`.
 Read the current Git status and `docs/cod4-mapping-coverage.md` before changing code.
 Preserve unrelated untracked research files. Follow the workspace's AGENTS.md

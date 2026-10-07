@@ -1,10 +1,10 @@
-# Continue native MWR car animation and debris validation
+# Vehicle animation and debris research
 
-Work in `F:\Dev\h1-cod4-demo` on `main`, private origin
-`https://github.com/Politohh/h1-cod4-demo`. Read Git status and
-`docs/cod4-mapping-coverage.md`. Preserve unrelated untracked research. This
-is a historical car-animation handoff; the current installed build and remaining
-HUD work are summarized in the mapping-coverage document.
+Historical implementation notes and validation evidence from September 2026.
+The investigation used `F:\Dev\h1-cod4-demo` and repository
+`https://github.com/Politohh/h1-cod4-demo`. For current features and setup,
+see the [documentation index](README.md). Dated builds and local evidence
+paths below describe the investigation checkpoint.
 
 Primary source: `C:\Games\cod4_game_files\main\demos\car_explo_to_h1.dm_1`,
 SHA-256 `E220C6065C5E39495547C4DF3DEDE3569F32828ACE96DA4D4B4694A85538A0CB`.
@@ -67,7 +67,7 @@ camera archives and 32.2 s footer independently validate; playback still failed.
 Subsequent gun firing work is now installed on top of this correction:
 `2A7574330343AAAB4F4A4B5B71ADCE327F954E6672AFEC4D81D44C53B546A3EA`.
 Its rollback is `build/install-backups/20260929-024312-before-native-gun-fx`
-with 28 files preserved. See `docs/next-prompt-fx.md` and `gun-fx-installed`
+with 28 files preserved. See [native FX research](native-fx-research.md) and `gun-fx-installed`
 for pending Backlot native gun FX validation. Car runtime acceptance is still
 pending; the facts below describe the corrected car-only build.
 

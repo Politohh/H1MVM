@@ -1,0 +1,36 @@
+name: Bug report
+description: Report a conversion, playback, camera or Theater problem.
+title: "[Bug] "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Release or commit
+      placeholder: demo-2026.10.06 or a commit hash
+    validations:
+      required: true
+  - type: dropdown
+    id: workflow
+    attributes:
+      label: Workflow
+      options:
+        - COD4 conversion
+        - Converted COD4 playback
+        - Native H1 recording or playback
+        - Direct COD4 preview
+        - Theater UI or cinematic tools
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: What happened?
+      description: Include steps, expected behavior, map, weapon and the exact demo timestamp where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs and visual evidence
+      description: Attach the conversion report, relevant logs or a screenshot/clip. For sniper issues, include cod4_snipers_status output. Share only material you have permission to distribute.

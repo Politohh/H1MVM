@@ -1,160 +1,102 @@
 # H1-Mod Demo Client
 
-[![Release](https://img.shields.io/github/v/release/Politohh/h1-cod4-demo)](https://github.com/Politohh/h1-cod4-demo/releases/latest)
-[![Build](https://github.com/Politohh/h1-cod4-demo/actions/workflows/build.yml/badge.svg)](https://github.com/Politohh/h1-cod4-demo/actions/workflows/build.yml)
-[![License](https://img.shields.io/github/license/Politohh/h1-cod4-demo)](LICENSE)
+**Record in H1. Replay COD4. Create cinematics in Modern Warfare Remastered.**
 
-**An H1-Mod client for Call of Duty: Modern Warfare Remastered with an integrated demo system and a CoD4-to-H1 demo converter.**
+[![Latest release](https://img.shields.io/github/v/release/Politohh/h1-cod4-demo?label=download)](https://github.com/Politohh/h1-cod4-demo/releases/latest) [![Platform](https://img.shields.io/badge/platform-Windows%20x64-0078D4)](#installation) [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-This repository contains the full client, including the demo recording, playback and cinematic tools. It is based on [Aurora H1-Mod](https://github.com/auroramod/h1-mod), with additional development focused on playing and filming demos in MWR.
+An **H1-Mod client with an integrated demo system and a COD4-to-H1 demo converter**. Bring original Call of Duty 4 recordings into MWR, replay them with remastered models and effects, and compose shots using native Theater controls.
 
-The converter reads original CoD4 `.dm_1` recordings and saves `.dm_h1` demos for playback in this client. Recorded players, weapons, animations and events are mapped to native MWR assets. The HUD uses MWR's interface with recorded CoD4 data.
+**[Download](https://github.com/Politohh/h1-cod4-demo/releases/latest)** · **[Documentation](docs/README.md)** · **[Changelog](CHANGELOG.md)** · **[Report an issue](https://github.com/Politohh/h1-cod4-demo/issues/new/choose)**
 
-**[Download the latest Windows x64 release](https://github.com/Politohh/h1-cod4-demo/releases/latest)** · [Changes](CHANGELOG.md) · [Technical documentation](docs/README.md)
+## Made for replay and cinematic work
 
-## Features
+| Feature | What you can do |
+| --- | --- |
+| **Demo library** | Browse, import, convert and play recordings from MWR's native Theater menu. |
+| **Playback controls** | Pause, seek, change speed and toggle the HUD independently of the timeline. |
+| **Camera tools** | Switch between first person, third person, free camera and dolly paths. |
+| **Shot editing** | Adjust camera, lighting, fog, depth of field and visual settings in the native editor. |
+| **COD4 conversion** | Convert `.dm_1` recordings to `.dm_h1`, including tested Promod and COD4x protocol 19/21 recordings. |
+| **Remastered presentation** | Map recorded players, weapons and events to native MWR assets, with recorded HUD data. |
+| **Classic sniper playback** | Use original COD4 sniper animations on remastered models, with late ADS zoom and flat scopes. Requires separately prepared inputs. |
+| **Video capture** | Export footage through an optional FFmpeg executable. |
 
-- H1 demo recording and playback, with a native MWR timeline and demo browser.
-- Pause, rewind, fast-forward, playback speed and timeline controls.
-- First-person, third-person, free camera and dolly camera modes, with editable camera-path markers.
-- Video capture through an optional FFmpeg executable.
-- CoD4 demo conversion, including tested Promod recordings and CoD4x protocol 19 and 21 decoding.
-- Native MWR character and weapon mappings, actor and death animations, gun and blood effects, grenade effects and car explosions.
-- Airstrike jet and bomb conversion, attached jet effects, and helicopter flight conversion.
-- Recorded data for the native MWR HUD: ammo, grenade inventory, minimap, hitmarkers, score popups and killfeed.
-- `developer 1` enabled when loading a demo.
-- Developer-style dvar access during demo playback, with native value ranges and latch behavior preserved.
+This fork builds on [Aurora H1-Mod](https://github.com/auroramod/h1-mod). Conversion coverage varies by recording, map and mod; supported features and remaining limits are listed below.
 
-Conversion is experimental. Coverage varies by recording, map and mod; see [Current limitations](#current-limitations).
+## Installation
 
-## Install
+You need a supported installation of **Call of Duty: Modern Warfare Remastered**. Game assets and demo recordings are not included.
 
-You must legally own Call of Duty: Modern Warfare Remastered and have a supported MWR / H1-Mod installation. Game assets and demo recordings are not bundled.
-
-1. Download the **`win64.zip`** asset from the [latest release](https://github.com/Politohh/h1-cod4-demo/releases/latest).
+1. Download the ZIP ending in **`win64.zip`** from [Releases](https://github.com/Politohh/h1-cod4-demo/releases/latest).
 2. Close H1 and back up your existing `h1-mod.exe` and `h1-mod` folder.
-3. Extract the ZIP into the game directory, next to `h1_mp64_ship.exe`. Replace matching files and include the bundled **`h1-mod` folder**; its scripts are required for the converted-demo HUD.
+3. Extract into the game directory, next to `h1_mp64_ship.exe`. Include the bundled **`h1-mod` folder**; its scripts are required.
 4. Launch through your **H1-Mod shortcut**.
 
-The symbols ZIP is optional and contains crash-debugging information. It is not needed to play demos. Release assets include SHA-256 checksums and file manifests.
+The symbols ZIP is optional crash-debugging data. Published packages include SHA-256 checksums.
 
-## Convert a CoD4 demo
+**Release or source?** The latest packaged release is **2026.10.06**. The current `main` branch also includes the newer sniper, HUD and Theater fixes listed under [Unreleased](CHANGELOG.md#unreleased). Build from source to use changes that have not yet been packaged.
 
-1. Open H1 multiplayer and let **Play Online** initialization finish.
+## Your first COD4 replay
+
+1. Open **Play Online** and let initialization finish.
 2. Open **THEATER**, directly below **Private Match**.
-3. Choose **Import Demos** and select the original `.dm_1` file (multiple selection is supported).
-4. Select its thumbnail and choose **Convert Demo**. Wait for conversion to finish.
-5. Return to **Theater**, choose **Refresh → H1 Demos**, select the converted recording and choose **Play Demo**.
+3. Choose **Convert COD4 Demo** and select a `.dm_1` recording.
+4. When conversion finishes, choose **Refresh → H1 Demos**, select the result and **Play Demo**.
 
-Converted files are saved directly under `demos/` in the game directory. Conversion also produces a `.conversion.txt` report beside the output demo, including any omitted models or unsupported data. **Convert COD4 Demo** is always available in Theater and opens a file picker directly.
+Use **Import Demos** to bring in several recordings at once. Original files are preserved. Converted demos are saved under the game's `demos/` directory, with a `.conversion.txt` report beside each result.
 
-**Reconvert the original `.dm_1` after converter updates.** An existing `.dm_h1` retains the data produced by the version that converted it. Keep the original recording.
-
-The converter can also be invoked from the H1 console:
+Console alternative:
 
 ```text
 cod4convert "C:\Demos\example.dm_1"
 ```
 
-## Record and play H1 demos
+Keep your originals. **Converter changes require reconversion; playback, UI and sniper animation fixes can use existing converted demos.** See the [library guide](docs/theater-library.md).
 
-In an H1 multiplayer match, `demostart` enables automatic recording and `demostop` disables it. Files are named automatically; these commands do not take a custom recording name. Recording locations use `demos/client/auto/`, or a mod-specific subdirectory when a mod is active.
+## Playback at your fingertips
 
-Open **Play Online → Theater → H1 Demos** to browse native H1 recordings and converted demos. The library scans all demos subfolders and shows map previews, modes, dates and durations. Use **Import Demos** for recordings stored elsewhere. During playback, the native timeline starts visible. **F1** toggles the game HUD, **F3** opens/closes the native editor, **F4** hides/shows the timeline, and **F2** cycles camera modes. **F9** switches between cursor controls and camera input. The XP bar and its rank icons are hidden during demos. Click the track to seek, or use the shortcuts below.
-
-| Key | During demo playback |
+| Key | Action |
 | --- | --- |
-| **F1** | Toggle game HUD (timeline stays visible) |
-| **F3** | Open/close native Theater editor |
-| **F4** | Hide/show timeline and transport controls |
-| **F2** | Cycle first person, third person, free camera and dolly |
-| **K** | Add dolly marker |
-| **J** | Start/stop dolly playback |
-| **L** | Clear all markers while dolly is stopped |
-| **Space** | Pause/resume |
-| **← / →** | Seek backward/forward five seconds |
-| **↑ / ↓** | Increase/decrease playback speed |
+| **Space** | Pause / resume |
+| **← / →** | Seek backward / forward five seconds |
+| **↑ / ↓** | Change playback speed |
+| **F1** | Toggle game HUD |
+| **F2** | Cycle camera modes |
+| **F3** | Open / close the native editor |
+| **F4** | Show / hide the timeline |
+| **F9** | Switch between cursor controls and camera input |
+| **F10** | Open the advanced camera / capture editor |
 
-Free camera uses WASD and mouse look, E/Q for height, Shift for faster flight, **Shift + scroll for zoom**, and scroll for camera roll. Compact native hints appear above the timeline. Space, seek and speed shortcuts remain available while flying.
+Free camera uses **WASD + mouse**, **E/Q** for height and **Shift** for faster flight. **Shift + scroll** adjusts zoom; scroll adjusts roll. For dolly paths, **K** adds a marker, **J** starts/stops playback and **L** clears markers while stopped.
 
-**EDITOR** opens the native MWR editor with camera, visual settings, preset, capture and custom-slider pages. All twelve category buttons remain visible without scrolling. Pages expose H1 settings plus native hooks for bone attachment, atmosphere, directional lighting, placed point lights and actor hiding. Large pages use Previous/Next buttons. Back returns to the timeline. **F10** retains the existing browser and advanced camera/capture editor. `demotimeline` shows or hides the native panel. Kill/death markers are indexed in newly converted demos; older files collect them during playback. See [Native theater timeline](docs/native-theater.md).
+For native H1 recordings, `demostart` enables automatic recording and `demostop` disables it. Browse recordings through **Theater → H1 Demos**. See the [playback and editor guide](docs/native-theater.md) for console commands and editor pages.
 
-Useful console commands:
+### Classic COD4 snipers
 
-| Command | Action |
-| --- | --- |
-| `demostart` / `demostop` | Enable / disable H1 automatic recording |
-| `demoreplay` | Replay the most recent demo |
-| `demopause` | Toggle playback pause |
-| `demoforward 5000` | Advance five seconds |
-| `demorewind 5000` | Rewind five seconds |
-| `cod4_snipers 1` / `cod4_snipers 0` | Enable / disable original COD4 sniper animations, zoom and 2D scopes on remastered models in converted demos |
-| `cod4_2dScopes 1` | Enable just the flat sniper scope overlay |
-| `cod4_snipers_status` | Show loaded-mode and native pose/overlay diagnostics |
-| `avi_ffmpeg "C:\Tools\ffmpeg.exe"` | Set the optional video encoder path |
-
-The sniper toggle is off by default. It requires the local `cod4_snipers` inputs prepared by
-`tools/prepare-cod4-sniper-source.py --full` (pinned original animations/rest rigs and weapon definitions/scope from your COD4 installation).
-It covers M40A3, R700, Barrett, M21 and Dragunov with standard scopes; ACOG optics keep their own behavior.
-ADS uses the original `tag_ads` curves with COD4's 100 ms up/down weight blend. Idle, firing, bolt cycling, segmented/magazine reloads,
-weapon switches, sprint and melee use original COD4 clips retargeted onto remastered weapons/hands.
-MWR helper bones are reset to their bind poses under the transferred animation. Unsupported/offhand
-actions keep native animation; native animation notifications/audio remain in use.
-Scene zoom starts at 95% ADS through the native camera zoom calculation, occupying only the final
-5% of the transition in either direction; weapon
-projection retains its configured hip FOV through the whole transition. The original ADS motion centers
-the authored hip pose; detachable-magazine receivers are aligned by their magazine seat, while
-bolt-action rifles use their shared scope mount. The full-ADS
-endpoint is centered using the native optic's reticle anchor, with correction blended by ADS amount.
-Native hand bind geometry preserves arm lengths even when stored tag positions are zero. Gun-part
-translation channels are sampled as offsets from their bind pivots. Mechanical parts rotate about
-their own remastered pivots and follow the authored movement relative to their shared parent,
-preserving bolt and cartridge placement; the separate bolt cap follows the original bolt control.
-Detached magazines transfer the authored hand contact through rotation after receiver alignment.
-Original hip/ADS recoil parameters are applied for the native frame and restored afterward; COD4
-preview keeps the engine's calculated camera rotation so recoil/view animation survives. The Barrett's
-original scoped firing slot is idle and relies on camera kick rather than an ADS firing clip.
-The 2D scope replaces the 3D viewmodel at COD4's reticle handoff (just after 95% ADS); it cuts away
-immediately when leaving full ADS, with no opacity fade. Playback clock and recorded action timers
-drive original clip sampling, including paused/slow playback and seeks. Sprint loops start after the
-recorded sprint-in duration instead of including that duration in their phase. Timed actions use COD4's
-clip-length/action-time rate; fire and bolt cycling retain their authored rate. Visual parity still requires
-playback validation for each remastered rig.
-The local installer uses `F:\Dev\h1-sniper-source\scope_upscale.png` as the default scope when present,
-preserving its RGBA pixels; `-ScopeImage` selects another PNG. The scope uses native alpha blending.
-
-## Current limitations
-
-- Custom CoD4 mod assets and unrecognized mappings can be unsupported. Conversion and playback may report an explicit error rather than substitute an unrelated asset.
-- Converted recordings map up to 42 character identities into 18 native player slots and 24 native agent slots. The 39-player Ambush fixture passes offline mapping checks; expanded playback validation is pending. Source player indices above 41 remain unsupported.
-- The latest jet-motion and team-emblem corrections in **2026.10.03** still need visual playback confirmation. A successful build or offline fixture check does not establish complete in-game parity.
-- Helicopter combat events, damage stages and ownership/compass markers are incomplete. Helicopter flight and recorded loop sound are handled separately.
-- General recorded sound-event playback and killstreak inventory HUD are incomplete.
-- H1 hooks and native asset mappings target the supported MWR build. Demo compatibility with other client forks or game executables is not guaranteed.
-
-See the [release notes](https://github.com/Politohh/h1-cod4-demo/releases/latest) and [feature documentation](docs/README.md) for validation details.
-
-## Build from source
-
-Use Windows, Git and Visual Studio 2022 with the **Desktop development with C++** workload and a Windows SDK.
-
-```powershell
-git clone --recurse-submodules https://github.com/Politohh/h1-cod4-demo.git
-cd h1-cod4-demo
-.\generate.bat
-```
-
-Open `build/h1-mod.sln` and build **Release / x64**. From a Visual Studio developer shell, the equivalent is:
+With the required local inputs installed, enable the mode during converted-demo playback or direct COD4 preview:
 
 ```text
-msbuild build\h1-mod.sln /m /p:Configuration=Release /p:Platform=x64
+cod4_snipers 1
 ```
 
-The executable is generated at `build/bin/x64/Release/h1-mod.exe`. Install it with the contents of `data/cdata/` copied into the game's `h1-mod/` folder. The TLS helper is embedded in the executable.
+Supports **M40A3, R700, Barrett, M21 and Dragunov** with standard scopes. Original action clips drive remastered weapons and hands; scene zoom begins at **95% ADS**, and the scope cuts away without an opacity fade. The mode is off by default and currently applies to replay, including preview. ACOG and regular live/devmap play keep their native behavior.
 
-To reproduce a release, check out its tag, run `git submodule update --init --recursive`, regenerate the solution and build that revision. Downloading GitHub's source ZIP alone does not include the required submodules.
+**[Setup, scope customization and compatibility](docs/cod4-snipers.md)**
 
-Implementation lives in [`src/client/component/demo/`](src/client/component/demo/); runtime scripts are in [`data/cdata/`](data/cdata/). Offline regression runners are in [`tests/`](tests/). Some checks require original demo fixtures that are not distributed with the repository.
+## Compatibility and remaining work
+
+- Custom mod assets and unknown mappings may be unsupported. Inspect the conversion report for omitted data.
+- Converted recordings support up to **42 character identities** across native player and agent slots. Source player indices above 41 are unsupported; expanded slot coverage still needs broader playback validation.
+- Helicopter combat events, damage stages and ownership/compass markers remain incomplete.
+- General recorded sound-event playback and killstreak inventory HUD remain incomplete.
+- Hooks and asset mappings target the supported MWR executable. Compatibility with other client forks or game builds is not guaranteed.
+- Offline checks cover decoding, mappings and playback math. Exact visual parity still needs confirmation for each recording and native rig.
+
+## Build and contribute
+
+Use **Windows, Visual Studio 2022, the C++ desktop workload and a Windows SDK**. Clone with submodules, run `generate.bat`, then build **Release / x64**.
+
+**[Build instructions and contribution guide](CONTRIBUTING.md)** · [Implementation](src/client/component/demo/) · [Regression tests](tests/)
 
 ## Credits and license
 

@@ -1,5 +1,9 @@
 # Native theater timeline
 
+Use the timeline to control playback, then open **EDITOR** to compose your shot.
+For importing/converting recordings, see the [library guide](theater-library.md).
+For original sniper animations on remastered models, see [classic COD4 snipers](cod4-snipers.md).
+
 The playback timeline uses MWR LUI widgets and its native title font. Transport buttons use the same `UIGenericButton`/`H1ButtonBackground` factory and style as MWR's pause menu, with compact layout dimensions and labels. The panel also uses the native background frame and MWR green, with a thin track, left-aligned playback status and timecode aligned to the far-right inset. The compact panel shows elapsed time, duration, playhead and event/camera-key markers. The panel stays 480 by 82 virtual UI units, with every transport button visible whether controls own the cursor or the mouse drives freecam. Timeline text heights are 10.5 units, including button labels in all focus states. The panel sits at the bottom center, with no filename or camera-editing rows. Small F1/F4 labels sit above the whole frame; two compact native hint lines appear above those in freecam.
 
 ## Controls
@@ -17,10 +21,28 @@ The playback timeline uses MWR LUI widgets and its native title font. Transport 
 - **F9:** native playback controls during a demo; the existing browser when playback is stopped.
 - **Editor:** native MWR editor with Main, Camera, Misc, Bone Camera, SSAO, Fog, DOF, Sun, Lights, Streams, Weapon and Sliders. All category buttons are visible without scrolling. Back returns to the timeline.
 - **F10:** existing browser, converter and advanced camera/capture editor.
+- **Escape:** demo pause menu, with playback actions, recording details, native options and return-to-Theater routing.
 - Click the track or a camera-key marker to seek. Skip buttons move five seconds. Speed and camera buttons cycle the available values.
 - Entering Free Camera through the camera button or F2 releases keyboard and mouse input for flight while retaining the visible timeline. F9 switches cursor ownership; Close releases the cursor while retaining the bar. F4 hides/shows the bar itself.
 - Freecam uses WASD/mouse, E/Q for height, Shift for boost, **Shift + scroll for zoom**, plain scroll for roll, MMB/K for markers, J for dolly and L to clear markers while stopped. The old ImGui help panel is replaced by small native hints.
 - `demotimeline` toggles panel visibility; `demo_native_timeline` stores the visibility preference. `demotheaterstatus` prints playback/UI diagnostics.
+
+## Recording and console commands
+
+`demostart` enables automatic H1 recording and `demostop` disables it. Recording
+names are generated automatically. Files use `demos/client/auto/`, or a
+mod-specific subdirectory when a mod is active.
+
+| Command | Action |
+| --- | --- |
+| `demoreplay` | Replay the most recent demo |
+| `demopause` | Pause / resume |
+| `demoforward 5000` / `demorewind 5000` | Seek five seconds |
+| `avi_ffmpeg "C:\Tools\ffmpeg.exe"` | Set the optional video encoder path |
+
+The editor's Capture controls use the configured encoder. Recorded match mode
+and team scores feed the demo HUD while regular native matches retain their
+own HUD behavior. The XP bar and rank icons are hidden during playback.
 
 ## Implementation
 

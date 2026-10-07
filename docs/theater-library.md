@@ -15,9 +15,19 @@ recording's complete filename remains visible in the preview.
 Only the game's `demos` folder and its subfolders are scanned. External folders,
 the old import registry and symlink targets outside this folder are excluded.
 
+Double-click a recording to play it or begin conversion, according to its type.
 The frontend no longer opens the old conversion overlay with F9. During playback,
-F9 opens the native timeline; F10 retains the advanced camera/export controls.
+F9 switches between cursor controls and camera input; F10 retains the advanced camera/export controls.
 F1, F3 and F4 keep their existing HUD, editor and controls functions.
+
+During a demo, **Escape** opens the demo pause menu with playback actions,
+recording details and native options. Returning to Theater reopens the library
+after the frontend is ready.
+
+Keep original COD4 recordings. Reconvert after updates that change converter
+data; playback, UI and sniper animation corrections work with existing
+converted demos. The adjacent `.conversion.txt` report lists omitted or
+unsupported data.
 
 Metadata is read on a background worker and cached by path and modification time.
 H1 chunk headers are scanned without decompressing network packets; COD4 source
@@ -30,3 +40,5 @@ Verification: `tests/test-theater-library.cmd` checks metadata and malformed-fil
 handling; `tests/test-native-theater.cmd` checks selection, paging, filtering,
 Convert/Play routing and existing editor/timeline behavior. Native rendering and
 navigation also require an in-game check.
+
+[Back to documentation](README.md) · [Playback controls](native-theater.md) · [Classic snipers](cod4-snipers.md)
