@@ -2,11 +2,11 @@
 
 `cod4_snipers 1` uses original COD4 action animations on MWR weapons and hands during converted-demo playback and direct COD4 preview. It supports **M40A3, R700, Barrett, M21 and Dragunov** with standard scopes.
 
-The mode is off by default. Regular live/devmap play and ACOG optics retain native behavior. Original input assets are prepared separately and are not bundled with the repository or the 2026.10.06 release.
+The mode is off by default. Regular live/devmap play and ACOG optics retain native behavior. Original input assets are prepared separately and are not bundled with the repository or release packages.
 
 ## Prepare the inputs
 
-Use a source build containing the sniper changes. Install Python and Pillow, then run from the repository root with the `main` directory of your COD4 installation:
+Use release **2026.10.07 or newer**, or a source build containing the sniper changes. Install Python and Pillow, then run from the repository root with the `main` directory of your COD4 installation:
 
 ```powershell
 python -m pip install Pillow

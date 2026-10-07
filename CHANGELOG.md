@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2026.10.07
 
-Changes on `main` after the 2026.10.06 package:
+[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07)
 
 - Added optional classic COD4 sniper playback on remastered M40A3, R700, Barrett, M21 and Dragunov models, including original actions, recoil parameters and flat scopes.
 - Moved sniper scene zoom to the final 5% of ADS and removed the scope opacity fade on release.
