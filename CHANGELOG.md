@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026.10.07.1
+
+[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07.1)
+
+- Fixed conversion and direct COD4 preview aborting on `destructible_car` kill notifications. Car-explosion deaths preserve recorded attribution and timing using a native generic death notification; no unrelated weapon is substituted.
+
+Release/x64 build and offline checks passed against the reported Crash recording: 236 kill notifications, including 12 headshots and one car-explosion death, with zero unmapped required weapons. Synthetic checks cover weapon-table order, duplicate notifications, seek timing and malformed indices. Retry failed conversion from the original `.dm_1` after updating; visual playback of this fix remains unverified.
+
 ## 2026.10.07
 
 [Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07)

@@ -1945,7 +1945,7 @@ namespace cod4_camera
                 const auto decoded_slots = cod4::make_client_slots(decoded_world);
                 auto decoded_grenades = cod4::collect_grenade_events(decoded_world);
                 auto decoded_bullets = cod4::collect_bullet_events(decoded_world);
-                auto decoded_obituaries = cod4::collect_obituary_events(decoded_world);
+                auto decoded_obituaries = cod4::collect_obituary_events(decoded_world, decoded.configstrings.at(2258));
                 auto decoded_car_fx = cod4::collect_car_fx(decoded_world, decoded.configstrings);
                 auto decoded_airstrikes = cod4::collect_airstrikes(decoded_world, decoded.configstrings);
                 auto decoded_helicopters = cod4::collect_helicopters(decoded_world, decoded.configstrings);

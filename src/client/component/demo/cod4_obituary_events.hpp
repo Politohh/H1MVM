@@ -8,6 +8,7 @@ namespace cod4
     {
         int time{};
         unsigned entity{}, attacker{}, victim{}, event_parameter{}, source_weapon{};
+        bool environmental{};
     };
 
     inline unsigned native_obituary_death(unsigned source_parameter)
@@ -28,9 +29,13 @@ namespace cod4
         }
     }
 
-    inline std::vector<obituary_event> collect_obituary_events(const world_track& world)
+    inline std::vector<obituary_event> collect_obituary_events(const world_track& world,
+        std::string_view weapon_table = {})
     {
         std::vector<obituary_event> events;
+        std::vector<std::string> weapons{""};
+        std::istringstream names{std::string(weapon_table)};
+        for (std::string name; names >> name;) weapons.push_back(name);
         std::map<unsigned, entity_state> previous;
         for (const auto& frame : world.frames)
         {
@@ -47,8 +52,17 @@ namespace cod4
                     throw std::runtime_error("Invalid COD4 obituary payload");
                 // A low parameter is the kill weapon itself, not MOD or the
                 // attacker's currently held weapon (which can already change).
+                auto weapon = parameter < 128 ? parameter : 0;
+                if (!weapon_table.empty() && weapon >= weapons.size())
+                    throw std::runtime_error("COD4 obituary weapon index outside its name table");
+                // A car explosion can be credited to a player with the damage
+                // weapon destructible_car. H1's MP weapon registry has no
+                // equivalent gun; retain the kill as a native generic death
+                // with a null weapon, rather than loading an unrelated weapon.
+                const bool environmental = weapon && !weapon_table.empty()
+                    && weapons[weapon] == "destructible_car";
                 events.push_back({frame.time, number, attacker, victim, parameter,
-                    parameter < 128 ? parameter : 0});
+                    environmental ? 0 : weapon, environmental});
             }
             previous = frame.entities;
         }
@@ -72,9 +86,9 @@ namespace cod4
         // CG_EntityEvent dereferences the low weapon byte before dispatching
         // CG_Obituary. Keep the complete native weapon/attachment value here.
         // Special deaths use eventParm >= 200 and the safe null weapon.
-        const bool special = event.event_parameter >= 128;
+        const bool special = event.environmental || event.event_parameter >= 128;
         write_native(result, 6, static_cast<std::uint8_t>(!special && alternate));
-        write_native(result, 36, special ? native_obituary_death(event.event_parameter) : 0u);
+        write_native(result, 36, event.environmental ? 200u : special ? native_obituary_death(event.event_parameter) : 0u);
         write_native(result, 76, special ? 0u : native_weapon);
         write_native(result, 168, static_cast<std::uint16_t>(attacker));
         return result;

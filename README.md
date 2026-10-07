@@ -34,7 +34,7 @@ You need a supported installation of **Call of Duty: Modern Warfare Remastered**
 
 The symbols ZIP is optional crash-debugging data. Published packages include SHA-256 checksums.
 
-The latest packaged release is **2026.10.07**, including the classic sniper, HUD and Theater fixes. See the [changelog](CHANGELOG.md#20261007) for details.
+The latest packaged release is **2026.10.07.1**, including the car-explosion kill fix alongside classic snipers, HUD and Theater improvements. See the [changelog](CHANGELOG.md#202610071) for details.
 
 ## Your first COD4 replay
 
