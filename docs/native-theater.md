@@ -46,6 +46,35 @@ own HUD behavior. The XP bar and rank icons are hidden during playback.
 
 ## Implementation
 
+### Indexed backward seeking for converted COD4 replays
+
+Since 2026.10.07.3, playback uses the converted file's existing independent full snapshots
+to seek backward without restarting from the beginning. Left Arrow, the Back
+button, `demorewind 5000` and backward timeline scrubs share this path. The index
+builds as packets are played or fast-forwarded, with roughly one anchor per
+second and no startup scan, disk cache or format change. Existing conversions
+can use it without reconversion.
+
+An anchor records its packet offset, time, sequence and associated camera
+prediction. Before jumping, playback validates the file framing, native snapshot
+ring and static command baseline. It clears old FX, snapshot pointers, ring
+validity and prediction history, then seeds both native snapshot walkers immediately
+before the selected sequence. Configstrings, assets and the loaded map remain in
+place. Native first-snapshot initialization rebuilds interpolation, followed by
+at most 2.5 seconds of demo-time catch-up; pauses and playback speed are preserved.
+Unvisited/discontinuous ranges and native H1 delta-coded recordings use the
+existing restart fallback. This is not an IW8 native-memory checkpoint port.
+
+`tests/run-demo-seek-index.cmd "<converted .dm_h1>"` tests bounded lookup,
+repeated rewinds, session reset, gaps and offsets beyond 4 GiB. On the reported
+Crash recording it also checks every compressed native snapshot header,
+prediction timestamp and sampled file offset: 137,738 full snapshots, 1,652
+anchors and a maximum 2,203 ms catch-up. Native reset offsets were checked against
+H1's `CL_ParseSnapshot` (`0x342770`), `CG_ReadNextSnapshot` (`0x32F950`) and
+`CL_FirstSnapshot` (`0x33B6B0`). These checks and successful compilation do not
+replace in-game confirmation of camera, animation, corpses and effects after a
+paused or playing rewind.
+
 `theater_ui.cpp` publishes a playback snapshot on the main scheduler and sends a separate LUI update event at 20 Hz. This event uses wall-clock scheduling, so the panel continues updating while the replay and normal HUD clocks are paused. UI actions run on the main pipeline and carry the playback session ID to reject actions left over from another demo.
 
 `ui_scripts/theater/timeline.lua` attaches to the root when `mp_hud` is constructed, after MWR creates the in-game root and fonts. FlowManager owns the interactive menu. With cursor capture released, the transport row uses display-only native `H1ButtonBackground` frames and text, with no buttons or seek hitboxes that could steal camera input. F1 also gates the complete `mp_hud` parent; native HUD dvars alone only hide part of MWR's drawing. The theater timeline and hints are siblings under the LUI root, so hiding this parent leaves them visible and interactive. Child HUD visibility states continue running and normal visibility is restored on show or playback stop. The native `experienceBar_root` widget (XP track plus rank emblems) is hidden during playback and restored when playback stops; its stock HUD wrapper retains visibility ownership outside demos. The native menu and advanced overlay are mutually exclusive. F10 is handled at the Windows message layer because upstream reserves the game-level F10 event and Windows also treats it as a system key.

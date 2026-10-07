@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026.10.07.3
+
+[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07.3)
+
+- Added indexed backward seeking for converted COD4 replays. Left Arrow, the five-second Back button and backward timeline scrubs jump to a nearby full snapshot instead of restarting at the beginning. The index builds during playback; existing conversions do not require reconversion.
+- Restore the selected frame's recorded camera data and reset native snapshot/prediction history before catch-up. Paused state and playback speed are preserved. Native H1 recordings and unsupported/discontinuous ranges retain the restart fallback.
+
+Release/x64 compilation and offline seek checks passed, including the reported 27-minute Crash conversion: 137,738 independent snapshots, 1,652 anchors and a maximum 2,203 ms of catch-up across all indexed destinations. This is demo time, not a measured wall-clock latency. In-game seek behavior still needs confirmation.
+
 ## 2026.10.07.2
 
 [Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07.2)

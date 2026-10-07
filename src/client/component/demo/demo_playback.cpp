@@ -12,6 +12,7 @@
 #include "cod4_obituary_events.hpp"
 #include "cod4_replay_agents.hpp"
 #include "demo_file_footer.hpp"
+#include "demo_seek_index.hpp"
 
 #include "component/command.hpp"
 #include "component/console.hpp"
@@ -120,6 +121,9 @@ namespace // demo class
 
 	private:
 		void repeat();
+        void reset_snapshots(int previous_sequence = 0);
+        bool rewind_converted(std::int32_t target);
+        void observe_network(std::int64_t offset, std::span<const std::uint8_t> packet);
 
 		bool converted_{}, bootstrapping_{}, legacy_obituaries_{};
         std::set<std::string> converted_models_;
@@ -145,6 +149,8 @@ namespace // demo class
 		std::optional<std::int32_t> rewind_snap_svr_time_;
 		std::optional<std::pair<std::int32_t, std::int32_t>> time_bounds_; // {first_svr_time, last_svr_time}, from gen_footer
 		std::optional<demo_timeline::index> timeline_index_;
+        demo_seek::index seek_index_;
+        std::map<int, predicted_data_t> seek_predictions_;
 		std::optional<gamestate_t> gs_;
 		std::vector<std::uint8_t> buffer_;
 		std::filesystem::path path_;
@@ -215,6 +221,14 @@ namespace // demo class
 		{
 			return false;
 		}
+
+        if (msec && game::mp::cl.get())
+        {
+            const auto destination = static_cast<std::int64_t>(game::mp::cl->snap.serverTime) - *msec;
+            const auto first = time_bounds_ ? time_bounds_->first : 0;
+            const auto target = static_cast<std::int32_t>((std::max)(destination, static_cast<std::int64_t>(first)));
+            if (rewind_converted(target)) return true;
+        }
 
 		// trigger demo end-of-file which will repeat the demo
 		ended_ = false;
@@ -547,7 +561,8 @@ namespace // demo class
 	{
         if (ended_) return;
         bool clean_end{};
-		if (!parse_demo(file_, buffer_, post_map_header_file_offset_, pred_data_, pred_data_index_, gs_, skip_map_preload_, clean_end))
+		if (!parse_demo(file_, buffer_, post_map_header_file_offset_, pred_data_, pred_data_index_, gs_, skip_map_preload_, clean_end,
+            [this](std::int64_t offset, std::span<const std::uint8_t> packet) { observe_network(offset, packet); }))
 		{
 			if ((is_demo_repeating() || rewind_pending_) && *game::mp::connstate != game::CA_DISCONNECTED)
 			{ // don't repeat demo if it was stopped manually
@@ -589,6 +604,8 @@ namespace // demo class
 		rewind_snap_svr_time_ = {};
 		time_bounds_.reset();
 		timeline_index_.reset();
+        seek_index_.clear();
+        seek_predictions_.clear();
 		gs_.reset();
 		buffer_.clear();
 		file_.clear();
@@ -632,12 +649,8 @@ namespace // demo class
         }
     }
 
-	void demo_playback_t::repeat()
-	{
-        reset_grenade_fx();
-        rewind_pending_ = false;
-		assert(post_map_header_file_offset_ > 0);
-
+    void demo_playback_t::reset_snapshots(int previous_sequence)
+    {
 		if (auto& connstate = *game::mp::connstate; connstate == game::CA_ACTIVE)
 		{
 			// prevent old snapshots from being processed; would mess up the server command sequences
@@ -650,7 +663,7 @@ namespace // demo class
         // rebuilds interpolation/animation state instead of comparing to the future.
         if (auto* cg = reinterpret_cast<std::uint8_t*>(game::CG_GetLocalClientGlobals()))
         {
-            *reinterpret_cast<int*>(cg + 0x48E4) = 0; // latestSnapshotNum
+            *reinterpret_cast<int*>(cg + 0x48E4) = previous_sequence; // latestSnapshotNum
             *reinterpret_cast<int*>(cg + 0x48E8) = 0; // latestSnapshotTime
             *reinterpret_cast<void**>(cg + 0x48F0) = nullptr; // snap
             *reinterpret_cast<void**>(cg + 0x48F8) = nullptr; // nextSnap
@@ -658,7 +671,7 @@ namespace // demo class
         if (auto* cgs = reinterpret_cast<std::uint8_t*>(game::CG_GetServerCommandsState()))
         {
             *reinterpret_cast<int*>(cgs + 0x18) = 0; // serverCommandSequence
-            *reinterpret_cast<int*>(cgs + 0x1C) = 0; // processedSnapshotNum
+            *reinterpret_cast<int*>(cgs + 0x1C) = previous_sequence; // processedSnapshotNum
         }
         pred_data_.fill({});
 
@@ -685,6 +698,11 @@ namespace // demo class
 			cl->oldFrameServerTime = 0;
 			cl->snap.serverTime = 0;
 			cl->snap.valid = 0;
+            cl->snap.messageNum = previous_sequence;
+            cl->newSnapshots = 0;
+            std::fill(std::begin(cl->clientArchive), std::end(cl->clientArchive), game::ClientArchiveData{});
+            cl->clientArchiveIndex = 0;
+            game::mp::clc->serverMessageSequence = previous_sequence;
             // CL_GetSnapshot (0x33B940) trusts the ring entry's valid flag;
             // it does not compare the requested sequence to the entry's sequence.
             // Old ring slots otherwise supply future snapshots during replay startup.
@@ -697,6 +715,85 @@ namespace // demo class
 
 		}
 
+        pred_data_index_ = 0;
+    }
+
+    void demo_playback_t::observe_network(std::int64_t offset, std::span<const std::uint8_t> packet)
+    {
+        const auto* cl = game::mp::cl.get();
+        if (!converted_ || !gs_ || !gamestate_applied_ || !cl || packet.size() <= 8) return;
+        int sequence{};
+        std::memcpy(&sequence, packet.data(), sizeof(sequence));
+        // The converter emits a null delta base for every snapshot and a static
+        // gamestate. Never apply this optimization to native delta-coded demos.
+        if (!cl->snap.valid || cl->snap.deltaNum != -1 || cl->snap.messageNum != sequence ||
+            game::mp::clc->serverCommandSequence != static_cast<int>(gs_->svr_cmd_seq)) return;
+        const auto& prediction = pred_data_[(pred_data_index_ + pred_data_.size() - 1) % pred_data_.size()];
+        if (prediction.cad.serverTime != cl->snap.serverTime) return;
+        const auto count = seek_index_.size();
+        seek_index_.observe({offset, cl->snap.serverTime, sequence});
+        if (seek_index_.size() != count) seek_predictions_.emplace(sequence, prediction);
+    }
+
+    bool demo_playback_t::rewind_converted(std::int32_t target)
+    {
+        if (!converted_ || !replay_armed_ || !gamestate_applied_ || !gs_ ||
+            *game::mp::connstate != game::CA_ACTIVE || !game::mp::cl.get() ||
+            game::mp::clc->serverCommandSequence != static_cast<int>(gs_->svr_cmd_seq)) return false;
+        const auto anchor = seek_index_.before(target);
+        if (!anchor) return false;
+        const auto prediction = seek_predictions_.find(anchor->sequence);
+        if (prediction == seek_predictions_.end()) return false;
+        auto* raw = reinterpret_cast<std::uint8_t*>(game::mp::cl.get());
+        const auto count = *reinterpret_cast<int*>(raw + 0x8F84);
+        if (count <= 0 || count > 4096 || !*reinterpret_cast<void**>(raw + 0x8FA0) ||
+            !game::CG_GetLocalClientGlobals() || !game::CG_GetServerCommandsState()) return false;
+
+        // Validate the indexed framing before touching native state. These
+        // offsets came from this open stream, not an external/cache file.
+        const auto original = file_.tellg();
+        file_.clear();
+        file_.seekg(anchor->offset, std::ios::beg);
+        std::uint8_t tag{};
+        file_.read(reinterpret_cast<char*>(&tag), 1);
+        std::uint32_t size{}, sequence{};
+        file_.read(reinterpret_cast<char*>(&size), (tag & 0x80) ? 1 : 4);
+        file_.read(reinterpret_cast<char*>(&sequence), 4);
+        const bool valid = file_.good() && (tag & 0x7F) == 2 && size > 8 && size <= MAX_SIZE &&
+            sequence == static_cast<std::uint32_t>(anchor->sequence);
+        file_.clear();
+        file_.seekg(valid ? std::streampos(anchor->offset) : original);
+        if (!valid || !file_.good()) return false;
+
+        reset_grenade_fx();
+        reset_snapshots(anchor->sequence - 1);
+        // The converter writes prediction immediately BEFORE its snapshot.
+        // Restore that small pointer-free record when jumping to the packet.
+        pred_data_[0] = prediction->second;
+        pred_data_index_ = 1;
+        game::mp::cl->clientArchive[0] = prediction->second.cad;
+        game::mp::cl->clientArchiveIndex = 1;
+        // Converted files have no incremental reliable commands. Keep their
+        // static configstrings/assets, and seed both command walkers together.
+        const auto baseline = static_cast<int>(gs_->svr_cmd_seq);
+        game::mp::clc->serverCommandSequence = baseline;
+        game::mp::clc->lastExecutedServerCommand = baseline;
+        game::mp::cgs->serverCommandSequence = baseline;
+        note_command_baseline(baseline);
+        ended_ = rewind_pending_ = false;
+        skip_timeout_ = true;
+        rewind_snap_svr_time_ = target;
+        console::info("Converted replay seek: %d -> %d ms, snapshot %d, %zu anchors (no restart)\n",
+            anchor->time, target, anchor->sequence, seek_index_.size());
+        return true;
+    }
+
+	void demo_playback_t::repeat()
+	{
+        reset_grenade_fx();
+        rewind_pending_ = false;
+		assert(post_map_header_file_offset_ > 0);
+        reset_snapshots();
 		if (auto* demo_timescale = game::Dvar_FindVar("demotimescale"); demo_timescale)
 		{
 			if (!retain_timescale_)

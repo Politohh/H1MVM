@@ -1384,12 +1384,14 @@ namespace demo_utils
 
 		bool parse_demo(std::ifstream& file, std::vector<std::uint8_t>& buffer,
 			std::size_t& post_map_header_file_offset, std::array<predicted_data_t, 256>& pred_data,
-			std::size_t& pred_data_index, std::optional<gamestate_t>& gs, bool skip_map_preload, bool& clean_end)
+			std::size_t& pred_data_index, std::optional<gamestate_t>& gs, bool skip_map_preload, bool& clean_end,
+            const std::function<void(std::int64_t, std::span<const std::uint8_t>)>& observe_network)
 		{
 			clean_end = false;
 			while (continue_demo_reading())
 			{
 				++g_demo_chunks_read;
+				const auto chunk_offset = static_cast<std::int64_t>(file.tellg());
 				const auto [full_id, id, flag1, flag2, one_byte] = read_demo_data_id(file);
 
 				if (id == demo_data_id::eof)
@@ -1427,6 +1429,7 @@ namespace demo_utils
 					continue;
 				case demo_data_id::network_data:
 					process_network_data(buffer);
+                    if (observe_network) observe_network(chunk_offset, buffer);
 					continue;
 				case demo_data_id::predicted_data:
 					process_predicted_data(buffer, pred_data, pred_data_index);

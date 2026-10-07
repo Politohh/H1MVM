@@ -205,7 +205,8 @@ namespace demo_utils
 		bool is_gamestate_valid(game::gameState_t& gs, bool sanitize);
 		bool parse_demo(std::ifstream& file, std::vector<std::uint8_t>& buffer,
 			std::size_t& post_map_header_file_offset, std::array<predicted_data_t, 256>& pred_data,
-			std::size_t& pred_data_index, std::optional<gamestate_t>& gs, bool skip_map_preload, bool& clean_end);
+			std::size_t& pred_data_index, std::optional<gamestate_t>& gs, bool skip_map_preload, bool& clean_end,
+            const std::function<void(std::int64_t, std::span<const std::uint8_t>)>& observe_network = {});
 
 		// [clocklog] cumulative count of chunks consumed by parse_demo's gated loop. See its definition.
 		extern int g_demo_chunks_read;
