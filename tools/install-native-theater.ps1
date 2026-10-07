@@ -18,6 +18,7 @@ $files = @(
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\__init__.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\__init__.lua'; Backup = 'theater\__init__.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\timeline.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\timeline.lua'; Backup = 'theater\timeline.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\editor.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\editor.lua'; Backup = 'theater\editor.lua' },
+    @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\model_swapper.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\model_swapper.lua'; Backup = 'theater\model_swapper.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\library.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\library.lua'; Backup = 'theater\library.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\match_hud.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\match_hud.lua'; Backup = 'theater\match_hud.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\theater\pause_menu.lua'; Target = Join-Path $DataDirectory 'ui_scripts\theater\pause_menu.lua'; Backup = 'theater\pause_menu.lua' },

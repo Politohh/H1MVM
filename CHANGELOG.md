@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Fixed conversion of demos with non-client obituary attackers, including `City_AKu_1-1__4man.dm_1`. Legal source entity references now retain the death as a world-attributed notification instead of aborting conversion or indexing a player row with an entity number.
+- Added **Model Swapper** to Theater Editor: select a replay player, browse head/body appearances by faction, class and collection, then Apply. The full-width browser includes native portraits when available, default appearance cards, scene camera focus, per-player restore and demo-specific save/load.
+- Acquire native character transient fastfiles on demand, preserve weapon/equipment attachments and restore the recorded appearance without modifying the demo or profile. Swaps follow recorded player identities across snapshots and seeks. Weapons and POV hands are outside this first version.
+- Corrected shared-skeleton head attachment tags, forwarded the native agent rebuild mask, and avoid marking unchanged replacements dirty every snapshot.
+
 - Restored native Character, body Camo, Armory and Collections selectors. The inherited Depot override replaced every tab list with Collections/Armory when its obsolete agreement flag was false, leaving those menus empty.
 - Added profile-specific local Depot persistence with validated balances, atomic replacement and backups. Crafting resolves purchase codes to item GUIDs, rejects insufficient funds, rolls back failed saves and delivers native completion events. Collection/season rewards and inventory checks share the same ownership data; the existing Unlock All Loot option also updates collection counts.
 - Repaired local supply-drop completion, bounded reward selection, duplicate-event protection and bundle/crate accounting. Ranked-match earnings persist; replay playback does not award currency. This is local Depot support, not an official marketplace or real-money store.

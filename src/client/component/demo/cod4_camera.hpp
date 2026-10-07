@@ -34,6 +34,7 @@ namespace cod4_camera
     bool has_replay_agents();
     std::optional<std::string> agent_name(unsigned client);
     void validate_model_budget(const std::set<std::string>& models);
+    void validate_extra_model_budget(const std::set<std::string>& models);
     // Register the recorded vehicle slot before native helicopter pose evaluation.
     void prepare_helicopter_vehicle(const std::uint8_t* entity_state);
     // Own the client's snapshot clock while replaying a COD4 recording.

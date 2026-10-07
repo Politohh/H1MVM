@@ -10,7 +10,7 @@ local categories = {
     {"main", "MAIN"}, {"camera", "CAMERA"}, {"misc", "MISC"},
     {"bone_camera", "BONE CAMERA"}, {"ssao", "SSAO"}, {"fog", "FOG"},
     {"dof", "DOF"}, {"sun", "SUN"}, {"lights", "LIGHTS"},
-    {"streams", "STREAMS"}, {"weapon", "WEAPON"}, {"sliders", "SLIDERS"}
+    {"streams", "STREAMS"}, {"weapon", "WEAPON"}, {"models", "MODEL SWAPPER"}, {"sliders", "SLIDERS"}
 }
 
 function Editor.registerPage(id, builder)
@@ -59,7 +59,7 @@ local function nativeButton(parent, id, label, x, y, w, callback, option)
         button_action_func = callback}
     if option then for k, v in pairs(option) do properties[k] = v end end
     local button = LUI.MenuBuilder.BuildAddChild(parent, {type = "UIGenericButton", id = id, properties = properties})
-    button:registerAnimationState("editor_layout", layout(x, y, w, 28))
+    button:registerAnimationState("editor_layout", layout(x, y, w, properties.height))
     button:animateToState("editor_layout", 0)
     local style, substyle = properties.style, properties.style.SubStyles.Default
     local function setting(name)
@@ -74,7 +74,7 @@ local function nativeButton(parent, id, label, x, y, w, callback, option)
         "text_over_disabled_color", "text_over_disabled_pulse_color", "pinned_color"}) do labelSettings[name] = setting(name) end
     button.textLabel:close()
     button.textLabel = LUI.UIGenericButton.ButtonLabelFactory(labelSettings, label, button, nil,
-        option and (option.maxLabelWidth or 178) or w - 14, {Font = CoD.TextSettings.TitleFontTiny.Font, Height = 15})
+        option and (option.maxLabelWidth or w - 14) or w - 14, {Font = CoD.TextSettings.TitleFontTiny.Font, Height = 15})
     button.textLabel.id = id .. "_label"
     button:addElement(button.textLabel)
     Editor.fitButtonBackground(button)
@@ -456,11 +456,23 @@ function Editor.create(parameters, back)
         topAnchor = true, bottomAnchor = true, left = 0, right = 0,
         top = CONTENT_OFFSET_Y, bottom = CONTENT_OFFSET_Y})
     menu:addElement(menu.content)
+    function menu:populateCategories()
+        self.list:closeChildren()
+        for _, category in ipairs(categories) do
+            local id, label = category[1], category[2]
+            local button = self:AddButton(label, function() self:selectCategory(id, label) end,
+                nil, true, nil, {height = 26, fadeIn = false})
+            Editor.fitButtonBackground(button)
+        end
+    end
     function menu:selectCategory(id, label)
         if self.category ~= id then self.settingsPage = 1 end
+        if id == "models" then self.list:closeChildren()
+        elseif self.category == "models" then self:populateCategories() end
         self.category = id
         self.colorPicker = nil
         self.skyPicker = nil
+        self.modelBrowser = nil
         -- closeChildren clears MWR's Lua childRecord as well as the native tree.
         self.content:closeChildren()
         self.controls = {}
@@ -472,18 +484,14 @@ function Editor.create(parameters, back)
     end
     -- AddButton supplies MWR's slanted borders, focus animation, native font,
     -- sounds and controller navigation; these are not custom transport buttons.
-    for _, category in ipairs(categories) do
-        local id, label = category[1], category[2]
-        local button = menu:AddButton(label, function() menu:selectCategory(id, label) end,
-            nil, true, nil, {height = 26, fadeIn = false})
-        Editor.fitButtonBackground(button)
-    end
+    menu:populateCategories()
     menu:AddBackButton(function()
         Engine.PlaySound(CoD.SFX.MenuBack)
-        if menu.colorPicker or menu.skyPicker then menu:selectCategory(menu.category, string.upper(menu.category:gsub("_", " ")))
+        if menu.category == "models" then menu:selectCategory("main", "MAIN")
+        elseif menu.colorPicker or menu.skyPicker then menu:selectCategory(menu.category, string.upper(menu.category:gsub("_", " ")))
         else back() end
     end)
-    -- All twelve categories fit in 334 units. The options helper overrides
+    -- All thirteen categories fit in 362 units. The options helper overrides
     -- this list with a nine-row viewport and adds a scrollbar; do not use it.
     menu:CreateBottomDivider()
     menu:selectCategory("main", "MAIN")
@@ -563,8 +571,9 @@ local function settingsPage(id)
     end)
 end
 for _, category in ipairs(categories) do
-    if category[1] ~= "main" and category[1] ~= "sliders" then settingsPage(category[1]) end
+    if category[1] ~= "main" and category[1] ~= "sliders" and category[1] ~= "models" then settingsPage(category[1]) end
 end
+require("model_swapper")(Editor,nativeButton,image,settings,request)
 
 Editor.registerPage("sliders", function(content, menu)
     nativeButton(content, "editor_reset_all", "RESET ALL EDITOR SETTINGS", 465, 560, 316, function() return request("reset_all") end)
@@ -602,6 +611,7 @@ function Editor.update(menu, data)
         else received.values[name] = edit.value end
     end
     for k, v in pairs(received) do settings[k] = v end
+    if Editor.updateModels then Editor.updateModels(menu) end
     if changed then
         for _, category in ipairs(categories) do
             if menu.category == category[1] then menu:selectCategory(category[1], category[2]); break end
@@ -615,7 +625,8 @@ function Editor.update(menu, data)
         if not equal(previous[item.control.name], settings.values[item.control.name]) then item.element:processEvent({name = "content_refresh"}) end
     end
     if menu.colorPicker then menu.colorPicker.refresh() end
-    menu.feedback:setText(settings.message ~= "" and settings.message or settings.sceneMessage or "")
+    menu.feedback:setText(settings.message ~= "" and settings.message or
+        (menu.category=="models" and settings.modelMessage or settings.sceneMessage) or "")
     if (menu.category == "bone_camera" or menu.category == "lights") and menu.sceneStatus then
         menu.sceneStatus:setText(menu.category == "bone_camera" and (settings.boneAttached and "ATTACHED" or "DETACHED") or
             "POINT " .. tostring(settings.selectedLight or 0) .. " / " .. tostring(settings.lightCount or 0))

@@ -22,6 +22,17 @@ int main(int argc, char** argv)
             const auto camera = cod4::decode(bytes);
             const auto events = cod4::collect_obituary_events(world, camera.configstrings.at(2258));
             const auto raw_events = cod4::collect_obituary_events(world);
+            if (std::filesystem::path(argv[arg]).filename() == "City_AKu_1-1__4man.dm_1")
+            {
+                check(events.size() == 232, "City kill notifications were dropped");
+                for (const auto& [time, victim] : {std::pair{381211450, 4u}, std::pair{381213800, 9u}})
+                {
+                    const auto event = std::find_if(events.begin(), events.end(), [time](const auto& e) { return e.time == time; });
+                    check(event != events.end() && event->attacker == 1022 && event->victim == victim
+                        && event->event_parameter == 0 && event->source_weapon == 0,
+                        "City non-client damage lost its victim, time or world attribution");
+                }
+            }
             check(events.size() == raw_events.size(), "Weapon classification dropped a kill notification");
             for (std::size_t i = 0; i < events.size(); ++i)
                 check(events[i].time == raw_events[i].time && events[i].entity == raw_events[i].entity
@@ -88,6 +99,32 @@ int main(int argc, char** argv)
         try { cod4::collect_obituary_events(car_world, "destructible_car"); }
         catch (const std::runtime_error&) { invalid_weapon = true; }
         check(invalid_weapon, "Out-of-range obituary weapon accepted");
+        car_world.frames.resize(1);
+        auto& damage = car_world.frames[0].entities[100];
+        damage.set(156, 0);
+        for (const auto attacker : {63u, 64u, 303u, 1022u, 1023u})
+        {
+            damage.set(120, attacker);
+            const auto deaths = cod4::collect_obituary_events(car_world);
+            check(deaths.size() == 1 && deaths[0].attacker == (attacker < 64 ? attacker : 1022u)
+                && deaths[0].victim == 2 && deaths[0].time == 1000 && deaths[0].event_parameter == 0,
+                "Legal entity attacker rejected or credited to a different player");
+            if (attacker >= 64)
+            {
+                const auto death = cod4::translate_obituary_event(deaths[0], 1500, 2046, 2, 0);
+                check(word(death, 168) == 2046 && !word(death, 76), "World obituary leaked a source entity into H1 clients");
+            }
+        }
+        const auto reject_damage = [&]
+        {
+            bool rejected{};
+            try { (void)cod4::collect_obituary_events(car_world); }
+            catch (const std::runtime_error&) { rejected = true; }
+            check(rejected, "Malformed obituary accepted");
+        };
+        damage.set(120, 1024); reject_damage();
+        damage.set(120, 1); damage.set(116, 64); reject_damage();
+        damage.set(116, 2); damage.set(156, 256); reject_damage();
         cod4::h1_entity legacy{};
         cod4::write_native(legacy, 76, 0x660088u); // Exact crashing dump's weapon value.
         cod4::repair_legacy_obituary(legacy);

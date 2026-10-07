@@ -2126,6 +2126,14 @@ namespace cod4_camera
         }
     }
 
+    void validate_extra_model_budget(const std::set<std::string>& models)
+    {
+        std::lock_guard lock(mutex);
+        auto all = requested_models;
+        all.insert(models.begin(), models.end());
+        validate_model_budget(all);
+    }
+
     void prepare_helicopter_vehicle(const std::uint8_t* entity_state)
     {
         if (!entity_state || entity_state[10] != 12)

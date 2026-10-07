@@ -418,7 +418,7 @@ local function checkEditorLayout(titleId)
     end
 end
 checkEditorLayout()
-assert(not root.menu.list.scrolling and #root.menu.list.children == 12)
+assert(not root.menu.list.scrolling and #root.menu.list.children == 13)
 for _, button in ipairs(root.menu.list.children) do checkBackground(button) end
 assert(root.menu.category == "main")
 assert(find(root.menu, "theater_editor_demo").text == "test.dm_h1")
@@ -606,6 +606,48 @@ for _, spec in ipairs({{"BONE CAMERA","editor_bone_attach","bone_attach"}, {"BON
     find(root.menu,"native_"..spec[1]):processEvent({name="button_action"}); tick()
     assert(click(spec[2])[2]==spec[3])
 end
+-- Character browser contracts: stable player identities, catalog paging,
+-- native portraits/default cards, filters and apply/load guards.
+editorData.modelPlayers={{key="actor:100",name="Alice",slot=18,visible=true},{key="actor:200",name="Bob",slot=19,visible=false}}
+editorData.modelSelected="actor:100"
+editorData.modelDetail={name="Alice",head="head_original",body="body_original"}
+editorData.modelCatalogRevision=1;editorData.modelLoading=false
+editorData.modelCatalog={}
+for i=1,15 do
+    editorData.modelCatalog[i]={id=i,kind="head",model="head_sas_ct_test_"..i,label="SAS head "..i,
+        icon=i==1 and "" or "h1_character_icon_010",faction="SAS / Urban",role="assault",collection="Default"}
+end
+editorData.modelCatalog[16]={id=100,kind="body",model="body_sas_ct_assault_mp_camo",label="SAS Urban assault",icon="",faction="SAS / Urban",role="assault",collection="Default"}
+tick();root.menu:selectCategory("models","MODEL SWAPPER");tick()
+checkEditorLayout()
+assert(find(root.menu,"model_default_card") and find(root.menu,"model_thumbnail_2"))
+assert(#root.menu.list.children==0, "the full-width browser hides the editor category list")
+assert(click("model_player_2")[2]=="model_select" and commands[#commands][3]=="actor:200")
+assert(click("model_apply")[2]=="model_head" and commands[#commands][3]=="1")
+find(root.menu,"model_next"):processEvent({name="button_action"});assert(root.menu.modelPage==2 and find(root.menu,"model_choice_5") and not find(root.menu,"model_choice_1"))
+find(root.menu,"model_next"):processEvent({name="button_action"});assert(root.menu.modelPage==3 and find(root.menu,"model_choice_9"))
+find(root.menu,"model_next"):processEvent({name="button_action"});assert(root.menu.modelPage==4 and find(root.menu,"model_choice_15"))
+find(root.menu,"model_next"):processEvent({name="button_action"});assert(root.menu.modelPage==1)
+find(root.menu,"model_bodies"):processEvent({name="button_action"});assert(find(root.menu,"model_choice_100") and not find(root.menu,"model_choice_1"))
+assert(click("model_apply")[2]=="model_body" and commands[#commands][3]=="100")
+editorData.modelLoading=true;tick()
+local beforeLoad=#commands;mouseClick(find(root.menu,"model_apply"),70);assert(#commands==beforeLoad,"loading must block repeated model apply")
+mouseClick(find(root.menu,"model_save"),70);mouseClick(find(root.menu,"model_load"),70)
+assert(#commands==beforeLoad,"loading must block save/load of incomplete selections")
+editorData.modelLoading=false;tick()
+assert(click("model_focus")[2]=="model_focus")
+assert(click("model_restore")[2]=="model_restore")
+assert(click("model_save")[2]=="model_save" and click("model_load")[2]=="model_load")
+find(root.menu,"model_faction"):processEvent({name="button_action"});assert(find(root.menu,"model_no_matches"),"faction filter removes other-faction variants")
+assert(find(root.menu,"model_count").text:find("0 APPEARANCES"))
+find(root.menu,"model_clear_filters"):processEvent({name="button_action"});assert(find(root.menu,"model_choice_100"))
+local stableCard=find(root.menu,"model_choice_100")
+tick();tick();assert(find(root.menu,"model_choice_100")==stableCard,"ordinary replay polls preserve browser focus")
+assert(find(root.menu,"model_choice_100").style.height==42,"appearance cards reserve space for readable metadata")
+checkEditorLayout()
+print("PASS detailed character browser: player identity, portraits/default cards, head/body apply, paging, faction filter, load guard, save/restore and layout")
+root.menu:processEvent({name = "button_secondary"}); tick(); tick()
+assert(root.menu.category=="main" and #root.menu.list.children==13, "browser Back restores the category hub")
 root.menu:processEvent({name = "button_secondary"}); tick(); tick()
 assert(root.menu.id == "h1_theater_controls", "editor Back returns to the timeline")
 root.menu.children[2]:processEvent({name = "button_secondary"}); tick()

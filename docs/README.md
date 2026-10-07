@@ -8,6 +8,7 @@ Start with the [project README](../README.md) for installation and a first repla
 | --- | --- |
 | [Theater library](theater-library.md) | Import recordings, convert COD4 demos, browse and play results. |
 | [Playback, cameras and editor](native-theater.md) | Timeline shortcuts, free camera, dolly paths, visual settings and capture controls. |
+| [Model Swapper](theater-model-swapper.md) | Select replay players, apply native heads/bodies, preview and save demo-specific appearances. |
 | [Classic COD4 snipers](cod4-snipers.md) | Original animations on remastered models, local input preparation and scope customization. |
 | [Personalization and local Depot](personalization.md) | Head/body selectors, local inventory, crafting, collection rewards and profile backups. |
 | [Build and contribute](../CONTRIBUTING.md) | Source setup, regression checks and useful bug reports. |

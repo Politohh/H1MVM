@@ -2,6 +2,7 @@
 #include "theater_editor.hpp"
 #include "theater_camera.hpp"
 #include "theater_scene.hpp"
+#include "theater_models.hpp"
 #include "game/dvars.hpp"
 #include "theater_ui.hpp"
 #include "demo_playback.hpp"
@@ -423,7 +424,7 @@ namespace theater_editor
                         game::Dvar_Reset(game::Dvar_FindVar(base.c_str()), game::DVAR_SOURCE_INTERNAL);
                 }
                 if (name == "reset_all" || argument == "camera") theater_camera::set_freecam_fov(90);
-                if (name == "reset_all") theater_scene::reset_editor();
+                if (name == "reset_all") { theater_scene::reset_editor(); theater_models::reset(); }
                 message = name == "reset_all" ? "Reset all editor settings; dolly markers retained" : "Reset " + argument + " to engine defaults";
             }
             else if (name == "add_slider")
@@ -434,6 +435,7 @@ namespace theater_editor
                     custom.push_back(argument);
             }
             else if (name == "remove_slider") std::erase(custom, argument);
+            else if (theater_models::action(name, argument)) message = "";
             else if (theater_scene::action(name)) message = "";
             else if (name == "toggle_hud") theater_camera::toggle_hud();
             else if (name == "capture_in") { if (const auto t = demo_playback::current_time()) demo_avidemo::set_in_point(*t); }
@@ -453,6 +455,7 @@ namespace theater_editor
 
     void update()
     {
+        theater_models::update();
         { std::lock_guard lock(mutex); if (!theater_ui::editor_open() && pending.empty()) return; }
         if (catalog.empty() || catalog_session != demo_playback::session_id())
         {
@@ -534,7 +537,8 @@ namespace theater_editor
         controls.push_back({{"page", "camera"}, {"name", "freecam_fov"}, {"label", "FREECAM FOV"},
             {"kind", "float"}, {"min", 1}, {"max", 179}, {"step", 1}});
         values["freecam_fov"] = theater_camera::get_freecam_fov();
-        const auto signature = controls.dump() + nlohmann::json(custom).dump();
+        const auto models = theater_models::state();
+        const auto signature = controls.dump() + nlohmann::json(custom).dump() + std::to_string(models.value("modelCatalogRevision", 0));
         if (signature != catalog_signature) { catalog_signature = signature; ++revision; }
         const auto bounds = demo_playback::time_bounds();
         const auto first = bounds ? bounds->first : 0;
@@ -544,12 +548,14 @@ namespace theater_editor
             {"captureOut", demo_avidemo::has_out() ? demo_avidemo::out_point() - first : -1},
             {"armed", demo_avidemo::is_armed()}, {"frames", demo_avidemo::captured_frames()}, {"ffmpeg", demo_avidemo::ffmpeg_path()}};
         data.update(theater_scene::state());
+        data.update(models);
         std::lock_guard lock(mutex); snapshot = std::move(data);
     }
     nlohmann::json state(int cached_revision)
     {
         std::lock_guard lock(mutex); auto copy = snapshot;
         if (cached_revision == copy.value("revision", -1)) { copy.erase("controls"); copy.erase("custom"); }
+        else copy["modelCatalog"] = theater_models::choices();
         return copy;
     }
     int queue_edit(const std::string& name, const std::array<double,3>& values, bool color)
@@ -570,7 +576,8 @@ namespace theater_editor
     {
         static const std::set<std::string> allowed{"save_preset", "load_preset", "save_path", "load_path", "reset", "reset_all", "add_slider", "remove_slider",
             "capture_in", "capture_out", "capture_clear", "capture_start", "capture_stop", "toggle_hud",
-            "bone_attach", "bone_detach", "bone_next", "point_add", "point_next", "point_remove", "point_clear", "fog_sample"};
+            "bone_attach", "bone_detach", "bone_next", "point_add", "point_next", "point_remove", "point_clear", "fog_sample",
+            "model_select", "model_head", "model_body", "model_restore", "model_reset_all", "model_focus", "model_save", "model_load"};
         if (!allowed.contains(name) || !demo_playback::is_replay_armed() || !theater_ui::editor_open() || argument.size() > 128) return false;
         const auto session = demo_playback::session_id();
         scheduler::once([name, argument, session]

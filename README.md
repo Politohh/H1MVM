@@ -16,6 +16,7 @@ An **H1-Mod client with an integrated demo system and a COD4-to-H1 demo converte
 | **Playback controls** | Pause, seek, change speed and toggle the HUD independently of the timeline. |
 | **Camera tools** | Switch between first person, third person, free camera and dolly paths. |
 | **Shot editing** | Adjust camera, lighting, fog, depth of field and visual settings in the native editor. |
+| **Model Swapper** | Select a replay player and replace their head or body with native MWR appearances, including models from other factions. Save selections for that demo. |
 | **COD4 conversion** | Convert `.dm_1` recordings to `.dm_h1`, including tested Promod and COD4x protocol 19/21 recordings. |
 | **Remastered presentation** | Map recorded players, weapons and events to native MWR assets, with recorded HUD data. |
 | **Classic sniper playback** | Use original COD4 sniper animations on remastered models, with late ADS zoom and flat scopes. Requires separately prepared inputs. |

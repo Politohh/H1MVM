@@ -49,8 +49,14 @@ namespace cod4
                 // +120 attackerEntityNum; the H1 fields differ.
                 const auto victim = entity.get(116), attacker = entity.get(120);
                 const auto parameter = entity.get(156);
-                if ((attacker >= 64 && attacker != 1022) || victim >= 64 || parameter > 255)
+                if (attacker > 1023 || victim >= 64 || parameter > 255)
                     throw std::runtime_error("Invalid COD4 obituary payload");
+                // The attacker field is an entity reference, not necessarily
+                // a client. Scripted/world damage can name an ordinary entity
+                // (the City recording uses 303). Keep the death and victim,
+                // but use the world sentinel instead of indexing client data
+                // or crediting an unrelated player to that entity number.
+                const auto kill_attacker = attacker < 64 ? attacker : 1022u;
                 // A low parameter is the kill weapon itself, not MOD or the
                 // attacker's currently held weapon (which can already change).
                 auto weapon = parameter < 128 ? parameter : 0;
@@ -62,7 +68,7 @@ namespace cod4
                 // with a null weapon, rather than loading an unrelated weapon.
                 const bool environmental = weapon && !weapon_table.empty()
                     && weapons[weapon] == "destructible_car";
-                events.push_back({frame.time, number, attacker, victim, parameter,
+                events.push_back({frame.time, number, kill_attacker, victim, parameter,
                     environmental ? 0 : weapon, environmental});
             }
             previous = frame.entities;
