@@ -4,6 +4,8 @@ local Editor = require("editor")
 local green = {r = 0.35, g = 0.75, b = 0.4}
 local white = {r = 1, g = 1, b = 1}
 local dark = {r = 0.025, g = 0.035, b = 0.025}
+local splitSelection
+local splitReturn
 local function layout(x,y,w,h)
     return {leftAnchor=true,rightAnchor=false,topAnchor=true,bottomAnchor=false,
         left=x,top=y,width=w,height=h}
@@ -71,6 +73,10 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
         do_not_add_friends_helper=true,showTopRightSmallBar=true,uppercase_title=true,skipAnim=true})
     menu.id="h1_theater_library"
     menu.page,menu.filter,menu.revision=1,"all",-1
+    if splitReturn then
+        menu.page,menu.filter,menu.selected=splitReturn.page,splitReturn.filter,splitReturn.selected
+        splitReturn=nil
+    end
     menu.cards={}
     local function request(name,id) return game:theaterlibraryaction(name,id or "") end
     local function activate(item)
@@ -111,9 +117,18 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
         if item.error and item.error~="" then
             text(self.preview,"preview_error",item.error,0,361,350,16)
         else
-            button(self.preview,"library_play",item.source and "CONVERT DEMO" or "PLAY DEMO",0,366,350,function()
+            button(self.preview,"library_play",item.source and "CONVERT DEMO" or "PLAY DEMO",0,356,350,function()
                 activate(item)
             end)
+            if item.splittable then
+                button(self.preview,"library_split","SPLIT DEMO",0,394,350,function()
+                    if self.snapshot.busy or self.snapshot.converting then return end
+                    splitSelection=item
+                    splitReturn={page=self.page,filter=self.filter,selected=self.selected}
+                    LUI.FlowManager.RequestLeaveMenu(self)
+                    LUI.FlowManager.RequestAddMenu(nil,"h1_theater_split",true,self.exclusiveController)
+                end)
+            end
         end
     end
 
@@ -175,7 +190,9 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
         if data.revision~=self.revision or data.page~=self.page or self.redraw then
             self.redraw=false; self:render(data)
         end
-        self.status:setText(data.busy and "Reading demo library..." or (data.conversionMessage or data.message or ""))
+        self.status:setText(data.busy and (data.splitProgress and data.splitProgress>=0
+            and string.format("Splitting recording... %d%%",data.splitProgress) or "Reading demo library...")
+            or (data.conversionMessage or data.message or ""))
         if self.wasConverting and not data.converting then request("refresh") end
         self.wasConverting=data.converting
     end
@@ -187,7 +204,7 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
     button(menu.actions,"library_cod4","COD4 DEMOS",362,92,150,function() filter("source") end)
     button(menu.actions,"library_import","IMPORT DEMOS",774,92,215,function() request("import") end)
     button(menu.actions,"library_refresh","REFRESH",1001,92,123,function() request("refresh") end)
-    button(menu.actions,"library_convert","CONVERT COD4 DEMO",774,544,350,function()
+    button(menu.actions,"library_convert","CONVERT COD4 DEMO",774,574,350,function()
         if not menu.snapshot.busy and not menu.snapshot.converting then request("convertfile") end
     end)
     button(menu.actions,"library_previous","< PREVIOUS",470,577,130,function()
@@ -201,6 +218,73 @@ LUI.MenuBuilder.registerType("h1_theater_library",function(parameters)
     menu:addElement(LUI.UITimer.new(500,"library_poll"))
     menu:refresh()
     request("refresh")
+    return menu
+end)
+
+local function clipTime(seconds)
+    local ms=math.floor(seconds*1000+.5)
+    return string.format("%02d:%02d.%03d",math.floor(ms/60000),math.floor(ms/1000)%60,ms%1000)
+end
+
+LUI.MenuBuilder.registerType("h1_theater_split",function(parameters)
+    local item=splitSelection
+    local menu=LUI.MenuTemplate.new(parameters,{menu_title="SPLIT DEMO",menu_width=720,
+        do_not_add_friends_helper=true,showTopRightSmallBar=true,skipAnim=true})
+    menu.id="h1_theater_split"
+    menu:AddBackButton(function()
+        LUI.FlowManager.RequestLeaveMenu(menu)
+        LUI.FlowManager.RequestAddMenu(nil,"h1_theater_library",true,menu.exclusiveController)
+    end)
+    if not item then return menu end
+    local total=(item.duration or 0)/1000
+    menu.start,menu.finish=0,total
+    menu.help=text(menu,"split_help","Drag the bars or use the arrows to adjust by one second.",38,538,1086,16)
+    text(menu,"split_filename",item.name,38,132,1086,20,green)
+    text(menu,"split_format",item.source and "COD4 → H1 CLIP" or "H1 CLIP",38,167,700,16,green)
+    text(menu,"split_original","Your original recording is kept. Clips appear in the Theater library.",38,200,1086,16)
+    menu.list:registerAnimationState("split_list",layout(38,248,704,260))
+    menu.list:animateToState("split_list",0)
+    menu.summary=text(menu,"split_summary","",38,478,1086,20,green)
+    local function summary()
+        menu.summary:setText(clipTime(menu.start).."  →  "..clipTime(menu.finish).."    /    "..clipTime(menu.finish-menu.start))
+    end
+    local function editable()
+        local data=game:gettheaterlibrary(1,"all")
+        return not menu.submitted and not data.busy and not data.converting
+    end
+    for _,spec in ipairs({{"start","START",0},{"finish","END",58}}) do
+        local key=spec[1]
+        local row=Editor.valueRow(menu.list,"split_"..key,spec[2],0,spec[3],
+            {kind="float",min=0,max=total,step=1,format=clipTime},function() return menu[key] end,
+            function(value)
+                if not editable() then return false end
+                value=math.floor(value*1000+.5)/1000
+                if key=="start" then value=math.max(0,math.min(value,menu.finish-.1))
+                else value=math.min(total,math.max(value,menu.start+.1)) end
+                menu[key]=value; summary(); return true
+            end,menu)
+        -- Keep the precise readout visible next to the compact native slider.
+        local readout=text(menu.list,"split_"..key.."_time","",342,spec[3]+7,210,16,green)
+        row:addEventHandler("button_over",function() readout:setText(clipTime(menu[key])) end)
+        menu[key.."Readout"]=readout
+    end
+    button(menu.list,"split_save",item.source and "CONVERT AND SAVE CLIP" or "SAVE CLIP",0,134,550,function()
+        if not editable() then return end
+        local accepted=game:theaterlibrarysplit(item.id,math.floor(menu.start*1000+.5),math.floor(menu.finish*1000+.5))
+        if accepted then menu.submitted=true; menu.help:setText("Saving your clip...")
+        else menu.help:setText("Cannot start the split. Refresh the library and check your range.") end
+    end)
+    menu:registerEventHandler("split_poll",function()
+        menu.startReadout:setText(clipTime(menu.start)); menu.finishReadout:setText(clipTime(menu.finish))
+        local data=game:gettheaterlibrary(1,"all")
+        if menu.submitted then
+            menu.help:setText(data.converting and (data.conversionMessage or "Converting COD4 clip...")
+                or data.busy and string.format("Saving clip... %d%%",math.max(0,data.splitProgress or 0)) or data.message or "")
+            if not data.busy and not data.converting then menu.submitted=false end
+        end
+    end)
+    menu:addElement(LUI.UITimer.new(250,"split_poll"))
+    menu:processEvent({name="split_poll"}); summary()
     return menu
 end)
 

@@ -13,6 +13,7 @@
 #include "cod4_obituary_events.hpp"
 #include "cod4_conversion_compression.hpp"
 #include "demo_timeline.hpp"
+#include "demo_splitter.hpp"
 #include "cod4_gun_events.hpp"
 #include "cod4_actor_translation.hpp"
 #include "cod4_replay_agents.hpp"
@@ -1912,7 +1913,8 @@ namespace cod4_camera
             disconnect_then_stop_locked(message);
         }
 
-        void play(const std::filesystem::path& path, bool convert = false)
+        void play(const std::filesystem::path& path, bool convert = false,
+            std::optional<std::pair<int, int>> clip = {}, const std::filesystem::path& output = {})
         {
             {
                 std::lock_guard lock(mutex);
@@ -1925,7 +1927,8 @@ namespace cod4_camera
                 use_facial_heads = facial_heads && facial_heads->current.enabled;
                 if (use_facial_heads && !facial::supported)
                     throw std::runtime_error("Facial playback is unavailable for this H1 animation ABI");
-                conversion_output = std::filesystem::path("demos") / (path.stem().string() + ".dm_h1");
+                conversion_output = output.empty() ? std::filesystem::path("demos") / (path.stem().string() + ".dm_h1") : output;
+                const auto output_stem = conversion_output.stem().string();
                 if (convert)
                 {
                     unsigned version = 0;
@@ -1935,7 +1938,7 @@ namespace cod4_camera
                     {
                         if (++version > 9999) throw std::runtime_error("No unused converted demo filename available");
                         conversion_output = conversion_output.parent_path()
-                            / std::format("{}.{:04}.dm_h1", path.stem().string(), version);
+                            / std::format("{}.{:04}.dm_h1", output_stem, version);
                         temporary = conversion_output;
                         temporary += ".tmp";
                     }
@@ -1955,6 +1958,10 @@ namespace cod4_camera
                 auto decoded_airstrikes = cod4::collect_airstrikes(decoded_world, decoded.configstrings);
                 auto decoded_helicopters = cod4::collect_helicopters(decoded_world, decoded.configstrings);
                 auto decoded_car_animations = cod4::collect_car_animations(decoded_world, decoded.configstrings, decoded_car_fx.events);
+                // Decode the complete source to reconstruct preceding delta and
+                // command history, but emit only the requested camera frames.
+                // Keep the original server clock for HUD, animations and FX.
+                if (clip) decoded.frames = demo_splitter::clip_frames(decoded.frames, clip->first, clip->second);
                 if (!game::SV_MapExists(decoded.map.c_str())) throw std::runtime_error("This map is not installed in H1: " + decoded.map);
                 game::Dvar_SetFromStringByNameFromSource("developer", "1", game::DVAR_SOURCE_INTERNAL);
                 if (!demo_playback::playing() && game::CL_IsCgameInitialized() && !game::VirtualLobby_Loaded() && !active())
@@ -2052,6 +2059,15 @@ namespace cod4_camera
 
     status get_status() { std::lock_guard lock(mutex); return state; }
     bool active() { std::lock_guard lock(mutex); return state.active; }
+
+    bool convert_clip(const std::filesystem::path& source, const std::filesystem::path& output, int start, int end)
+    {
+        if (active() || demo_playback::playing() || !game::VirtualLobby_Loaded()
+            || game::Live_SyncOnlineDataFlags(0) != 0 || !game::Sys_IsDatabaseReady2()) return false;
+        play(source, true, std::pair{start, end}, output);
+        const auto current = get_status();
+        return current.active || current.loading;
+    }
 
     void set_agent_names(const std::map<unsigned, std::string>& names) { recorded_agent_names = names; }
     bool has_replay_agents() { return !recorded_agent_names.empty(); }

@@ -22,12 +22,11 @@ end
 
 local player_old_score = 0
 
-local scoreboard_orig = LUI.MenuBuilder.m_types_build["scoreboard"]
-local scoreboard = function(unk1, unk2)
-    local scoreboard = scoreboard_orig(unk1, unk2)
+LUI.overrideMenuBuilder("scoreboard", function(native, unk1, unk2)
+    local scoreboard = native(unk1, unk2)
 
     scoreboard:registerOmnvarHandler("ui_round_end", function(f22_arg0, f22_arg1)
-        if GameX.IsRankedMatch() then
+        if GameX.IsRankedMatch() and not customdepot.isreplay() then
             local player_score = 0
 
             local gamemode = GameX.GetGameMode()
@@ -38,7 +37,8 @@ local scoreboard = function(unk1, unk2)
             this check may be true more than once cuz this callback happens 3 times, 
                 but the player_old_score variable will stop us from adding more currency
             ]] --
-            local unlocalized_string = ending_reasons[Game.GetOmnvar("ui_round_end_title")]
+            if not player_stats then return end
+            local unlocalized_string = ending_reasons[Game.GetOmnvar("ui_round_end_title")] or ""
             local is_round_based = starts_with(unlocalized_string, "MP_ROUND") or IsGameTypeRoundBased(gamemode)
 
             if is_round_based or has_value(score_var_gamemodes, gamemode) then
@@ -53,17 +53,12 @@ local scoreboard = function(unk1, unk2)
                 return
             end
 
-            custom_depot.get_function("add_currency")(InventoryCurrencyType.Parts, currency_gain)
-
-            if custom_depot.functions["has_accepted_mod_eula"]() then
-                custom_depot.get_function("add_currency")(InventoryCurrencyType.Credits, math.random(2, 3))
-            end
-
-            player_old_score = player_score
-            custom_depot.get_function("save_depot_data")()
+            if custom_depot.commit(function()
+                return custom_depot.get_function("add_currency")(InventoryCurrencyType.Parts, currency_gain)
+                    and custom_depot.get_function("add_currency")(InventoryCurrencyType.Credits, math.random(2, 3))
+            end) then player_old_score = player_score end
         end
     end)
 
     return scoreboard
-end
-LUI.MenuBuilder.m_types_build["scoreboard"] = scoreboard
+end)

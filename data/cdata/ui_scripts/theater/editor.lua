@@ -129,6 +129,7 @@ end
 local function valueRow(content, id, label, x, y, control, getter, setter, menu)
     local slider = control.kind == "float" and control.max > control.min
     local function readout()
+        if control.format then return control.format(getter()) end
         if control.name == "demo_sun_timeofday" then
             local minutes = math.floor(getter()*60+.5)
             return string.format("%02d:%02d", math.floor(minutes/60), minutes%60)
@@ -180,7 +181,7 @@ local function valueRow(content, id, label, x, y, control, getter, setter, menu)
         local value = LUI.UIText.new(style); button:addElement(value)
         refresh = function()
             local v = getter()
-            value:setText(control.kind == "bool" and (v ~= 0 and "ON" or "OFF") or
+            value:setText(control.format and control.format(v) or control.kind == "bool" and (v ~= 0 and "ON" or "OFF") or
                 control.choices and control.choices[math.floor(v)+1] or string.format("%.4g",v))
         end
     end
@@ -235,6 +236,8 @@ local function valueRow(content, id, label, x, y, control, getter, setter, menu)
     refresh()
     return button
 end
+
+Editor.valueRow = valueRow
 
 local function controlButton(content, control, index, menu)
     local x, y = 465 + math.floor((index - 1) / 10) * 328,

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Restored native Character, body Camo, Armory and Collections selectors. The inherited Depot override replaced every tab list with Collections/Armory when its obsolete agreement flag was false, leaving those menus empty.
+- Added profile-specific local Depot persistence with validated balances, atomic replacement and backups. Crafting resolves purchase codes to item GUIDs, rejects insufficient funds, rolls back failed saves and delivers native completion events. Collection/season rewards and inventory checks share the same ownership data; the existing Unlock All Loot option also updates collection counts.
+- Repaired local supply-drop completion, bounded reward selection, duplicate-event protection and bundle/crate accounting. Ranked-match earnings persist; replay playback does not award currency. This is local Depot support, not an official marketplace or real-money store.
+
+- Added **Split Demo** to Theater for converted H1 replays and original COD4 inputs. Start/end controls save a separate `.dm_h1` clip under `demos/clips`, preserving originals and choosing unused names. Converted files are cut directly on a worker with progress feedback; COD4 sources use the existing converter to emit only the selected range.
+- Preserve original snapshot/camera payloads and asset metadata for direct cuts, renumber packets/archives, and rebuild duration and range-filtered kill markers. Back restores the library selection/filter. Native H1 match recordings with dependent snapshots do not yet support direct splitting.
+
+Release/x64 compilation, splitter checks on the 27-minute Crash source/conversion, and Theater menu/library checks passed. A 10:00–10:05 direct cut retained 418 frames with a 4,998 ms span. In-game splitter rendering and clip playback still need confirmation.
+
 ## 2026.10.07.3
 
 [Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07.3)

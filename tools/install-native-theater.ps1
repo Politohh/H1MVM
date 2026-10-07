@@ -4,7 +4,8 @@ param(
     [string]$BackupRoot = 'F:\Dev\h1-releases\install-backups',
     [string]$SkySourceDirectory = 'F:\Dev\h1-theater-skies',
     [string]$SniperSourceDirectory = 'F:\Dev\h1-sniper-source',
-    [string]$ScopeImage = ''
+    [string]$ScopeImage = '',
+    [switch]$SkipOptionalAssets
 )
 $ErrorActionPreference = 'Stop'
 if (Get-Process h1-mod -ErrorAction SilentlyContinue) { throw 'Close H1 before installing.' }
@@ -23,9 +24,13 @@ $files = @(
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\patches\pausequit.lua'; Target = Join-Path $DataDirectory 'ui_scripts\patches\pausequit.lua'; Backup = 'patches\pausequit.lua' },
     @{ Source = Join-Path $repository 'data\cdata\ui_scripts\server_list\lobby.lua'; Target = Join-Path $DataDirectory 'ui_scripts\server_list\lobby.lua'; Backup = 'server_list\lobby.lua' }
 )
+$depotScripts = @('__init__.lua', 'inventory.lua', 'depot_override.lua', 'scoreboard_override.lua')
+foreach ($script in $depotScripts) {
+    $files += @{ Source = Join-Path $repository "data\cdata\ui_scripts\custom_depot\$script"; Target = Join-Path $DataDirectory "ui_scripts\custom_depot\$script"; Backup = "custom_depot\$script" }
+}
 $skyManifest = Join-Path $SkySourceDirectory 'manifest.json'
 $sniperManifest = Join-Path $SniperSourceDirectory 'manifest.json'
-if (Test-Path -LiteralPath $sniperManifest -PathType Leaf) {
+if (!$SkipOptionalAssets -and (Test-Path -LiteralPath $sniperManifest -PathType Leaf)) {
     $sniperInputs = Get-Content -LiteralPath $sniperManifest -Raw | ConvertFrom-Json
     foreach ($inputFile in $sniperInputs.files) {
         if ($inputFile.name -notmatch '^(viewmodel_[a-z0-9_]+|view(model_[a-z0-9_]+|hands_usmc3)\.rig|animations\.json|scope\.png)$') { throw 'Unexpected sniper asset path' }
@@ -41,7 +46,7 @@ if (Test-Path -LiteralPath $sniperManifest -PathType Leaf) {
         $files += @{ Source=$source; Target=(Join-Path $GameDirectory "cod4_snipers\$($inputFile.name)"); Backup="cod4_snipers\$($inputFile.name)" }
     }
 }
-if (Test-Path -LiteralPath $skyManifest -PathType Leaf) {
+if (!$SkipOptionalAssets -and (Test-Path -LiteralPath $skyManifest -PathType Leaf)) {
     $skies = Get-Content -LiteralPath $skyManifest -Raw | ConvertFrom-Json
     foreach ($sky in $skies.assets) {
         if ($sky.name -notmatch '^[a-zA-Z0-9_]+$' -or $sky.zone -notmatch '^[a-zA-Z0-9_]+$') { throw 'Invalid sky manifest path' }

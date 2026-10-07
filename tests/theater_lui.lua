@@ -639,13 +639,15 @@ LUI.UITimer={new=function(interval,event) return Element.new({interval=interval,
 local libraryEntries={}
 for i=1,12 do
     libraryEntries[i]={id="demo_"..i,name="recording_"..i..".dm_h1",map="mp_crash",mapTitle="Crash",
-        modeTitle="Team Deathmatch",date="06/10/2026  21:00",duration=61000,material="preview_mp_crash",source=i%2==0,error=""}
+        modeTitle="Team Deathmatch",date="06/10/2026  21:00",duration=61000,material="preview_mp_crash",source=i%2==0,error="",splittable=true}
 end
 libraryEntries[2].name="a_very_long_recording_title_that_should_fit_the_card.dm_1"
 local libraryRevision=1
 local libraryActions={}
 local libraryClock=1000
 local libraryPlaying=false
+local libraryBusy=false
+local librarySplitCalls={}
 function game:theaterclock() return libraryClock end
 function game:gettheaterlibrary(page,filter)
     local visible={}
@@ -654,9 +656,12 @@ function game:gettheaterlibrary(page,filter)
     end
     local pages=math.max(1,math.ceil(#visible/9)); page=math.max(1,math.min(page,pages))
     local entries={}; for i=(page-1)*9+1,math.min(page*9,#visible) do entries[#entries+1]=visible[i] end
-    return {revision=libraryRevision,busy=false,converting=false,playing=libraryPlaying,message="Library ready",entries=entries,page=page,pages=pages,total=#visible}
+    return {revision=libraryRevision,busy=libraryBusy,splitProgress=25,converting=false,playing=libraryPlaying,message="Library ready",entries=entries,page=page,pages=pages,total=#visible}
 end
 function game:theaterlibraryaction(name,id) libraryActions[#libraryActions+1]={name,id}; return true end
+function game:theaterlibrarysplit(id,start,finish)
+    librarySplitCalls[#librarySplitCalls+1]={id,start,finish}; libraryBusy=true; return true
+end
 dofile("data/cdata/ui_scripts/theater/library.lua")
 root.menu=menus.h1_theater_library({type="h1_theater_library"})
 local library=root.menu
@@ -697,6 +702,39 @@ libraryPlaying=true; library:refresh()
 assert(root.menu==nil,"confirmed playback closes Theater")
 libraryPlaying=false
 print("PASS nine-card native Theater library, stable focus/selection, paging, H1/COD4 filters and correct Convert/Play routing")
+
+for _,format in ipairs({"ready","source"}) do
+    root.menu=menus.h1_theater_library({})
+    local owner=root.menu
+    owner.filter=format; owner.redraw=true; owner:refresh()
+    local selected=owner.selected
+    find(owner,"library_split"):processEvent({name="button_action"})
+    local split=root.menu
+    assert(split.id=="h1_theater_split" and split.start==0 and split.finish==61)
+    assert(find(split,"split_format").text==(format=="source" and "COD4 → H1 CLIP" or "H1 CLIP"))
+    find(split,"split_start"):processEvent({name="button_right"})
+    find(split,"split_finish"):processEvent({name="button_left"})
+    assert(split.start==1 and split.finish==60)
+    find(split,"split_save"):processEvent({name="button_action"})
+    local request=librarySplitCalls[#librarySplitCalls]
+    assert(request[1]==selected and request[2]==1000 and request[3]==60000,"split sends precise local milliseconds and stable selection")
+    local requests=#librarySplitCalls
+    find(split,"split_save"):processEvent({name="button_action"})
+    find(split,"split_start"):processEvent({name="button_right"})
+    assert(#librarySplitCalls==requests and split.start==1,"pending split prevents duplicate saves/range edits")
+    split:processEvent({name="split_poll"})
+    assert(split.help.text=="Saving clip... 25%")
+    libraryBusy=false; split:processEvent({name="split_poll"})
+    assert(not split.submitted and split.help.text=="Library ready")
+    split:processEvent({name="button_secondary"})
+    assert(root.menu.id=="h1_theater_library" and root.menu.selected==selected and root.menu.filter==format,
+        "Back returns to the selected recording/filter without stacking duplicate menus")
+end
+libraryEntries[1].splittable=false
+root.menu=menus.h1_theater_library({})
+assert(not find(root.menu,"library_split"),"unsupported native H1 recordings must not offer independent-snapshot cuts")
+libraryEntries[1].splittable=true
+print("PASS Theater splitter: both inputs, range adjustments, millisecond requests, duplicate/busy protection, progress and unsupported-format gating")
 
 root.menu=menus.h1_theater_library({})
 local playbackCard=root.menu.cards[1].element
@@ -831,6 +869,7 @@ function game:theaterlibraryreturn()
     local requested=returnPending; returnPending=false; return requested
 end
 menus.h1_theater_library=nil
+menus.h1_theater_split=nil
 dofile("data/cdata/ui_scripts/theater/library.lua")
 local frontend=Element.new()
 callbacks.mp_main_menu(frontend)

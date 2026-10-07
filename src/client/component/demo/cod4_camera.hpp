@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <optional>
+#include <filesystem>
 #include "cod4_model_metadata.hpp"
 
 namespace cod4_camera
@@ -16,6 +17,7 @@ namespace cod4_camera
     };
     status get_status();
     bool active();
+    bool convert_clip(const std::filesystem::path& source, const std::filesystem::path& output, int start, int end);
     void bootstrap_demo(const std::string& map, const std::vector<std::uint8_t>& gamestate,
         const std::string& gametype);
     // Saved converted files bind resident remastered assets to unused model slots.

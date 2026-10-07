@@ -3,6 +3,7 @@
 #include "theater_library.hpp"
 #include "theater_library_metadata.hpp"
 #include "theater_launch.hpp"
+#include "demo_splitter.hpp"
 #include "demo_playback.hpp"
 #include "demo_utils.hpp"
 #include "cod4_camera.hpp"
@@ -28,6 +29,7 @@ namespace theater_library
         std::vector<entry> entries;
         std::jthread worker;
         std::atomic_bool busy{}, stopping{}, returning{};
+        std::atomic_int split_progress{-1};
         int revision{};
         std::string message;
         std::filesystem::path root;
@@ -190,6 +192,7 @@ namespace theater_library
         const auto pages = std::max(1, static_cast<int>((visible.size() + 8) / 9));
         page = std::clamp(page, 1, pages);
         nlohmann::json result = {{"revision", revision}, {"busy", busy.load()}, {"message", message},
+            {"splitProgress", split_progress.load()},
             {"page", page}, {"pages", pages}, {"total", visible.size()}, {"entries", nlohmann::json::array()}};
         const auto conversion = cod4_camera::get_status();
         result["converting"] = conversion.loading || conversion.active;
@@ -205,6 +208,7 @@ namespace theater_library
             const auto display_mode = mode && *mode && info.gametype != mode ? std::string(mode)
                 : (info.mode_title.empty() ? info.gametype : info.mode_title);
             result["entries"].push_back({{"id", item.id}, {"name", item.name}, {"source", item.source},
+                {"splittable", item.source || info.converted},
                 {"map", info.map}, {"mapTitle", display_map}, {"modeTitle", display_mode}, {"date", item.date},
                 {"duration", info.duration}, {"material", thumbnail(info.map)}, {"error", item.error}});
         }
@@ -260,10 +264,88 @@ namespace theater_library
         return true;
     }
 
+    bool split(const std::string& id, int start, int end)
+    {
+        const auto conversion = cod4_camera::get_status();
+        if (stopping || root.empty() || demo_playback::playing() || conversion.loading || conversion.active) return false;
+        entry selected;
+        {
+            std::lock_guard lock(mutex);
+            const auto it = std::find_if(entries.begin(), entries.end(), [&](const entry& item) { return item.id == id; });
+            if (it == entries.end() || !it->error.empty() || (!it->source && !it->details.converted)
+                || start < 0 || end <= start || end > it->details.duration || busy.exchange(true)) return false;
+            selected = *it;
+            message = selected.source ? "Preparing COD4 clip conversion..." : "Splitting recording...";
+            split_progress = 0;
+        }
+        const auto folder = root / "demos" / "clips";
+        const auto stem = std::format("{}_{}-{}", std::filesystem::path(selected.path).stem().string(), start, end);
+        if (selected.source)
+        {
+            scheduler::once([selected, folder, stem, start, end]
+            {
+                const auto accepted = cod4_camera::convert_clip(selected.path, folder / (stem + ".dm_h1"), start, end);
+                {
+                    std::lock_guard lock(mutex);
+                    if (!accepted) message = cod4_camera::get_status().message.empty()
+                        ? "Open Play Online and finish initialization before converting a clip." : cod4_camera::get_status().message;
+                    else returning = true;
+                    split_progress = -1;
+                    busy = false;
+                }
+            }, scheduler::main);
+            return true;
+        }
+        if (worker.joinable()) worker.join();
+        worker = std::jthread([selected, folder, stem, start, end](std::stop_token stop)
+        {
+            const auto finish = gsl::finally([] { split_progress = -1; busy = false; });
+            std::filesystem::path temporary;
+            try
+            {
+                std::filesystem::create_directories(folder);
+                auto target = folder / (stem + ".dm_h1");
+                temporary = std::filesystem::path(target.string() + ".splitting");
+                for (unsigned i = 1; std::filesystem::exists(target) || std::filesystem::exists(temporary); ++i)
+                {
+                    if (i > 9999) throw std::runtime_error("No unused clip filename available");
+                    target = folder / std::format("{}.{:04}.dm_h1", stem, i);
+                    temporary = std::filesystem::path(target.string() + ".splitting");
+                }
+                std::ifstream input(selected.path, std::ios::binary);
+                std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
+                if (!input || !output) throw std::runtime_error("Cannot open clip input or output");
+                const auto saved = demo_splitter::split_native(input, output, start, end, [&](int percent)
+                { split_progress = percent; return !stop.stop_requested(); });
+                output.flush();
+                if (!output) throw std::runtime_error("Cannot finish writing clip");
+                output.close();
+                if (output.fail()) throw std::runtime_error("Cannot close split recording");
+                std::ifstream check(temporary, std::ios::binary);
+                const auto details = read_native(check);
+                if (details.duration != saved.last - saved.first || !details.converted)
+                    throw std::runtime_error("Saved clip metadata verification failed");
+                check.close(); input.close();
+                if (stop.stop_requested()) throw std::runtime_error("Split cancelled");
+                std::filesystem::rename(temporary, target);
+                scan(stop);
+                std::lock_guard lock(mutex);
+                message = std::format("Saved {} ({} frames). The original is unchanged.", target.filename().string(), saved.frames);
+            }
+            catch (const std::exception& e)
+            {
+                std::error_code ignored;
+                if (!temporary.empty()) std::filesystem::remove(temporary, ignored);
+                std::lock_guard lock(mutex); message = e.what(); ++revision;
+            }
+        });
+        return true;
+    }
+
     bool consume_return()
     {
         // Wait for the frontend map and HKS VM before opening the library.
-        return !demo_playback::playing() && game::VirtualLobby_Loaded() && returning.exchange(false);
+        return !demo_playback::playing() && !cod4_camera::active() && game::VirtualLobby_Loaded() && returning.exchange(false);
     }
 
     class component final : public component_interface

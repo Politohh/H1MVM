@@ -10,6 +10,7 @@ namespace theater_library
     {
         std::string map, gametype, map_title, mode_title, recorded;
         int duration{};
+        bool converted{};
     };
 
     inline std::vector<std::string> strings(std::span<const char> bytes)
@@ -56,7 +57,12 @@ namespace theater_library
                 {
                     const auto fields = strings(bytes);
                     if (fields.size() >= 9)
-                    { result.recorded = fields[0]; result.map_title = fields[7]; result.mode_title = fields[8]; }
+                    {
+                        result.recorded = fields[0]; result.map_title = fields[7]; result.mode_title = fields[8];
+                        result.converted = fields[1] == "H1 COD4 conversion v1" || fields[1] == "H1 COD4 conversion v2"
+                            || fields[1] == "H1 COD4 conversion v3" || fields[1] == "H1 COD4 conversion v4"
+                            || fields[1] == "H1 COD4 conversion v5";
+                    }
                 }
                 else if (size >= 8)
                 {

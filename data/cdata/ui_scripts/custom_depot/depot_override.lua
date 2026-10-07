@@ -1,332 +1,217 @@
-GetCurrencyBalance = function(currency_type)
-    return custom_depot.get_function("get_currency")(currency_type)
+local functions = custom_depot.functions
+GetCurrencyBalance = function(currency, controller) return functions.get_currency(currency) end
+IsContentPromoUnlocked = function() return true end
+
+-- Keep native AddLootDropTabSelector, GetItemSet(s) and Personalize menus.
+-- The old override replaced every selector with Collections/Armory and never
+-- created a tabManager or populated the head/body camouflage lists.
+local function queue_inventory(controller, guid, success)
+    table.insert(custom_depot.pending, {
+        name = "inventory", controller = controller, guid = guid, success = success,
+        inventoryTaskType = LUI.InventoryUtils.TaskType.INV_TASK_PURCHASE_ITEM,
+        inventoryEventType = LUI.InventoryUtils.EventType.ELUIInventoryEvent_TaskCompleted
+    })
 end
-
-Inventory_PurchaseItem_orig = Engine.Inventory_PurchaseItem
-Engine.Inventory_PurchaseItem = function(controller, item_guid, unk2)
-    if not custom_depot.get_function("has_item")(item_guid) then
-        custom_depot.get_function("add_item")(item_guid, true)
-
-        local item_value = Engine.TableLookup(LootTable.File, LootTable.Cols.GUID, item_guid, LootTable.Cols.Value)
-        custom_depot.get_function("remove_currency")(InventoryCurrencyType.Parts, item_value)
-
-        custom_depot.get_function("save_depot_data")()
-
-        if custom_depot.collection_details_menu then
-            custom_depot.collection_details_menu:OnCraftedItem()
+local function completed_reward(guid)
+    local sets = GetItemSets()
+    for _, season in ipairs(sets.seasons) do
+        if season.rewardData and season.rewardData.setReward.guid == guid then return season.rewardData.completed == true end
+        for _, set in ipairs(season.sets) do
+            if set.setReward and set.setReward.guid == guid then return set.completed == true end
         end
     end
-
-    return Inventory_PurchaseItem_orig(controller, item_guid, unk2)
+    return false
 end
-
-GetItemLockState_orig = Engine.GetItemLockState
-Engine.GetItemLockState = function(controller, item_guid)
-    if custom_depot.get_function("has_item")(item_guid) then
-        return "Unlocked", 0, ""
-    end
-
-    return GetItemLockState_orig(controller, item_guid)
+Engine.Loot_CanClaimItemSetReward = function(controller, id)
+    local set = GetItemSet(id)
+    return set ~= nil and set.completed == true and set.setReward ~= nil
+        and Engine.Inventory_GetItemQuantity(controller, set.setReward.guid, false) == 0
 end
-
-GetItemSet_orig = GetItemSet
-GetItemSet = function(item_set_id)
-    local item_set = GetItemSet_orig(item_set_id)
-    local items_unlocked = 0
-
-    for k, v in pairs(item_set.setItems) do
-        if custom_depot.get_function("has_item")(v.guid) and (not v.isOwned or v.lockState == "Unlocked") then
-            v.isOwned = true
-            v.lockState = "Unlocked"
-            items_unlocked = items_unlocked + 1
-        end
-    end
-
-    if items_unlocked == #item_set.setItems then
-        if not item_set.completed then
-            item_set.completed = true
-        end
-
-        if not custom_depot.get_function("has_item")(item_set.setReward.guid) then
-            custom_depot.get_function("add_item")(item_set.setReward.guid, true)
-            custom_depot.get_function("save_depot_data")()
-
-            if custom_depot.collection_details_menu then
-                custom_depot.collection_details_menu:OnCompletedSet()
-            end
-        end
-    end
-
-    item_set.numOwned = items_unlocked
-    return item_set
+Engine.Loot_ClaimItemSetReward = function(controller, id)
+    if not Engine.Loot_CanClaimItemSetReward(controller, id) then return false end
+    local guid = GetItemSet(id).setReward.guid
+    local success = custom_depot.commit(function() return functions.add_item(guid, true) end)
+    queue_inventory(controller, guid, success)
+    return success
 end
-
-GetItemSets_orig = GetItemSets
-GetItemSets = function()
-    local item_sets = GetItemSets_orig()
-    local completed_sets = 0
-
-    for i = 1, #item_sets.seasons do
-        local seasons_completed_sets = 0
-        local sets = item_sets.seasons[i].sets
-        local rewardData = item_sets.seasons[i].rewardData
-
-        for i = 1, #sets do
-            if sets[i].completed then
-                completed_sets = completed_sets + 1
-                seasons_completed_sets = seasons_completed_sets + 1
-            end
-        end
-
-        if item_sets.seasons[i].completedSets == #sets then
-            rewardData.setReward.isOwned = true
-            rewardData.setReward.lockState = "Unlocked"
-            rewardData.completed = true
-
-            if not custom_depot.get_function("has_item")(rewardData.setReward.guid) then
-                custom_depot.get_function("add_item")(rewardData.setReward.guid, true)
-                custom_depot.get_function("save_depot_data")()
-            end
-        end
-
-        item_sets.seasons[i].completedSets = seasons_completed_sets
-    end
-
-    for k, v in pairs(item_sets.itemToSetMap) do
-        local items_unlocked = 0
-
-        for i = 1, #v.setItems do
-            if custom_depot.get_function("has_item")(v.setItems[i].guid) and
-                (not v.setItems[i].isOwned or v.setItems[i].lockState == "Unlocked") then
-                v.setItems[i].isOwned = true
-                v.setItems[i].lockState = "Unlocked"
-                items_unlocked = items_unlocked + 1
-            end
-        end
-
-        if items_unlocked == #v.setItems then
-            if not v.completed then
-                v.completed = true
-                completed_sets = completed_sets + 1
-            end
-
-            if not custom_depot.get_function("has_item")(v.setReward.guid) then
-                custom_depot.get_function("add_item")(v.setReward.guid, true)
-                custom_depot.get_function("save_depot_data")()
-            end
-        end
-
-        v.numOwned = items_unlocked
-    end
-
-    item_sets.completedSets = completed_sets
-    return item_sets
+local function lookup(info, column, value, result)
+    return Engine.TableLookup(info.File, column, tostring(value), result)
 end
-
-IsContentPromoUnlocked_orig = IsContentPromoUnlocked
-IsContentPromoUnlocked = function()
-    return true
-end
-
-TryShowCollectionCompleted_orig = TryShowCollectionCompleted
-TryShowCollectionCompleted = function(controller, reward_data, unk1)
-    if reward_data.completed then
-        if not custom_depot.get_function("has_reward_splash")(reward_data.setReward.guid) then
-            LUI.FlowManager.RequestAddMenu(nil, "MPDepotCollectionRewardSplash", true, controller, false, {
-                collectionData = reward_data
-            })
-
-            if custom_depot.collection_details_menu then
-                custom_depot.collection_details_menu:OnCompletedSet()
+local function purchase_bundle(controller, sku)
+    local info = LUI.MPDepot.BundlesTable
+    local id = lookup(info, info.Cols.PurchaseID, sku, info.Cols.ID)
+    if not id or id == "" then return nil end
+    local function field(column) return lookup(info, info.Cols.ID, id, column) end
+    local currency = tonumber(field(info.Cols.PurchaseCurrency))
+    local cost = tonumber(field(info.Cols.PurchaseAmount))
+    local limit_item = field(info.Cols.PurchaseLimitItem)
+    local limit = tonumber(field(info.Cols.PurchaseLimitQuantity)) or 0
+    if limit > 0 and Engine.Inventory_GetItemQuantity(controller, limit_item, false) >= limit then return false end
+    return custom_depot.commit(function()
+        if not functions.remove_currency(currency, cost) then return false end
+        for index = 0, 3 do
+            local guid = field(info.Cols["Item" .. index .. "ID"])
+            local count = tonumber(field(info.Cols["Item" .. index .. "Amount"])) or 0
+            if guid and guid ~= "" and count > 0 then
+                if not functions.add_item(guid, functions.get_quantity(guid) + count) then return false end
             end
-
-            custom_depot.get_function("add_reward_splash")(reward_data.setReward.guid, true)
-            custom_depot.get_function("save_depot_data")()
         end
-
+        if limit_item and limit_item ~= "" then
+            if not functions.add_item(limit_item, functions.get_quantity(limit_item) + 1) then return false end
+        end
+        local award = tonumber(field(info.Cols.CurrencyAwardAmount)) or 0
+        if award > 0 and not functions.add_currency(tonumber(field(info.Cols.CurrencyAwardID)), award) then return false end
         return true
-    else
-        return false
-    end
+    end)
 end
-
-TryShowSeasonCompleted_orig = TryShowSeasonCompleted
-TryShowSeasonCompleted = function(controller, reward_data, unk1)
-    if reward_data.completed then
-        if not custom_depot.get_function("has_reward_splash")(reward_data.setReward.guid) then
-            LUI.FlowManager.RequestAddMenu(nil, "MPDepotCollectionRewardSplash", true, controller, false, {
-                collectionData = reward_data
-            })
-
-            if custom_depot.collection_details_menu then
-                custom_depot.collection_details_menu:OnCompletedSet()
-            end
-
-            custom_depot.get_function("add_reward_splash")(reward_data.setReward.guid, true)
-            custom_depot.get_function("save_depot_data")()
+Engine.Inventory_PurchaseItem = function(controller, sku, count)
+    -- Crafting passes a purchase SKU; season reward claims pass a GUID.
+    if count ~= 1 or sku == nil then return false end
+    local guid = lookup(LootTable, LootTable.Cols.Purchase, sku, LootTable.Cols.GUID)
+    if not guid or guid == "" then
+        if completed_reward(sku) then
+            local success = custom_depot.commit(function() return functions.add_item(sku, true) end)
+            queue_inventory(controller, sku, success)
+            return success
         end
-
+        local success = purchase_bundle(controller, sku)
+        if success ~= nil then queue_inventory(controller, sku, success) end
+        return success == true
+    end
+    if Engine.Inventory_GetItemQuantity(controller, guid, false) > 0 then
+        queue_inventory(controller, guid, true)
         return true
-    else
-        return false
     end
+    local cost = tonumber(lookup(LootTable, LootTable.Cols.GUID, guid, LootTable.Cols.Value))
+    if not cost or cost <= 0 then return false end
+    local success = custom_depot.commit(function()
+        return functions.remove_currency(InventoryCurrencyType.Parts, cost) and functions.add_item(guid, true)
+    end)
+    -- Failed synchronous crafting never opens the native wait popup.
+    if success then queue_inventory(controller, guid, true) end
+    return success
 end
 
-MPDepotCollectionDetailsMenu_orig = LUI.MenuBuilder.m_types_build["MPDepotCollectionDetailsMenu"]
-MPDepotCollectionDetailsMenu = function(unk1, unk2)
-    custom_depot.collection_details_menu = MPDepotCollectionDetailsMenu_orig(unk1, unk2)
-    return custom_depot.collection_details_menu
-end
-LUI.MenuBuilder.m_types_build["MPDepotCollectionDetailsMenu"] = MPDepotCollectionDetailsMenu
-
-MPDepotOpenLootMenu_orig = LUI.MenuBuilder.m_types_build["MPDepotOpenLootMenu"]
-MPDepotOpenLootMenu = function(unk1, unk2)
-    local open_loot_menu = MPDepotOpenLootMenu_orig(unk1, unk2)
-
-    local supply_drop_orig = open_loot_menu.m_eventHandlers["supply_drop"]
-    open_loot_menu:registerEventHandler("supply_drop", function(f48_arg0, f48_arg1)
-        f48_arg1.success = true
-        f48_arg1.transaction = f48_arg0.supplyDropTransaction
-        f48_arg1.duplicateRefund = false
-        f48_arg1.items = {}
-        f48_arg1.currencies = {}
-        f48_arg1.replacements = {}
-        f48_arg1.cards = {}
-
-        local supply_drop_price = LUI.MPDepot.GetSupplyDropPrice(f48_arg0.supplyDropType)
-        custom_depot.get_function("remove_currency")(supply_drop_price.type, supply_drop_price.amount)
-        custom_depot.get_function("save_depot_data")()
-
-        for i = 1, unk2.crateType:find("_basic") and math.random(1, 2) or math.random(2, 3) do
-            local items_list = LUI.MPLootDropsBase.GetGenericItemList(x, LUI.MPDepot.LootDropsData[LUI.MPDepot
-                .SuppyDropLootStream[unk2.crateType]].lootTableColName)
-            local random_item = items_list[math.random(#items_list)]
-
-            while random_item.inventoryItemType ~= Cac.InventoryItemType.Loot do
-                random_item = items_list[math.random(#items_list)]
-            end
-
-            if random_item then
-                f48_arg1.items[i] = random_item.guid
-            end
-        end
-
-        for i = 1, #f48_arg1.items do
-            if not custom_depot.get_function("has_item")(f48_arg1.items[i]) then
-                custom_depot.get_function("add_item")(f48_arg1.items[i], true)
-            else
-                local item_rarity = tonumber(Engine.TableLookup(LootTable.File, LootTable.Cols.GUID, f48_arg1.items[i],
-                    LootTable.Cols.Rarity))
-                local dismantled_amount = 0
-
-                if item_rarity == ItemRarity.Common then
-                    dismantled_amount = math.random(1, 75)
-                elseif item_rarity == ItemRarity.Rare then
-                    dismantled_amount = math.random(75, 155)
-                elseif item_rarity == ItemRarity.Legendary then
-                    dismantled_amount = math.random(155, 260)
-                elseif item_rarity == ItemRarity.Epic then
-                    dismantled_amount = math.random(260, 550)
+local native_drop_count = Engine.Loot_GetSupplyDropCount
+local crate_aliases = {}
+local function crate_for_item(guid)
+    if crate_aliases[guid] ~= nil then return crate_aliases[guid] or nil end
+    if LUI.MPDepot.SuppyDropLootStream[guid] then return guid end
+    local ref = Engine.LookupStatsTableColumnForGUID(guid, StatsTable.Cols.Ref)
+    if ref and ref ~= "" then
+        local base = string.gsub(ref, "_1$", "")
+        if LUI.MPDepot.SuppyDropLootStream[base] then crate_aliases[guid] = base; return base end
+    end
+    -- Event crates use catalog references such as ex_promo_one, while the
+    -- menu uses ex_promo_1. Resolve them through its native bundle metadata.
+    for crate, data in pairs(LUI.MPDepot.crateData) do
+        if data.bundleID then
+            local info = LUI.MPDepot.BundlesTable
+            for index = 0, 3 do
+                local item = lookup(info, info.Cols.ID, data.bundleID, info.Cols["Item" .. index .. "ID"])
+                if item == guid then
+                    local canonical = data.items and data.items[1] or crate
+                    crate_aliases[guid] = canonical
+                    return canonical
                 end
-
-                table.insert(f48_arg1.replacements, {
-                    item_index = i,
-                    currency = {
-                        amount = dismantled_amount
-                    }
-                })
-
-                custom_depot.get_function("add_currency")(InventoryCurrencyType.Parts, dismantled_amount)
             end
         end
-
-        custom_depot.get_function("save_depot_data")()
-        supply_drop_orig(f48_arg0, f48_arg1)
-    end)
-
-    local slow_purchase_transfer_orig = open_loot_menu.m_eventHandlers["slow_purchase_transfer"]
-    open_loot_menu:registerEventHandler("slow_purchase_transfer", function(f33_arg0, f33_arg1)
-        local f33_local0 = 0
-        if f33_arg0.slowPurchaseTimer then
-            f33_arg0.slowPurchaseTimer:close()
-            f33_arg0.slowPurchaseTimer = nil
+    end
+    crate_aliases[guid] = false
+end
+local function crate_stock(crate)
+    local total, keys = 0, {}
+    for guid in pairs(custom_depot.data.items) do
+        local count = functions.get_quantity(guid)
+        if count > 0 and crate_for_item(guid) == crate then
+            total = total + count
+            keys[#keys + 1] = guid
         end
-        local f33_local1 = CoD.CreateState(-500, 0, 500, 20, CoD.AnchorTypes.Top)
-        f33_local1.font = CoD.TextSettings.BodyFont.Font
-        f33_local1.verticalAlignment = LUI.VerticalAlignment.Top
-        f33_local1.horizontalAlignment = LUI.HorizontalAlignment.Center
-        f33_local1.color = Colors.mw1_green
-        f33_local1.alpha = 1
-        f33_arg0.slowPurchaseText = LUI.UIText.new(f33_local1)
-        f33_arg0:addElement(f33_arg0.slowPurchaseText)
-        f33_arg0.slowPurchaseText:setText(Engine.Localize("@DEPOT_TRANSFER_IN_PROGRESS_DOT"))
-        f33_arg0.slowPurchaseText.textState = 1
-        f33_arg0.slowPurchaseText:registerEventHandler("update_slow_purchase_text", f0_local30)
-        f33_arg0.slowPurchaseText:addElement(LUI.UITimer.new(1000, "update_slow_purchase_text"))
-        local f33_local2 = LUI.MenuBuilder.BuildRegisteredType("progressBar")
-        f33_local2:registerAnimationState("default", {
-            topAnchor = false,
-            bottomAnchor = true,
-            leftAnchor = false,
-            rightAnchor = false,
-            top = 0,
-            height = 40
-        })
-        f33_local2:animateToState("default")
-        f33_arg0.slowPurchaseText:addElement(f33_local2)
-        f33_local2:animateFill(f33_local0)
-        f33_arg0.purchaseTimeoutTimer = LUI.UITimer.new(f33_local0, "abort_purchase_transfer", nil, true)
-        f33_arg0:addElement(f33_arg0.purchaseTimeoutTimer)
-    end)
-
-    return open_loot_menu
-end
-LUI.MenuBuilder.m_types_build["MPDepotOpenLootMenu"] = MPDepotOpenLootMenu
-
-AddLootDropTabSelector_orig = LUI.MPDepotBase.AddLootDropTabSelector
-LUI.MPDepotBase.AddLootDropTabSelector = function(unk1, unk2)
-    if not custom_depot.get_function("has_accepted_mod_eula")() then
-        local item_sets = GetItemSets()
-
-        unk1:AddButtonWithInfo("depot_collections", "@DEPOT_COLLECTIONS", "MPDepotCollectionsMenu", nil, nil,
-            Engine.Localize("@MPUI_X_SLASH_Y", item_sets.completedSets, item_sets.numSets))
-
-        unk1:AddButtonWithInfo("depot_armory", "@DEPOT_ARMORY", "MPDepotArmoryMenu")
-        return
     end
-
-    AddLootDropTabSelector_orig(unk1, unk2)
+    table.sort(keys)
+    return total, keys
 end
-
-MPDepotMenu_orig = LUI.MenuBuilder.m_types_build["MPDepotMenu"]
-MPDepotMenu = function(unk1, unk2)
-    local depot_menu = MPDepotMenu_orig(unk1, unk2)
-
-    if not custom_depot.get_function("has_seen_mod_eula")() then
-        LUI.FlowManager.RequestAddMenu(nil, "mod_eula", true, 0, false, {
-            acceptCallback = function()
-                custom_depot.get_function("set_has_accepted_mod_eula")(true)
-                custom_depot.get_function("set_has_seen_mod_eula")(true)
-                LUI.FlowManager.RequestLeaveMenu(depot_menu)
-            end,
-            declineCallback = function()
-                custom_depot.get_function("set_has_accepted_mod_eula")(false)
-                custom_depot.get_function("set_has_seen_mod_eula")(true)
+Engine.Loot_GetSupplyDropCount = function(controller, crate)
+    local stock = crate_stock(crate)
+    return math.max(tonumber(native_drop_count(controller, crate)) or 0, stock)
+end
+local function eligible_items(crate)
+    local stream = LUI.MPDepot.SuppyDropLootStream[crate]
+    local data = stream and LUI.MPDepot.LootDropsData[stream]
+    local items = data and LUI.MPLootDropsBase.GetGenericItemList(nil, data.lootTableColName) or {}
+    local eligible = {}
+    for _, item in ipairs(items) do
+        if item.guid and item.inventoryItemType == Cac.InventoryItemType.Loot then eligible[#eligible + 1] = item end
+    end
+    return eligible
+end
+local drop_results = {}
+Engine.Loot_OpenSupplyDrop = function(controller, crate, transaction)
+    local key = tostring(controller) .. ":" .. tostring(transaction) .. ":" .. tostring(crate)
+    -- A repeated engine/UI event must not debit or roll rewards twice.
+    if drop_results[key] then return drop_results[key].success end
+    local event = {name = "supply_drop", controller = controller, transaction = transaction,
+        success = false, duplicateRefund = false, items = {}, currencies = {}, replacements = {}, cards = {}}
+    local eligible = eligible_items(crate)
+    if #eligible > 0 then
+        event.success = custom_depot.commit(function()
+            local stock, keys = crate_stock(crate)
+            if stock > 0 then functions.add_item(keys[1], functions.get_quantity(keys[1]) - 1)
+            else
+                local price = LUI.MPDepot.GetSupplyDropPrice(crate)
+                if not price or not functions.remove_currency(price.type, price.amount) then return false end
             end
-        })
+            for index = 1, 3 do
+                local item = eligible[math.random(#eligible)]
+                event.items[index] = item.guid
+                if Engine.Inventory_GetItemQuantity(controller, item.guid, false) == 0 then functions.add_item(item.guid, true)
+                else
+                    -- Local duplicate salvage; official drop odds aren't emulated.
+                    local salvage = math.max(1, math.floor((tonumber(lookup(LootTable, LootTable.Cols.GUID,
+                        item.guid, LootTable.Cols.Value)) or 10) / 10))
+                    if not functions.add_currency(InventoryCurrencyType.Parts, salvage) then return false end
+                    event.replacements[#event.replacements + 1] = {item_index = index,
+                        currency = {type = InventoryCurrencyType.Parts, amount = salvage}}
+                end
+            end
+            return true
+        end)
     end
-
-    return depot_menu
+    if not event.success then event.items, event.replacements = {}, {} end
+    drop_results[key] = event
+    table.insert(custom_depot.pending, event)
+    return event.success
 end
-LUI.MenuBuilder.m_types_build["MPDepotMenu"] = MPDepotMenu
 
-GetLootDataForRef_orig = LUI.InventoryUtils.GetLootDataForRef
-LUI.InventoryUtils.GetLootDataForRef = function(f13_arg0, f13_arg1, f13_arg2, f13_arg3, f13_arg4)
-    local loot_data = GetLootDataForRef_orig(f13_arg0, f13_arg1, f13_arg2, f13_arg3, f13_arg4)
-
-    if loot_data and custom_depot.get_function("has_item")(loot_data.guid) then
-        loot_data.lockState = "Unlocked"
-    end
-
-    return loot_data
+-- Native handlers are installed during construction, sometimes on a child.
+-- Deliver completion after construction using the native task/event contract.
+local function attach_events(menu, params, kind)
+    local controller = menu.exclusiveController or menu.controller or (params and params.exclusiveController) or 0
+    menu:registerEventHandler("custom_depot_tasks", function(element)
+        local pending, events = custom_depot.pending, {}
+        for index = #pending, 1, -1 do
+            local event = pending[index]
+            local accepts = event.controller == controller
+            if kind == "drop" then
+                accepts = accepts and ((event.name == "supply_drop" and event.transaction == element.supplyDropTransaction)
+                    or (event.name == "inventory" and element.supplyDropPurchase ~= nil))
+            else
+                local guid = (element.properties and element.properties.guid) or (params and params.guid)
+                    or (params and params.collectionData and params.collectionData.setReward.guid)
+                accepts = accepts and event.name == "inventory" and (not guid or guid == event.guid)
+            end
+            if accepts then table.insert(events, 1, table.remove(pending, index)) end
+        end
+        for _, event in ipairs(events) do element:processEvent(event) end
+    end)
+    menu:addElement(LUI.UITimer.new(50, "custom_depot_tasks"))
+    return menu
 end
+for _, name in ipairs({"popup_fabricating_item", "popup_purchasing_bundle", "MPDepotCollectionRewardSplash"}) do
+    LUI.overrideMenuBuilder(name, function(native, root, params)
+        return attach_events(native(root, params), params, "inventory")
+    end)
+end
+LUI.overrideMenuBuilder("MPDepotOpenLootMenu", function(native, root, params)
+    return attach_events(native(root, params), params, "drop")
+end)

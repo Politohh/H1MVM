@@ -25,6 +25,8 @@
 #include "demo/theater_editor.hpp"
 #include "demo/theater_library.hpp"
 #include "demo/demo_playback.hpp"
+#include "depot_store.hpp"
+#include "game/demonware/services.hpp"
 
 #include "game/ui_scripting/execution.hpp"
 #include "game/ui_scripting/json_conversion.hpp"
@@ -252,6 +254,8 @@ namespace ui_scripting
             };
 			game_type["theaterlibraryaction"] = [](const game&, const std::string& name, const std::string& id)
 			{ return theater_library::action(name, id); };
+            game_type["theaterlibrarysplit"] = [](const game&, const std::string& id, int start, int end)
+            { return theater_library::split(id, start, end); };
             game_type["theaterlibraryreturn"] = [](const game&) { return theater_library::consume_return(); };
 			game_type["theaterkeyboard"] = [](const game&, bool value) { theater_ui::set_keyboard_available(value); };
 			game_type["gettheaterstate"] = [](const game&, int cached_revision, int cached_keys)
@@ -559,13 +563,31 @@ namespace ui_scripting
 
 			depot_table["save"] = [](const std::string& data)
 			{
-				// todo
+				try
+				{
+					depot_store::save(demonware::bdStorage::get_user_file_path("depot.json"), data);
+					return true;
+				}
+				catch (const std::exception& error)
+				{
+					console::error("[Depot] Save failed: %s\n", error.what());
+					return false;
+				}
 			};
 
 			depot_table["load"] = []()
 			{
-				// todo
+				try
+				{
+					return json_to_lua(depot_store::load(demonware::bdStorage::get_user_file_path("depot.json")));
+				}
+				catch (const std::exception& error)
+				{
+					console::error("[Depot] Load failed; original retained: %s\n", error.what());
+					return json_to_lua(depot_store::defaults());
+				}
 			};
+			depot_table["isreplay"] = [] { return demo_playback::playing() || demo_playback::is_replay_armed(); };
 
 			auto server_list_table = table();
 			lua["serverlist"] = server_list_table;
@@ -695,7 +717,8 @@ namespace ui_scripting
 				}
 
 				console::info("%s\n", buffer.data());
-				if (buffer.starts_with("[theater]")) utils::io::write_file("h1-lui-errors.log", buffer + "\n", true);
+				if (buffer.starts_with("[theater]") || buffer.starts_with("[Depot]"))
+					utils::io::write_file("h1-lui-errors.log", buffer + "\n", true);
 			};
 
 			lua["table"]["unpack"] = lua["unpack"];

@@ -31,6 +31,42 @@ data; playback, UI and sniper animation corrections work with existing
 converted demos. The adjacent `.conversion.txt` report lists omitted or
 unsupported data.
 
+## Split a recording
+
+Select a converted `.dm_h1` replay or an original `.dm_1` recording and choose
+**Split Demo** in its preview. Set **Start** and **End** with the sliders or
+arrows, then choose **Save Clip** (converted replay) or **Convert and Save Clip**
+(COD4 source). Arrows adjust by one second; the readouts show minutes, seconds
+and milliseconds. The selected range is relative to the recording's beginning
+and snaps inward to its recorded frames. It must contain at least two frames.
+
+Clips are new `.dm_h1` files in `demos/clips`, with automatic unused names.
+The original remains unchanged. Back returns to the selected recording and
+filter; Refresh shows the saved clip in the library. You can split a clip again.
+Splitting is unavailable while playback, conversion or another library job runs.
+
+Converted replays are split on the library worker with progress feedback. They
+keep the starting native gamestate, required assets and recorded metadata, while
+only the selected independent snapshots and matching camera records are copied.
+Packet/archive indices, duration and kill markers are rebuilt. Original server
+timestamps are retained for animation, corpses, facial data, HUD and effects.
+No reconversion is required for this path. Some shared metadata covers the full
+recording, so output size does not shrink exactly in proportion to duration.
+
+For original COD4 inputs, the existing converter loads the remastered map and
+reconstructs the complete source history, then emits the selected frames as an
+H1 clip. It returns to Theater after conversion. It does not write a COD4-playable
+`.dm_1` cut. Native H1 match recordings with dependent snapshots are not currently
+offered the Split button; the direct file splitter requires converted COD4 data.
+
+`tests/run-demo-splitter.cmd "<converted .dm_h1>" "<original .dm_1>"` checks
+range validation, malformed/dependent snapshots, cancellation, repeated cuts,
+packet numbering, duration/kill markers and byte preservation. The reported
+27-minute Crash replay's 10:00–10:05 cut retains 418 frames and spans 4,998 ms.
+Original-source range selection is also checked against its real camera track.
+Release compilation and these offline checks do not establish interactive menu
+rendering or in-game acceptance of a saved clip.
+
 Metadata is read on a background worker and cached by path and modification time.
 Current H1 recordings use the metadata prefix and a bounded footer read, so
 duration lookup does not walk every packet of a large recording. Older layouts

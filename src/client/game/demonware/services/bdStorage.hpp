@@ -8,6 +8,7 @@ namespace demonware
 	{
 	public:
 		bdStorage();
+		static std::string get_user_file_path(const std::string& name);
 
 	private:
 		using callback = std::function<std::string()>;
@@ -26,6 +27,5 @@ namespace demonware
 		void get_user_file(service_server* server, byte_buffer* buffer) const;
 		void set_user_file(service_server* server, byte_buffer* buffer) const;
 
-		static std::string get_user_file_path(const std::string& name);
 	};
 }
