@@ -28,7 +28,7 @@ end
 local activeModelAction
 function Element:processEvent(event)
     local previous=activeModelAction
-    if event.name=="button_action" and self.id and self.id:sub(1,6)=="model_" then activeModelAction=self end
+    if event.name=="button_action" and self.id and (self.id:sub(1,6)=="model_" or self.id:sub(1,7)=="weapon_") then activeModelAction=self end
     local result
     if self.handlers[event.name] then result=self.handlers[event.name](self,event) end
     activeModelAction=previous
@@ -276,6 +276,16 @@ function game:theatereditorset(name, value)
     if not delayed then editorData.values[name] = value; editorData.acks[name]=editTicket end
     commands[#commands + 1] = {"setting", name, value}; return editTicket
 end
+function game:gettheaterweaponcatalog(source,weapon,page)
+    local guns={{weapon="h1_remington700_mp",label="R700"},{weapon="h1_junsnp_mp",label="S-Tac Aggressor"}}
+    if weapon=="" then weapon="h1_remington700_mp" end
+    local all={}
+    for i=1,6 do all[i]={id=weapon.."|kit"..i,weapon=weapon,label=weapon==guns[1].weapon and "R700" or "S-Tac Aggressor",
+        kitLabel=i==1 and "No weapon kit" or "Neanderthal "..i,icon=i==1 and "" or "weapon_kit_icon"} end
+    page=math.max(1,math.min(2,page));local items={}
+    for i=(page-1)*4+1,math.min(page*4,#all) do items[#items+1]=all[i] end
+    return {items=items,weapons=guns,total=#all,page=page,pages=2,category="Sniper rifles"}
+end
 function game:theatereditorcolor(name,r,g,b)
     assert(editorData.values[name]~=nil,"unknown color")
     editTicket=editTicket+1
@@ -470,7 +480,7 @@ local function checkEditorLayout(titleId)
     end
 end
 checkEditorLayout()
-assert(not root.menu.list.scrolling and #root.menu.list.children == 13)
+assert(not root.menu.list.scrolling and #root.menu.list.children == 14)
 for _, button in ipairs(root.menu.list.children) do checkBackground(button) end
 assert(root.menu.category == "main")
 assert(find(root.menu, "theater_editor_demo").text == "test.dm_h1")
@@ -793,7 +803,30 @@ editorData.modelCatalog[16].icon=""
 checkEditorLayout()
 print("PASS detailed character browser: player identity, portraits/default cards, head/body apply, paging, faction filter, load guard, save/restore and layout")
 root.menu:processEvent({name = "button_secondary"}); tick(); tick()
-assert(root.menu.category=="main" and #root.menu.list.children==13, "browser Back restores the category hub")
+assert(root.menu.category=="main" and #root.menu.list.children==14, "browser Back restores the category hub")
+editorData.weaponSwapSource="h1_remington700_mp_a#none_f#base"
+editorData.weaponSwapLabel="R700";editorData.weaponSwapLoading=false;editorData.weaponSwapCount=0
+tick();root.menu:requestCategory("weapons","WEAPON SWAPPER");tick()
+assert(root.menu.category=="weapons" and #root.menu.list.children==0)
+local weaponCard=find(root.menu,"weapon_card_1")
+assert(weaponCard.textLabel.text=="" and find(weaponCard,"weapon_text_1").stencil)
+click("weapon_apply")
+assert(commands[#commands][2]=="weapon_swap_apply" and commands[#commands][3]==editorData.weaponSwapSource.."|h1_remington700_mp|kit1")
+find(root.menu,"weapon_next"):processEvent({name="button_action"});tick()
+assert(find(root.menu,"weapon_card_1")==weaponCard and find(root.menu,"weapon_card_3").style.alpha==0)
+find(root.menu,"weapon_next_gun"):processEvent({name="button_action"});tick()
+assert(find(root.menu,"weapon_filter").text=="S-Tac Aggressor")
+local allocatedWeapons=elementCount
+for i=1,80 do find(root.menu,"weapon_next"):processEvent({name="button_action"});tick();find(root.menu,"weapon_previous"):processEvent({name="button_action"});tick() end
+assert(elementCount==allocatedWeapons,"weapon paging must reuse all native widgets")
+editorData.weaponSwapLoading=true;tick()
+local beforeApply=#commands;find(root.menu,"weapon_apply"):processEvent({name="button_action"});assert(#commands==beforeApply,"no competing apply while a fastfile loads")
+editorData.weaponSwapLoading=false;tick();click("weapon_save")
+assert(commands[#commands][2]=="weapon_swap_save")
+click("weapon_restore");assert(commands[#commands][2]=="weapon_swap_restore")
+find(root.menu,"weapon_back"):processEvent({name="button_action"});assert(root.menu.category=="weapons","Back must defer destroying the focused button")
+tick();assert(root.menu.category=="main" and #root.menu.list.children==14)
+print("PASS Weapon Swapper catalog paging, kit selection, same-category gun selection, bounded widget reuse, loading guard and deferred Back")
 root.menu:processEvent({name = "button_secondary"}); tick(); tick()
 assert(root.menu.id == "h1_theater_controls", "editor Back returns to the timeline")
 root.menu.children[2]:processEvent({name = "button_secondary"}); tick()

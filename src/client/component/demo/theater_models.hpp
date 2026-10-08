@@ -1,9 +1,11 @@
 #pragma once
 #include <string>
+#include <set>
 #include <json.hpp>
 namespace theater_models
 {
     void update();
+    std::set<std::string> held_models();
     nlohmann::json state();
     nlohmann::json choices();
     nlohmann::json choices_page(const std::string& kind, const std::string& faction, const std::string& role,

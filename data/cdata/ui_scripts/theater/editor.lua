@@ -10,7 +10,7 @@ local categories = {
     {"main", "MAIN"}, {"camera", "CAMERA"}, {"misc", "MISC"},
     {"bone_camera", "BONE CAMERA"}, {"ssao", "SSAO"}, {"fog", "FOG"},
     {"dof", "DOF"}, {"sun", "SUN"}, {"lights", "LIGHTS"},
-    {"streams", "STREAMS"}, {"weapon", "WEAPON"}, {"models", "MODEL SWAPPER"}, {"sliders", "SLIDERS"}
+    {"streams", "STREAMS"}, {"weapon", "WEAPON"}, {"models", "MODEL SWAPPER"}, {"weapons", "WEAPON SWAPPER"}, {"sliders", "SLIDERS"}
 }
 
 function Editor.registerPage(id, builder)
@@ -461,10 +461,10 @@ function Editor.create(parameters, back)
         for _, category in ipairs(categories) do
             local id, label = category[1], category[2]
             local button = self:AddButton(label, function()
-                if id == "models" then self:requestCategory(id, label)
+                if id == "models" or id == "weapons" then self:requestCategory(id, label)
                 else self:selectCategory(id, label) end
             end,
-                nil, true, nil, {height = 26, fadeIn = false})
+                nil, true, nil, {height = 24, fadeIn = false})
             Editor.fitButtonBackground(button)
         end
     end
@@ -475,13 +475,13 @@ function Editor.create(parameters, back)
     end
     function menu:selectCategory(id, label)
         self.pendingCategory = nil
-        if id == "models" and self.category == "models" then
-            Editor.pages.models(self.content, self)
+        if (id == "models" or id == "weapons") and self.category == id then
+            Editor.pages[id](self.content, self)
             return
         end
         if self.category ~= id then self.settingsPage = 1 end
-        if id == "models" then self.list:closeChildren()
-        elseif self.category == "models" then self:populateCategories() end
+        if id == "models" or id == "weapons" then self.list:closeChildren()
+        elseif self.category == "models" or self.category == "weapons" then self:populateCategories() end
         self.category = id
         self.colorPicker = nil
         self.skyPicker = nil
@@ -489,6 +489,7 @@ function Editor.create(parameters, back)
         -- closeChildren clears MWR's Lua childRecord as well as the native tree.
         self.content:closeChildren()
         self.content.modelWidgets=nil
+        self.content.weaponWidgets=nil
         self.controls = {}
         categoryTitle(self.content, "theater_editor_category", label)
         self.help = text(self.content, "theater_editor_help", notes[id] or "", 145, 10)
@@ -501,11 +502,11 @@ function Editor.create(parameters, back)
     menu:populateCategories()
     menu:AddBackButton(function()
         Engine.PlaySound(CoD.SFX.MenuBack)
-        if menu.category == "models" then menu:requestCategory("main", "MAIN")
+        if menu.category == "models" or menu.category == "weapons" then menu:requestCategory("main", "MAIN")
         elseif menu.colorPicker or menu.skyPicker then menu:selectCategory(menu.category, string.upper(menu.category:gsub("_", " ")))
         else back() end
     end)
-    -- All thirteen categories fit in 362 units. The options helper overrides
+    -- All fourteen categories fit in 362 units. The options helper overrides
     -- this list with a nine-row viewport and adds a scrollbar; do not use it.
     menu:CreateBottomDivider()
     menu:selectCategory("main", "MAIN")
@@ -585,9 +586,10 @@ local function settingsPage(id)
     end)
 end
 for _, category in ipairs(categories) do
-    if category[1] ~= "main" and category[1] ~= "sliders" and category[1] ~= "models" then settingsPage(category[1]) end
+    if category[1] ~= "main" and category[1] ~= "sliders" and category[1] ~= "models" and category[1] ~= "weapons" then settingsPage(category[1]) end
 end
 require("model_swapper")(Editor,nativeButton,image,settings,request)
+require("weapon_swapper")(Editor,nativeButton,image,settings,request)
 
 Editor.registerPage("sliders", function(content, menu)
     nativeButton(content, "editor_reset_all", "RESET ALL EDITOR SETTINGS", 465, 560, 316, function() return request("reset_all") end)
@@ -628,6 +630,7 @@ function Editor.update(menu, data)
     local navigation = menu.pendingCategory
     if navigation then menu:selectCategory(navigation[1], navigation[2]) end
     if Editor.updateModels then Editor.updateModels(menu) end
+    if Editor.updateWeapons then Editor.updateWeapons(menu) end
     if changed then
         for _, category in ipairs(categories) do
             if menu.category == category[1] then menu:selectCategory(category[1], category[2]); break end
@@ -642,7 +645,7 @@ function Editor.update(menu, data)
     end
     if menu.colorPicker then menu.colorPicker.refresh() end
     menu.feedback:setText(settings.message ~= "" and settings.message or
-        (menu.category=="models" and settings.modelMessage or settings.sceneMessage) or "")
+        (menu.category=="models" and settings.modelMessage or menu.category=="weapons" and settings.weaponSwapMessage or settings.sceneMessage) or "")
     if (menu.category == "bone_camera" or menu.category == "lights") and menu.sceneStatus then
         menu.sceneStatus:setText(menu.category == "bone_camera" and (settings.boneAttached and "ATTACHED" or "DETACHED") or
             "POINT " .. tostring(settings.selectedLight or 0) .. " / " .. tostring(settings.lightCount or 0))

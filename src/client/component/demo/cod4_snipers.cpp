@@ -9,6 +9,7 @@
 #include "demo_game.hpp"
 #include "cod4_camera.hpp"
 #include "theater_camera.hpp"
+#include "theater_weapons.hpp"
 #include "component/console.hpp"
 #include "component/command.hpp"
 #include "component/materials.hpp"
@@ -32,7 +33,7 @@ namespace cod4_snipers
         struct frame_pose
         {
             std::shared_ptr<const clips> source;
-            std::array<game::XModel*, 2> gun_models{};
+            std::vector<game::XModel*> gun_models;
             float fraction{};
             float down_weight{};
             const cod4::sniper::action* action{};
@@ -98,8 +99,8 @@ namespace cod4_snipers
             return layout_supported && (demo_playback::converted() || cod4_camera::active()) && game::CL_IsCgameInitialized()
                 && !game::VirtualLobby_Loaded();
         }
-        bool classic() { return enabled && enabled->current.enabled && replay(); }
-        bool flat_scope() { return replay() && ((scopes && scopes->current.enabled) || classic()); }
+        bool classic() { return enabled && enabled->current.enabled && replay() && !theater_weapons::different_weapon(); }
+        bool flat_scope() { return replay() && !theater_weapons::different_weapon() && ((scopes && scopes->current.enabled) || classic()); }
         template<typename T> T field(const void* p, std::size_t offset)
         { T value; std::memcpy(&value, static_cast<const std::uint8_t*>(p) + offset, sizeof(value)); return value; }
         std::shared_ptr<const clips> load(int weapon)
@@ -405,9 +406,11 @@ namespace cod4_snipers
         const auto blend = return_blend.sample(token, time, action->second, seconds, reset);
         sampled_token.store(token); sampled_remaining.store(field<int>(cg, 552));
         sampled_time.store(time); sampled_seconds.store(seconds);
-        if (std::isfinite(ads) && def->gunModel)
+        auto models = theater_weapons::view_models(weapon);
+        if (models.empty() && def->gunModel) models = {def->gunModel[0], def->gunModel[1]};
+        if (std::isfinite(ads) && !models.empty())
             pose.store(std::make_shared<const frame_pose>(frame_pose{source,
-                {def->gunModel[0], def->gunModel[1]}, ads, down_weight, &action->second, seconds, session, blend}));
+                std::move(models), ads, down_weight, &action->second, seconds, session, blend}));
     }
     void apply_pose(void* object, const std::uint32_t* fresh)
     {

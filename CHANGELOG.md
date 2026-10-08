@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add Theater Editor > Weapon Swapper: browse native gun kits or replace the first-person gun with another firearm in the same class. Apply, restore, and save/load per-demo selections without rewriting the recording. Kits preserve the recorded attachment; different guns use their standard native setup and animations.
 - Restore a half-second return blend when a classic COD4 sniper's unfinished weapon-lowering action is cancelled back to forced idle. The outgoing authored action continues while fading, driven by replay time; pause holds the pose and seeks/weapon changes clear the transition.
 - Keep the Theater timeline visible when F1 hides the game HUD. Replay F1 now hides the native `mp_hud` UI group without disabling global rendering switches; F4 still controls the timeline independently.
 

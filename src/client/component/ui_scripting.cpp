@@ -24,6 +24,7 @@
 #include "demo/theater_ui.hpp"
 #include "demo/theater_editor.hpp"
 #include "demo/theater_models.hpp"
+#include "demo/theater_weapons.hpp"
 #include "demo/theater_library.hpp"
 #include "demo/demo_playback.hpp"
 #include "depot_store.hpp"
@@ -269,6 +270,8 @@ namespace ui_scripting
             game_type["gettheatermodelcatalog"] = [](const game&, const std::string& kind, const std::string& faction,
                 const std::string& role, const std::string& collection, int page, const std::string& head, const std::string& body)
             { return json_to_lua(theater_models::choices_page(kind, faction, role, collection, page, head, body)); };
+            game_type["gettheaterweaponcatalog"] = [](const game&, const std::string& source, const std::string& weapon, int page)
+            { return json_to_lua(theater_weapons::choices_page(source, weapon, page)); };
 			game_type["theatereditorset"] = [](const game&, const std::string& name, double value)
 			{ return theater_editor::set(name, value); };
 			game_type["theatereditorcolor"] = [](const game&, const std::string& name, double red, double green, double blue)

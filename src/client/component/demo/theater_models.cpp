@@ -1,6 +1,7 @@
 #include <std_include.hpp>
 #include "loader/component_loader.hpp"
 #include "theater_models.hpp"
+#include "theater_weapons.hpp"
 #include "theater_models_catalog.hpp"
 #include "theater_models_policy.hpp"
 #include "demo_game.hpp"
@@ -252,6 +253,7 @@ namespace theater_models
         {
             if (held.contains(model)) return;
             auto budget = held; budget.insert(model);
+            const auto weapons = theater_weapons::held_models(); budget.insert(weapons.begin(), weapons.end());
             for (const auto& [slot, a] : actors)
             {
                 if (!a.original.body.empty()) budget.insert(a.original.body);
@@ -280,6 +282,7 @@ namespace theater_models
             theater_camera::set_freecam_pose(pose);
         }
     }
+    std::set<std::string> held_models() { return held; }
     void reset() { pending.reset(); restoring.reset(); previous_swaps.clear(); swaps.clear(); message = "All player models restored"; }
     bool action(const std::string& name, const std::string& argument)
     {

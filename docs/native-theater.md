@@ -103,7 +103,8 @@ The editor follows the T6MVM category structure and exposes supported H1 control
 | Sun | Directional-light color, intensity, elevation/azimuth and Time Of Day; native flare and shadow settings |
 | Lights | Selected map-light color/intensity, up to 16 placed point lights with position/color/radius/intensity, native light-grid and shadow settings |
 | Streams | Capture current settings or omit players/corpses, In/Out range, encoder settings and capture actions; FFmpeg required |
-| Weapon | Native viewmodel visibility; offsets, sway, custom camo, holdgun and animation replacement require further H1 viewmodel/asset hooks |
+| Weapon | Native viewmodel visibility; offsets, sway, custom camo and holdgun require further H1 viewmodel/asset hooks |
+| Weapon Swapper | Replace the recorded first-person firearm with a native kit or another gun in the same class; apply, restore and save/load per demo |
 | Sliders | Up to 20 controls from registered H1 render/camera/effect float/vector controls and color pickers, saved with a preset |
 
 Large settings pages use native Previous/Next buttons. All twelve categories remain visible and no scrollbar is added. RGB settings use a color picker with a saturation/brightness square, hue strip, preview, HSV adjustment and preset swatches. Native RGBA alpha is preserved and remains separately editable. Noncolor vector channels preserve the other components when edited. Only registered settings with a usable native type/domain appear; latched and read-only settings are available through the demo console where applicable, rather than advertised as immediate menu controls.

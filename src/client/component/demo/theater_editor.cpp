@@ -3,6 +3,7 @@
 #include "theater_camera.hpp"
 #include "theater_scene.hpp"
 #include "theater_models.hpp"
+#include "theater_weapons.hpp"
 #include "game/dvars.hpp"
 #include "theater_ui.hpp"
 #include "demo_playback.hpp"
@@ -424,7 +425,7 @@ namespace theater_editor
                         game::Dvar_Reset(game::Dvar_FindVar(base.c_str()), game::DVAR_SOURCE_INTERNAL);
                 }
                 if (name == "reset_all" || argument == "camera") theater_camera::set_freecam_fov(90);
-                if (name == "reset_all") { theater_scene::reset_editor(); theater_models::reset(); }
+                if (name == "reset_all") { theater_scene::reset_editor(); theater_models::reset(); theater_weapons::reset(); }
                 message = name == "reset_all" ? "Reset all editor settings; dolly markers retained" : "Reset " + argument + " to engine defaults";
             }
             else if (name == "add_slider")
@@ -436,6 +437,7 @@ namespace theater_editor
             }
             else if (name == "remove_slider") std::erase(custom, argument);
             else if (theater_models::action(name, argument)) message = "";
+            else if (theater_weapons::action(name, argument)) message = "";
             else if (theater_scene::action(name)) message = "";
             else if (name == "toggle_hud") theater_camera::toggle_hud();
             else if (name == "capture_in") { if (const auto t = demo_playback::current_time()) demo_avidemo::set_in_point(*t); }
@@ -456,6 +458,7 @@ namespace theater_editor
     void update()
     {
         theater_models::update();
+        theater_weapons::update();
         { std::lock_guard lock(mutex); if (!theater_ui::editor_open() && pending.empty()) return; }
         if (catalog.empty() || catalog_session != demo_playback::session_id())
         {
@@ -549,6 +552,7 @@ namespace theater_editor
             {"armed", demo_avidemo::is_armed()}, {"frames", demo_avidemo::captured_frames()}, {"ffmpeg", demo_avidemo::ffmpeg_path()}};
         data.update(theater_scene::state());
         data.update(models);
+        data.update(theater_weapons::state());
         std::lock_guard lock(mutex); snapshot = std::move(data);
     }
     nlohmann::json state(int cached_revision)
@@ -576,7 +580,8 @@ namespace theater_editor
         static const std::set<std::string> allowed{"save_preset", "load_preset", "save_path", "load_path", "reset", "reset_all", "add_slider", "remove_slider",
             "capture_in", "capture_out", "capture_clear", "capture_start", "capture_stop", "toggle_hud",
             "bone_attach", "bone_detach", "bone_next", "point_add", "point_next", "point_remove", "point_clear", "fog_sample",
-            "model_select", "model_head", "model_body", "model_restore", "model_reset_all", "model_focus", "model_save", "model_load"};
+            "model_select", "model_head", "model_body", "model_restore", "model_reset_all", "model_focus", "model_save", "model_load",
+            "weapon_swap_apply", "weapon_swap_restore", "weapon_swap_reset", "weapon_swap_save", "weapon_swap_load"};
         if (!allowed.contains(name) || !demo_playback::is_replay_armed() || !theater_ui::editor_open() || argument.size() > 128) return false;
         const auto session = demo_playback::session_id();
         scheduler::once([name, argument, session]

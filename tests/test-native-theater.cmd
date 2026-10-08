@@ -21,6 +21,10 @@ cl /nologo /std:c++20 /EHsc /W4 /O2 /I src\client /I deps\json\single_include\nl
 if not "%errorlevel%"=="0" exit /b 1
 build\theater_models_test.exe
 if not "%errorlevel%"=="0" exit /b 1
+cl /nologo /std:c++20 /EHsc /W4 /O2 /I src\client tests\theater_weapons.cpp /Fe:build\theater_weapons_test.exe /Fo:build\theater_weapons_test.obj
+if not "%errorlevel%"=="0" exit /b 1
+build\theater_weapons_test.exe
+if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c++20 /EHsc /W4 /O2 /I src\client /I deps\json\single_include\nlohmann tests\ui_json_conversion.cpp /Fe:build\ui_json_conversion_test.exe /Fo:build\ui_json_conversion_test.obj
 if not "%errorlevel%"=="0" exit /b 1
 build\ui_json_conversion_test.exe
