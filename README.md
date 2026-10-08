@@ -35,7 +35,7 @@ You need a supported installation of **Call of Duty: Modern Warfare Remastered**
 
 The symbols ZIP is optional crash-debugging data. Published packages include SHA-256 checksums.
 
-The latest packaged release is **2026.10.07.3**, adding indexed backward seeking for converted COD4 replays. Left Arrow and Back 5s jump to a nearby full snapshot without restarting from the beginning; existing conversions do not require reconversion. See the [changelog](CHANGELOG.md#202610073) for details and validation limits.
+The latest packaged release is **2026.10.08**, adding COD4-style FOV, Theater Model Swapper and Demo Splitter, restoring character personalization and local Depot support, and fixing conversion of non-player obituary events. See the [changelog](CHANGELOG.md#20261008) for details and validation limits.
 
 ## Your first COD4 replay
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2026.10.08
+
+[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.08)
+
 - Added the saved `cod4_fov` toggle for live multiplayer, devmaps and replays. Hip weapon framing follows `cg_fov`, fully aimed FOV stays fixed, and `cg_fovScale` affects both. It also preserves the late zoom transition used by `cod4_snipers`.
 - Stabilized Model Swapper navigation by deferring category changes until button dispatch finishes, reusing widgets and fetching only four visible appearance cards from the native catalog. Filters and paging no longer rebuild the entire menu or copy the full catalog into Lua on every refresh.
 
