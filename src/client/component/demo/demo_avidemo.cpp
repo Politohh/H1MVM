@@ -1,4 +1,6 @@
 #include "std_include.hpp"
+#include "runtime_assets.hpp"
+#include <utils/flags.hpp>
 #include "loader/component_loader.hpp"
 
 #include "demo_playback.hpp"
@@ -108,12 +110,14 @@ namespace demo_avidemo
 
 		void load_ffmpeg_path()
 		{
+			g_ffmpeg_path = runtime_assets::path("tools/ffmpeg.exe").string();
+			if (utils::flags::has_flag("bundled-only")) return;
 			std::error_code ec;
 			const auto f = ffmpeg_path_file();
 			if (!std::filesystem::exists(f, ec)) return;
 			std::ifstream in(f);
 			std::string line;
-			if (std::getline(in, line) && !line.empty()) g_ffmpeg_path = line;
+			if (std::getline(in, line) && !line.empty() && std::filesystem::is_regular_file(line, ec)) g_ffmpeg_path = line;
 		}
 
 		// next free demos/avi/<stem>_NNN.<ext>
@@ -390,7 +394,7 @@ namespace demo_avidemo
 	const char* ffmpeg_path() { return g_ffmpeg_path.c_str(); }
 	void set_ffmpeg_path(const char* path)
 	{
-		g_ffmpeg_path = (path && *path) ? path : "ffmpeg";
+		g_ffmpeg_path = (path && *path && std::string_view(path) != "ffmpeg") ? path : runtime_assets::path("tools/ffmpeg.exe").string();
 		std::error_code ec;
 		std::ofstream out(ffmpeg_path_file(), std::ios::trunc);
 		if (out) out << g_ffmpeg_path;

@@ -4,6 +4,7 @@
 #include "command.hpp"
 #include "console.hpp"
 #include "filesystem.hpp"
+#include "runtime_assets.hpp"
 #include "localized_strings.hpp"
 #include "mods.hpp"
 #include "updater.hpp"
@@ -45,10 +46,14 @@ namespace filesystem
 
 			initialized = true;
 
-			register_path(utils::properties::get_appdata_path() / CLIENT_DATA_FOLDER);
-			register_path(L"h1-mod");
-			register_path(L"raw");
-			register_path(L"main");
+			if (!utils::flags::has_flag("bundled-only"))
+			{
+				register_path(utils::properties::get_appdata_path() / CLIENT_DATA_FOLDER);
+				register_path(L"h1-mod");
+				register_path(L"raw");
+				register_path(L"main");
+			}
+			register_path(runtime_assets::path("cdata"));
 
 			const auto mod_path = utils::flags::get_flag("mod");
 			if (mod_path.has_value())

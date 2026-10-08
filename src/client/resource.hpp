@@ -21,3 +21,4 @@
 #define LUA_JSON              311
 
 #define DVAR_LIST			  312
+#define RUNTIME_ASSETS        313

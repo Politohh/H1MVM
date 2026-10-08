@@ -1,4 +1,5 @@
 #include <std_include.hpp>
+#include "runtime_assets.hpp"
 #include "launcher/launcher.hpp"
 #include "loader/loader.hpp"
 #include "loader/component_loader.hpp"
@@ -269,6 +270,14 @@ int main()
 				setvbuf(stderr, NULL, _IONBF, 0);
 			}
 
+			runtime_assets::initialize();
+			if (utils::flags::has_flag("bundle-check"))
+			{
+				runtime_assets::write_check("bundle-check.json");
+				premature_shutdown = false;
+				return 0;
+			}
+
 			if (!component_loader::post_start()) return 0;
 
 			auto mode = detect_mode_from_arguments();
@@ -294,7 +303,11 @@ int main()
 		}
 		catch (std::exception& e)
 		{
-			MSG_BOX_ERROR(e.what());
+			if (utils::flags::has_flag("bundle-check"))
+			{
+				utils::io::write_file("bundle-check.json", nlohmann::json({{"ok", false}, {"error", e.what()}}).dump(2));
+			}
+			else MSG_BOX_ERROR(e.what());
 			return 1;
 		}
 	}

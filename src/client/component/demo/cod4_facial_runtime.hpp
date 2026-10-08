@@ -1,4 +1,5 @@
 #pragma once
+#include "runtime_assets.hpp"
 #include "cod4_facial_playback.hpp"
 #include "cod4_snipers.hpp"
 #include <memory>
@@ -128,7 +129,7 @@ namespace cod4_camera::facial
     inline std::vector<std::uint8_t> asset(std::string_view category, std::string_view name)
     {
         if (!cod4::valid_model_name(name)) throw std::runtime_error("Invalid facial source asset name");
-        const auto path = std::filesystem::path("cod4_facial") / category / name;
+        const auto path = runtime_assets::path("cod4_facial/" + std::string(category) + "/" + std::string(name));
         std::ifstream file(path, std::ios::binary | std::ios::ate);
         if (!file) return {};
         const auto size = file.tellg();

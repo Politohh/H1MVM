@@ -1,4 +1,6 @@
 #pragma once
+#include "runtime_assets.hpp"
+#include <utils/flags.hpp>
 #include "theater_sky_gpu.hpp"
 #include <fstream>
 
@@ -26,23 +28,26 @@ namespace theater_sky
     public:
         const char** discover()
         {
-            const std::filesystem::path directory="demos/theater/skies";
-            if (std::filesystem::is_directory(directory))
+            std::set<std::string> seen;
+            for (const auto& directory : {runtime_assets::path("demos/theater/skies"), std::filesystem::path("demos/theater/skies")})
             {
+                if (directory.is_relative() && utils::flags::has_flag("bundled-only")) continue;
+                if (!std::filesystem::is_directory(directory)) continue;
                 for (const auto& file:std::filesystem::directory_iterator(directory))
                 {
                     if (!file.is_regular_file() || file.path().extension()!=".h1sky") continue;
+                    if (seen.contains(file.path().filename().string())) continue;
                     try
                     {
                         std::ifstream input(file.path(),std::ios::binary); header h{};
                         input.read(reinterpret_cast<char*>(&h),sizeof(h));
                         if (!input || std::filesystem::file_size(file.path())!=sizeof(h)+h.size) continue;
-                        (void)layout(h);files.push_back(file.path());
+                        (void)layout(h);files.push_back(file.path());seen.insert(file.path().filename().string());
                     }
                     catch (const std::exception& e) { console::warn("Theater sky %s: %s\n",file.path().string().c_str(),e.what()); }
                 }
             }
-            std::sort(files.begin(),files.end());
+            std::sort(files.begin(),files.end(),[](const auto& a,const auto& b) { return a.filename()<b.filename(); });
             if (files.size()>255) files.resize(255);
             for (const auto& file:files) names.push_back(file.stem().string());
             for (const auto& name:names) choices.push_back(name.c_str());

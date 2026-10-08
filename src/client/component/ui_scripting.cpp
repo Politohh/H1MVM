@@ -1,4 +1,5 @@
 #include <std_include.hpp>
+#include "runtime_assets.hpp"
 #include "loader/component_loader.hpp"
 
 #include "game/game.hpp"
@@ -216,6 +217,7 @@ namespace ui_scripting
 
 			for (const auto& script : scripts)
 			{
+				if (runtime_assets::obsolete_ui_package(script, use_rawfiles)) continue;
 				const auto init_file = script + "/__init__.lua";
 				std::string data;
 				if (read_script(init_file, &data, false))

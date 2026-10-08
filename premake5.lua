@@ -304,7 +304,7 @@ dependson {"tlsdll"}
 
 links {"common"}
 
-prebuildcommands {"pushd %{_MAIN_SCRIPT_DIR}", "tools\\premake5 generate-buildinfo", "popd"}
+prebuildcommands {"pushd %{_MAIN_SCRIPT_DIR}", "powershell -NoProfile -ExecutionPolicy Bypass -File tools\\build-runtime-assets.ps1", "if errorlevel 1 exit /b 1", "tools\\premake5 generate-buildinfo", "popd"}
 
 if _OPTIONS["copy-to"] then
 	postbuildcommands {"copy /y \"$(TargetPath)\" \"" .. _OPTIONS["copy-to"] .. "\""}

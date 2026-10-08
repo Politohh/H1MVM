@@ -118,6 +118,7 @@ LUI_UPDATER           RCDATA "resources/ui_scripts/updater.lua"
 LUA_JSON              RCDATA "resources/json.lua"
 
 DVAR_LIST             RCDATA "resources/dvar_list.json"
+RUNTIME_ASSETS        RCDATA "../../build/runtime-assets.bin"
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////

@@ -1,4 +1,5 @@
 #include "std_include.hpp"
+#include "runtime_assets.hpp"
 #include "loader/component_loader.hpp"
 #include "cod4_snipers.hpp"
 #include "cod4_sniper_style.hpp"
@@ -115,14 +116,14 @@ namespace cod4_snipers
                 {
                     const auto path = std::format("cod4_snipers/viewmodel_{}_ads_{}", names[weapon], direction ? "down" : "up");
                     std::string bytes;
-                    if (!utils::io::read_file(path, &bytes)) throw std::runtime_error("Missing " + path);
+                    if (!runtime_assets::read(path, &bytes)) throw std::runtime_error("Missing " + path);
                     auto value = cod4::face::decode({reinterpret_cast<const std::uint8_t*>(bytes.data()), bytes.size()}, true);
                     if (value.tracks.size() != 1 || value.tracks[0].bone != "tag_ads")
                         throw std::runtime_error("Unexpected COD4 sniper ADS controls");
                     (direction ? result->down : result->up) = std::move(value);
                 }
                 std::string descriptor;
-                if (!utils::io::read_file("cod4_snipers/animations.json", &descriptor))
+                if (!runtime_assets::read("cod4_snipers/animations.json", &descriptor))
                     throw std::runtime_error("Missing original COD4 sniper animation set");
                 const auto manifest = nlohmann::json::parse(descriptor);
                 if (manifest.at("version") != 4 || manifest.at("rifles").size() != 5)
@@ -137,7 +138,7 @@ namespace cod4_snipers
                     if (name.empty() || name.size() > 128 || name.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_.") != name.npos)
                         throw std::runtime_error("Invalid original sniper asset name");
                     std::string bytes;
-                    if (!utils::io::read_file("cod4_snipers/" + name, &bytes)) throw std::runtime_error("Missing " + name);
+                    if (!runtime_assets::read("cod4_snipers/" + name, &bytes)) throw std::runtime_error("Missing " + name);
                     return std::vector<std::uint8_t>(bytes.begin(), bytes.end());
                 };
                 result->hands = cod4::face::decode_rest(asset(rifle.at("hands").get<std::string>()));
@@ -275,7 +276,7 @@ namespace cod4_snipers
             if (!overlay)
             {
                 std::string bytes;
-                if (!utils::io::read_file("cod4_snipers/scope.png", &bytes)) return;
+                if (!runtime_assets::read("cod4_snipers/scope.png", &bytes)) return;
                 // $white's blend state ignores texture alpha. Use the native
                 // 2D scope's complete render state, including its alpha blend.
                 const auto* base = game::Material_RegisterHandle("scope_overlay_m40a3");
