@@ -111,6 +111,60 @@ int main(int argc, char** argv)
             const auto hands = cod4::face::decode_rest(asset(rifle.at("hands")));
             const auto gun = cod4::face::decode_rest(asset(rifle.at("gun")));
             const auto rig = cod4::sniper::combine_rigs(hands, gun);
+            // Actual drop/idle curves, including the reported R700's 100 ms
+            // quick-drop cancellations at 50.750 and 50.950 seconds.
+            const auto load_action = [&](unsigned logical)
+            {
+                for (const auto& entry : rifle.at("actions")) if (entry.at("logical") == logical)
+                    return cod4::sniper::action{cod4::face::decode(asset(entry.at("clip")), true),
+                        entry.at("timer_ms"), entry.at("loop"), entry.at("scale_to_timer")};
+                throw std::runtime_error("Missing switch cancellation action");
+            };
+            const auto drop = load_action(27), idle = load_action(1);
+            cod4::sniper::switch_return_blend switch_blend;
+            check(!switch_blend.sample(27, 1000, drop, drop.clip_seconds(.036), true).outgoing,
+                "A new drop must retain its authored start");
+            const auto cancelled = switch_blend.sample(1, 1100, idle, 0, false);
+            check(cancelled.outgoing == &drop && cancelled.weight == 1,
+                "Cancelled drop snapped directly to idle");
+            check(std::abs(cancelled.seconds - drop.clip_seconds(.136)) < .000001,
+                "Outgoing drop lost its elapsed phase at cancellation");
+            auto returned = cod4::sniper::retarget_action(rig, idle.animation, 0, rig);
+            const auto lowering_pose = cod4::sniper::retarget_action(rig, drop.animation, cancelled.seconds, rig);
+            cod4::sniper::blend_action_pose(returned, lowering_pose, cancelled.weight);
+            for (unsigned i = 0; i < returned.size(); ++i)
+                for (unsigned axis = 0; axis < 3; ++axis)
+                    check(std::abs(returned[i].translation[axis] - lowering_pose[i].translation[axis]) < .00001f,
+                        "Hands/gun are discontinuous at the start of the return blend");
+            const auto paused_blend = switch_blend.sample(1, 1100, idle, 0, false);
+            check(paused_blend.seconds == cancelled.seconds && paused_blend.weight == 1,
+                "Pause advanced the return animation");
+            const auto halfway = switch_blend.sample(1, 1350, idle, .25, false);
+            check(halfway.outgoing == &drop && std::abs(halfway.weight - .5f) < .00001f
+                && std::abs(halfway.seconds - cancelled.seconds - .25) < .000001,
+                "Return must fade over 500 ms of replay time at the outgoing clip's natural rate");
+            check(!switch_blend.sample(1, 1600, idle, .5, false).outgoing,
+                "Return did not finish at the idle pose");
+            for (const auto target : {0, 18, 2, 31})
+            {
+                switch_blend.sample(27, 2000, drop, drop.clip_seconds(.05), true);
+                check(!switch_blend.sample(target, 2050, idle, 0, false).outgoing,
+                    "Ordinary idle, raise, fire or sprint was incorrectly blended as a cancelled switch");
+            }
+            switch_blend.sample(27 | 2048, 3000, drop, drop.clip_seconds(.05), true);
+            check(switch_blend.sample(1 | 2048, 3050, idle, 0, false).outgoing != nullptr,
+                "Animation restart bit prevented cancellation blending");
+            check(!switch_blend.sample(27, 3100, drop, 0, false).outgoing,
+                "A new drop retained the previous idle transition");
+            switch_blend.sample(27, 4000, drop, drop.clip_seconds(.05), true);
+            check(!switch_blend.sample(1, 4050, idle, 0, true).outgoing,
+                "Seek/session/weapon reset retained the outgoing rifle pose");
+            switch_blend.sample(27, 5000, drop, drop.clip_seconds(.05), true);
+            check(!switch_blend.sample(1, 4900, idle, 0, false).outgoing,
+                "Backward seek retained the outgoing pose");
+            switch_blend.sample(27, 6000, drop, double(drop.animation.frames) / drop.animation.fps, true);
+            check(!switch_blend.sample(1, 6050, idle, 0, false).outgoing,
+                "A completed drop received an interrupted-switch blend");
             std::map<unsigned, std::string> available;
             for (const auto& entry : rifle.at("actions"))
             {
@@ -408,7 +462,7 @@ int main(int argc, char** argv)
         }
         std::cout << "Validated " << count << " ADS clips, " << actions << " original actions, " << poses
             << " skeletal samples, five rifle kits, native mechanical pivots/helper bones/bolt caps, optical centering,"
-            << " draw cartridge continuity, magazine hand contact, recoil profiles, sprint entry/loop clocks, paused/seek clocks,"
+            << " draw cartridge continuity, cancelled-switch return blending, magazine hand contact, recoil profiles, sprint entry/loop clocks, paused/seek clocks,"
             << " 95 percent ADS zoom start, instant scope cut and facial isolation\n";
     }
     catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }

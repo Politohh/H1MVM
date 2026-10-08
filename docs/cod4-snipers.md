@@ -43,6 +43,7 @@ Existing converted demos work with these runtime changes. Reconversion is needed
 - The R700/M40A3 cartridge stays at its chambered idle pose during pull-out. Reload and bolt-cycle cartridge motion remain authored.
 - Original hip/ADS recoil parameters are applied during the native frame. COD4 preview preserves the calculated camera rotation. The Barrett's original ADS firing slot is idle and relies on camera kick.
 - Sprint loops begin after sprint-in, and recorded clocks/action timers drive playback, including pause, slow motion and seeks.
+- Cancelling an unfinished weapon-lowering action back to forced idle blends the outgoing pose away over half a second of replay time, following COD4's return transition. Pause freezes the blend; seeks, unsupported actions and weapon changes clear it.
 
 Native notifications and audio remain in use. Unsupported/offhand actions retain native animation. This mode does not promise exact visual parity across every remastered rig.
 

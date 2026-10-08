@@ -308,9 +308,9 @@ local function updateTheater(root)
         latest.open = false
         desired = nil
     end
-    -- cg_draw2D/hud_* only suppress some MWR data/legacy drawing. The complete
-    -- native HUD (map frame/icons, scores, killstreaks, weapon/grenade frames,
-    -- popups and crosshair) must also be hidden at its common mp_hud parent.
+    -- Keep the renderer's cg_draw2D/hud_* gates enabled: disabling them can
+    -- suppress Theater too. Hide the native HUD (map, scores, killstreaks,
+    -- weapon/grenade frames, popups and crosshair) at its mp_hud parent only.
     -- Theater is attached to the LUI root as a sibling, never below this parent.
     local hideHud = latest.playing and latest.hudHidden == true
     if gameHud and (hideHud or hudSuppressed) then setAlpha(gameHud, hideHud and 0 or 1) end

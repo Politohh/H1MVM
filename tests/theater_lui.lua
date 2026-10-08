@@ -386,6 +386,11 @@ for _, widget in ipairs(hudWidgets) do
     assert(effectiveAlpha(widget) == 0, "F1 must hide entire native HUD even after stock child animations")
 end
 assert(effectiveAlpha(passive.pause) == 1 and effectiveAlpha(passive.hudHint) == 1)
+data.visible = false; tick()
+assert(hud.style.alpha == 0 and passive.style.alpha == 0, "F4 must hide controls independently while F1 hides the HUD")
+data.visible = true; tick()
+assert(hud.style.alpha == 0 and effectiveAlpha(passive.pause) == 1,
+    "F4 must restore controls without restoring the game HUD")
 data.open = true; tick(); tick()
 assert(root.menu and passive.style.alpha == 0)
 assert(hud.style.alpha == 0 and root.menu.panel.style.alpha == 1, "HUD toggle must leave interactive theater controls visible")

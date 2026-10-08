@@ -24,6 +24,53 @@ namespace cod4::sniper
         std::map<unsigned, action> actions;
         std::array<float, 28> recoil{};
     };
+    struct action_blend_sample
+    {
+        const action* outgoing{};
+        double seconds{};
+        float weight{};
+    };
+    struct switch_return_blend
+    {
+        const action* previous{}, *outgoing{};
+        int token{-1}, last{-1}, begin{};
+        double previous_seconds{}, outgoing_seconds{};
+        action_blend_sample sample(int next_token, int time, const action& current, double seconds, bool reset)
+        {
+            if (reset || last < 0 || time < last || time - last > 250) *this = {};
+            if (next_token != token)
+            {
+                outgoing = nullptr;
+                const auto logical = static_cast<unsigned>(token) & 2047u;
+                const bool dropping = logical == 17 || logical == 25 || logical == 27 || logical == 29;
+                // COD4 CG_UpdateViewWeaponAnim's forced-idle (1) path uses a
+                // 0.5 s goal-weight transition when the old action is unfinished.
+                // StartWeaponAnim lets the outgoing clip advance at natural rate.
+                // Ordinary idle, completed swaps and other actions keep their timing.
+                if ((static_cast<unsigned>(next_token) & 2047u) == 1 && dropping && previous && !previous->loop)
+                {
+                    outgoing_seconds = previous_seconds + previous->clip_seconds((time - last) / 1000.0);
+                    if (outgoing_seconds < double(previous->animation.frames) / previous->animation.fps)
+                    { outgoing = previous; begin = time; }
+                }
+            }
+            previous = &current; previous_seconds = seconds; token = next_token; last = time;
+            const auto elapsed = (time - begin) / 1000.0;
+            if (elapsed >= .5) outgoing = nullptr;
+            return outgoing ? action_blend_sample{outgoing, outgoing_seconds + elapsed,
+                static_cast<float>(1.0 - elapsed / .5)} : action_blend_sample{};
+        }
+    };
+    inline void blend_action_pose(std::vector<face::pose>& current, const std::vector<face::pose>& outgoing, float weight)
+    {
+        if (current.size() != outgoing.size()) throw std::runtime_error("Mismatched sniper transition rigs");
+        for (unsigned i = 0; i < current.size(); ++i)
+        {
+            current[i].rotation = face::interpolate(current[i].rotation, outgoing[i].rotation, weight);
+            for (unsigned axis = 0; axis < 3; ++axis)
+                current[i].translation[axis] = std::lerp(current[i].translation[axis], outgoing[i].translation[axis], weight);
+        }
+    }
     inline void stabilize_draw_cartridge(animation_set& source)
     {
         const auto idle = source.actions.find(0);

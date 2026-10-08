@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Restore a half-second return blend when a classic COD4 sniper's unfinished weapon-lowering action is cancelled back to forced idle. The outgoing authored action continues while fading, driven by replay time; pause holds the pose and seeks/weapon changes clear the transition.
+- Keep the Theater timeline visible when F1 hides the game HUD. Replay F1 now hides the native `mp_hud` UI group without disabling global rendering switches; F4 still controls the timeline independently.
+
+Release/x64 build, sniper and Theater regressions passed. Offline evaluation of `6oPuC_3k_r700_backlot.dm_1` identified 56 R700 cancelled-drop transitions handled by the new blend. In-game visual acceptance of these changes remains pending.
+
 ## 2026.10.08.1
 
 [Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.08.1)

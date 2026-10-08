@@ -614,7 +614,10 @@ namespace theater_camera
 				if (replay) for (const auto* name : hud_dvar_names)
 					if (auto* d = game::Dvar_FindVar(name)) game::Dvar_SetFromStringFromSource(d, "1", game::DVAR_SOURCE_INTERNAL);
 			}
-			set_hud_hidden(replay && hud_hidden);
+			// Replay F1 hides only the mp_hud subtree in timeline.lua. Disabling
+			// cg_draw2D/hud_* also gates LUI rendering and hides Theater controls.
+			// Retain the legacy whole-frame suppression below for direct preview.
+			set_hud_hidden(false);
 
 			camera_pose_t cod4_pose{};
 			if (cod4_camera::view(cod4_pose))
@@ -796,7 +799,7 @@ namespace theater_camera
 			hud_session = demo_playback::session_id();
 		}
 		hud_hidden = !hud_hidden;
-		set_hud_hidden(hud_hidden);
+		// timeline.lua applies this to mp_hud; F4 owns timeline visibility.
 	}
 
 	void set_freecam_pose(const camera_pose_t& pose)

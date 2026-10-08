@@ -38,6 +38,7 @@ namespace cod4_snipers
             const cod4::sniper::action* action{};
             double seconds{};
             unsigned session{};
+            cod4::sniper::action_blend_sample blend;
         };
         std::atomic<std::shared_ptr<const frame_pose>> pose;
         unsigned session{};
@@ -47,6 +48,7 @@ namespace cod4_snipers
         cod4::sniper::ads_direction scope_direction;
         cod4::sniper::ads_curve_blend curve_blend;
         cod4::sniper::action_clock action_clock;
+        cod4::sniper::switch_return_blend return_blend;
         std::atomic_uint64_t applied{}, action_samples{}, missing{}, scope_draws{}, hidden_viewmodels{};
         std::atomic_uint64_t zoom_samples{};
         std::atomic<float> last_zoom_ads{}, last_zoom{};
@@ -368,21 +370,24 @@ namespace cod4_snipers
     {
         pose.store(nullptr);
         const auto* cg = game::CG_GetLocalClientGlobals();
-        if (!classic() || !cg || theater_camera::get_mode() != theater_camera::THEATER_CAMERA_FIRST_PERSON) return;
+        const auto invalidate = [] { return_blend = {}; previous_time = -1; };
+        if (!classic() || !cg || theater_camera::get_mode() != theater_camera::THEATER_CAMERA_FIRST_PERSON)
+        { invalidate(); return; }
         const auto weapon = field<unsigned>(cg, 916);
         const auto* def = definition(weapon);
         const int index = def && def->name ? cod4::sniper::rifle(def->name) : -1;
-        if (index < 0) return;
+        if (index < 0) { invalidate(); return; }
         std::array<game::WeaponAttachment*, 4> parts{};
         const auto count = utils::hook::invoke<int>(0x2E0C20_b, weapon, parts.data());
         for (int i = 0; i < std::clamp(count, 0, 4); ++i)
-            if (parts[i] && parts[i]->name && std::string_view(parts[i]->name).find("acog") != std::string_view::npos) return;
+            if (parts[i] && parts[i]->name && std::string_view(parts[i]->name).find("acog") != std::string_view::npos)
+            { invalidate(); return; }
         const auto source = load(index);
-        if (!source) return;
+        if (!source) { invalidate(); return; }
         const auto ads = field<float>(cg, 924);
         const int time = game::mp::cl->serverTime;
         const bool reset = session != demo_playback::session_id() || index != previous_weapon
-            || previous_time < 0 || time < previous_time || time - previous_time > 250;
+            || previous_time < 0 || time < previous_time || time - previous_time > 250 || demo_playback::seeking();
         if (reset)
             lowering = false;
         else if (ads < previous_fraction - .00001f) lowering = true;
@@ -391,17 +396,18 @@ namespace cod4_snipers
         const auto down_weight = curve_blend.sample(time, lowering, reset);
         const int token = field<int>(cg, 548);
         const auto action = source->actions.find(static_cast<unsigned>(token) & 2047u);
-        if (action == source->actions.end()) return; // Offhand/unsupported actions keep their native pose.
+        if (action == source->actions.end()) { invalidate(); return; } // Offhand/unsupported actions keep their native pose.
         const auto elapsed = action_clock.sample(session, weapon, token, time, field<int>(cg, 552),
             action->second.timer_ms, action->second.loop,
             (static_cast<unsigned>(token) & 2047u) == 33 ? field<int>(cg, 448) : 0,
             source->actions.at(31).timer_ms);
         const auto seconds = action->second.clip_seconds(elapsed);
+        const auto blend = return_blend.sample(token, time, action->second, seconds, reset);
         sampled_token.store(token); sampled_remaining.store(field<int>(cg, 552));
         sampled_time.store(time); sampled_seconds.store(seconds);
         if (std::isfinite(ads) && def->gunModel)
             pose.store(std::make_shared<const frame_pose>(frame_pose{source,
-                {def->gunModel[0], def->gunModel[1]}, ads, down_weight, &action->second, seconds, session}));
+                {def->gunModel[0], def->gunModel[1]}, ads, down_weight, &action->second, seconds, session, blend}));
     }
     void apply_pose(void* object, const std::uint32_t* fresh)
     {
@@ -471,6 +477,14 @@ namespace cod4_snipers
                     auto local = gun && !hands
                         ? cod4::sniper::retarget_gun(source_rig, value->action->animation, value->seconds, c.rig)
                         : cod4::sniper::retarget_action(source_rig, value->action->animation, value->seconds, c.rig);
+                    if (value->blend.outgoing)
+                    {
+                        const auto& blend = value->blend;
+                        const auto old = gun && !hands
+                            ? cod4::sniper::retarget_gun(source_rig, blend.outgoing->animation, blend.seconds, c.rig)
+                            : cod4::sniper::retarget_action(source_rig, blend.outgoing->animation, blend.seconds, c.rig);
+                        cod4::sniper::blend_action_pose(local, old, blend.weight);
+                    }
                     for (unsigned b = 0; b < bones; ++b)
                     {
                         const auto bone = first + b, bit = 0x80000000u >> (bone & 31), word = bone >> 5;
