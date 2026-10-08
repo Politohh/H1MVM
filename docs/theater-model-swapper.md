@@ -14,6 +14,8 @@ The catalog comes from this installation's native character tables. Models regis
 
 This version changes third-person player heads and bodies during replay playback. It does not change weapon models, POV hands, profile unlocks, or the recorded demo data. Body/head combinations may retain appearance differences authored into the game's models.
 
+Appearance cards reserve a separate clipped column for the name and faction/class details. Long text is fitted on every refresh and shortened at the end if necessary. If a portrait material is unavailable during playback, the card shows a HEAD/BODY tile and the preview shows faction/class details instead of a checkerboard. This fallback does not load missing frontend-only portraits; those images remain an open issue and do not prevent applying the appearance.
+
 ## Implementation checks
 
 `tests/test-native-theater.cmd` checks head/body composition and equipment/tag preservation, plus the Lua interaction harness's player identities, filtering, paging, Apply guards, save/restore, layout and return navigation. It also checks deferred mouse callbacks, reused card targets and bounded widget creation across repeated filters.

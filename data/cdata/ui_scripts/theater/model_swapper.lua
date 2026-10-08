@@ -42,24 +42,60 @@ return function(Editor, createButton, createImage, settings, request)
         e.modelState=e.editorImageLayout
         return show(e)
     end
-    local function text(parent,id,value,x,y,w,h,color)
+    local function text(parent,id,value,x,y,w,h,color,font)
+        font=font or CoD.TextSettings.FontBold110.Font
         local cache=widgets(parent)
         local t=cache[id]
         if not t then
             t=LUI.UIText.new({leftAnchor=true,rightAnchor=false,topAnchor=true,bottomAnchor=false,
-                left=x,top=y,width=w,height=h,font=CoD.TextSettings.FontBold110.Font,
+                left=x,top=y,width=w,height=h,font=font,
                 alignment=LUI.Alignment.Left,color=color or grey})
             t.id=id;parent:addElement(t);cache[id]=t
         end
         t.modelState={leftAnchor=true,rightAnchor=false,topAnchor=true,bottomAnchor=false,
-            left=x,top=y,width=w,height=h,font=CoD.TextSettings.FontBold110.Font,
+            left=x,top=y,width=w,height=h,font=font,
             alignment=LUI.Alignment.Left,color=color or grey}
         t:setText(value);return show(t)
+    end
+    local function textArea(parent,id,x,y,w,h)
+        local cache=widgets(parent)
+        local area=cache[id]
+        if not area then
+            area=LUI.UIElement.new()
+            area.id=id;area:setUseStencil(true);parent:addElement(area);cache[id]=area
+        end
+        area.modelState={leftAnchor=true,rightAnchor=false,topAnchor=true,bottomAnchor=false,
+            left=x,top=y,width=w,height=h}
+        return show(area)
+    end
+    local function fittedText(parent,id,value,x,y,w,h,minimum,color,font)
+        font=font or CoD.TextSettings.FontBold110.Font
+        local function width(s,size)
+            local _,_,measured=luiglobals.GetTextDimensions(s,font,size)
+            return measured
+        end
+        -- Recompute for every reused card; the native label factory only fits
+        -- the first value. Preserve the beginning and shorten only the tail.
+        local measured=width(value,h)
+        local size=measured>w and math.max(minimum,h*w/measured) or h
+        if width(value,size)>w then
+            while value~="" and width(value.."...",size)>w do
+                value=value:gsub("[%z\1-\127\194-\244][\128-\191]*$","")
+            end
+            value=value.."..."
+        end
+        return text(parent,id,value,x,y,w,size,color,font)
     end
     local function label(c)
         local value=c.label or c.model
         if value:sub(1,5)=="LOOT_" and Engine.Localize then value=Engine.Localize(value) end
         return value
+    end
+    local function hasPortrait(c)
+        -- Catalog strings can name frontend-only or absent materials. Registering
+        -- those during playback returns the checkerboard, not a usable portrait.
+        -- Check on each refresh so a reused card can recover when assets change.
+        return c.icon and c.icon~="" and not game:isdefaultmaterial(c.icon)
     end
     local function place(element,x,y,w,h)
         element:registerAnimationState("model_layout",{leftAnchor=true,rightAnchor=false,topAnchor=true,bottomAnchor=false,
@@ -144,14 +180,19 @@ return function(Editor, createButton, createImage, settings, request)
         if not picked then picked=matches[1];menu.modelPick=picked and picked.id end
         for i,c in ipairs(matches) do
             local y=309+(i-1)*47
-            local row=button(content,"model_choice_"..i,(menu.modelPick==c.id and "> " or "")..label(c),365,y,405,
-                function() menu.modelPick=c.id;redraw() end,{height=42,maxLabelWidth=330})
+            -- Keep the native input/focus shell, but put both text lines in a
+            -- separate bounded column. Native label focus/up states reset a
+            -- one-off offset and would draw the name underneath the portrait.
+            local row=button(content,"model_choice_"..i,"",365,y,405,
+                function() menu.modelPick=c.id;redraw() end,{height=42})
             row.modelChoice=c.id
-            place(row.textLabel,61,5,330,15)
-            local portrait=c.icon and c.icon~=""
+            local portrait=hasPortrait(c)
             image(row,"model_thumbnail",6,3,36,36,portrait and {r=1,g=1,b=1} or {r=.08,g=.12,b=.09},portrait and c.icon or "white")
-            text(row,"model_placeholder_text",portrait and "" or (menu.modelKind=="head" and "HEAD" or "BODY"),9,18,37,8,green)
-            text(row,"model_variant",c.faction.." / "..string.upper(c.role),61,28,330,10)
+            text(row,"model_placeholder_text",portrait and "" or (menu.modelKind=="head" and "HEAD" or "BODY"),9,18,30,8,green)
+            local copy=textArea(row,"model_copy",54,3,337,36)
+            fittedText(copy,"model_name",(menu.modelPick==c.id and "> " or "")..string.upper(label(c)),
+                2,3,333,15,12,menu.modelPick==c.id and green or grey,CoD.TextSettings.TitleFontTiny.Font)
+            fittedText(copy,"model_variant",c.faction.." / "..string.upper(c.role),2,24,333,10,10)
         end
         if #matches==0 then text(content,"model_no_matches","No appearances match. Try CLEAR FILTERS.",365,333,405,13) end
         text(content,"model_count",(catalog.total or 0).." APPEARANCES   /   PAGE "..menu.modelPage.." OF "..pages,365,501,405,10,green)
@@ -167,15 +208,15 @@ return function(Editor, createButton, createImage, settings, request)
 
         text(content,"model_target_name",detail.name or "SELECT A PLAYER",805,210,304,20,green)
         if picked then
-            if picked.icon and picked.icon~="" then image(content,"model_portrait",879,243,152,152,{r=1,g=1,b=1},picked.icon)
+            if hasPortrait(picked) then image(content,"model_portrait",879,243,152,152,{r=1,g=1,b=1},picked.icon)
             else
                 image(content,"model_default_card",805,243,304,152,{r=.08,g=.12,b=.09})
                 text(content,"model_default_name",picked.faction,826,271,263,20,green)
                 text(content,"model_default_class",string.upper(picked.role),826,304,263,16)
-                text(content,"model_default_hint","DEFAULT "..string.upper(menu.modelKind).." / NO PORTRAIT",826,369,263,11)
+                text(content,"model_default_hint",string.upper(menu.modelKind).." / PORTRAIT UNAVAILABLE",826,369,263,11)
             end
-            text(content,"model_candidate_name",label(picked),805,410,304,17,green)
-            text(content,"model_candidate_meta",picked.faction.." / "..string.upper(picked.role).." / "..picked.collection,805,434,304,11)
+            fittedText(content,"model_candidate_name",label(picked),805,410,304,17,13,green)
+            fittedText(content,"model_candidate_meta",picked.faction.." / "..string.upper(picked.role).." / "..picked.collection,805,434,304,11,10)
         end
         text(content,"model_equipped_label","CURRENT "..string.upper(menu.modelKind),805,464,304,11,green)
         text(content,"model_equipped",label({label=catalog[menu.modelKind.."Label"] or "Recorded appearance"}),805,485,304,14)

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 2026.10.08.1
+
+[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.08.1)
+
+- Fixed Model Swapper appearance names drawing underneath HEAD/BODY tiles. Titles and faction/class details now use a separate clipped text column, with text fitting recalculated when cards are reused. Long names keep their beginnings and shorten at the end.
+- Fit the selected appearance's title and details to the preview panel. Preserve widget reuse and deferred navigation for safe paging and filtering.
+- Show a faction/class fallback when a portrait material is unavailable during playback, instead of the checkerboard. Available portraits still display and model swapping remains enabled. This does not restore frontend-only portrait assets; complete portrait loading remains unresolved.
+
+The regression harness covers card layout, focus-state resets, long-name reuse, and missing/available portrait transitions. Final visual confirmation across resolutions remains pending. The reported screen-fixed blurred specks are still under investigation; this release does not include an overlay fix.
+
 ## 2026.10.08
 
 [Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.08)

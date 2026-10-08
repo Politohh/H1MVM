@@ -68,6 +68,7 @@ end
 function Element:pixelsToUnits(x,y) return x,y end
 function Element:setText(value) self.text = value end
 function Element:setTextStyle(value) self.textStyle = value end
+function Element:setUseStencil(value) self.stencil = value end
 function Element:makeNotFocusable() self.notFocusable = true end
 function Element:close()
     local active=activeModelAction
@@ -122,6 +123,7 @@ end
 GenericButtonSettings = {Common = {text_default_color = {r = .6, g = .6, b = .6}}, Variants = {Slider = "slider", Select = "select"}}
 luiglobals = {Colors = {mw1_green = {r = .2, g = .6, b = .25}, white = {r = 1, g = 1, b = 1},
     h1 = {light_grey = {r = .9, g = .9, b = .9}}}}
+luiglobals.GetTextDimensions=function(value,font,height) return 0,0,#value*height*.55 end
 function LUI.MenuBuilder.BuildRegisteredType(name, properties)
     assert(name == "UIGenericButton" and properties.style == LUI.MenuTemplate.ButtonStyle)
     local button = Element.new()
@@ -163,12 +165,20 @@ function LUI.MenuBuilder.BuildAddChild(parent, definition)
     parent:addElement(button)
     return button
 end
-function LUI.UIGenericButton.ButtonLabelFactory(_, label, _, _, width, font)
+function LUI.UIGenericButton.ButtonLabelFactory(settings, label, _, _, width, font)
     assert(font.Font == "MWR_NATIVE_TITLE_FONT" and (font.Height * .8 == 10.5 or font.Height * .8 == 12))
     assert(width > 0)
     local element = Element.new({font = font.Font})
-    for _, name in ipairs({"default", "focus", "disabled"}) do
-        element:registerAnimationState(name, {height = font.Height * .8})
+    for _, name in ipairs({"default", "focus", "disabled", "over_disabled", "over_disabled_pulse"}) do
+        element:registerAnimationState(name, {height = font.Height * .8,
+            leftAnchor=true,rightAnchor=true,topAnchor=false,bottomAnchor=false,
+            left=name=="focus" and settings.paddingFocus or settings.padding,
+            top=settings.yOffset-font.Height*.4})
+    end
+    for event,state in pairs({button_over="focus",button_up="default",button_disable="disabled",
+        button_over_disable="over_disabled",visual_focused_lowlighted="focus",visual_lowlighted="disabled",
+        visual_unlighted="default"}) do
+        element:registerEventHandler(event,function(self) self:animateToState(state,0) end)
     end
     element:setText(label)
     element:animateToState("default", 0)
@@ -217,11 +227,16 @@ local rootReady = false
 Engine = {GetLuiRoot = function() assert(rootReady, "in-game root accessed during VM startup"); return root end, InFrontend = function() return false end,
     PlaySound = function() end}
 CoD = nil -- MWR populates fonts only after in-game VM startup.
-RegisterMaterial = function(name) return name end
+local missingMaterials={}
+RegisterMaterial = function(name)
+    assert(not missingMaterials[name],"unavailable portraits must not register the checkerboard: "..name)
+    return name
+end
 local data = {playing = false, open = false, enabled = true, visible = true, session = 1, paused = false, seeking = false,
     name = "test.dm_h1", elapsed = 0, duration = 10000, speed = 1, camera = 0, selected = -1,
     events = {}, keys = {}, revision = 0}
 game = {}
+function game:isdefaultmaterial(name) return missingMaterials[name] or false end
 function game:gettheaterstate()
     -- The real C++ bridge returns a new snapshot. Keep the prior poll's camera
     -- value stable when the simulated engine changes modes between updates.
@@ -698,6 +713,78 @@ assert(elementCount<=stableWidgets+8,"repeated filters must reuse native widgets
 find(root.menu,"model_clear_filters"):processEvent({name="button_action"});tick()
 assert(find(root.menu,"model_choice_1").style.height==42,"appearance cards reserve space for readable metadata")
 assert(find(root.menu,"model_choice_1").textLabel.style.alpha~=0,"native card labels remain visible during reuse")
+local function checkModelCard(row)
+    local thumbnail=find(row,"model_thumbnail")
+    local copy=assert(find(row,"model_copy"),"card text needs its own bounded column")
+    local title=assert(find(copy,"model_name"))
+    local meta=assert(find(copy,"model_variant"))
+    assert(copy.stencil and row.textLabel.text=="","native label must not paint under the thumbnail")
+    local original=title.text
+    for _,event in ipairs({"button_over","button_up","button_disable","button_over_disable",
+        "visual_focused_lowlighted","visual_lowlighted","visual_unlighted"}) do
+        row.textLabel:processEvent({name=event})
+        assert(title.text==original and title.style.left==2,"native states must not move card copy")
+        for _,resolution in ipairs({{1024,768},{1280,720},{1920,1080},{2560,1440},{3440,1440},{3840,2160}}) do
+            local scale=math.min(resolution[1]/1280,resolution[2]/720)
+            assert(copy.style.left*scale>(thumbnail.style.left+thumbnail.style.width)*scale)
+            assert((copy.style.left+copy.style.width)*scale<row.style.width*scale)
+            assert((title.style.top+title.style.height)*scale<meta.style.top*scale)
+            assert((meta.style.top+meta.style.height)*scale<copy.style.height*scale)
+        end
+    end
+    for _,line in ipairs({title,meta}) do
+        local _,_,width=luiglobals.GetTextDimensions(line.text,line.style.font,line.style.height)
+        assert(width<=line.style.width+.001,"card text must fit after reuse")
+        assert(line.style.left>0 and line.style.left+line.style.width<copy.style.width,
+            "text needs a small inset from the clipping edges")
+    end
+end
+checkModelCard(find(root.menu,"model_choice_1"))
+find(root.menu,"model_heads"):processEvent({name="button_action"});tick()
+checkModelCard(find(root.menu,"model_choice_1")) -- HEAD placeholder
+checkModelCard(find(root.menu,"model_choice_2")) -- native portrait
+local reused=find(root.menu,"model_choice_1")
+local reusedCopy=find(reused,"model_copy")
+local oldLabel=editorData.modelCatalog[5].label
+editorData.modelCatalog[5].label="SAS "..string.rep("Woodland ",24).."assault"
+find(root.menu,"model_next"):processEvent({name="button_action"});tick()
+assert(find(root.menu,"model_choice_1")==reused and find(reused,"model_copy")==reusedCopy)
+checkModelCard(reused)
+assert(find(reused,"model_name").text:sub(1,5)=="> SAS" and find(reused,"model_name").text:sub(-3)=="...")
+editorData.modelCatalog[5].label=oldLabel
+find(root.menu,"model_previous"):processEvent({name="button_action"});tick()
+checkModelCard(reused)
+assert(find(reused,"model_name").text=="> SAS HEAD 1" and find(reused,"model_name").style.height==15,
+    "reused short names regain normal size and complete text")
+-- A valid catalog icon is not necessarily resident in the replay. Exercise
+-- valid -> missing -> valid -> missing without replacing the card or preview.
+local portraitCard=find(root.menu,"model_choice_2")
+mouseClick(portraitCard,90);tick()
+local preview=assert(find(root.menu,"model_portrait"))
+assert(not preview.modelHidden and preview.editorImageLayout.material=="h1_character_icon_010")
+local portraitWidgets=elementCount
+for _,missing in ipairs({true,false,true,false}) do
+    missingMaterials.h1_character_icon_010=missing
+    root.menu:requestCategory("models","MODEL SWAPPER");tick()
+    assert(find(root.menu,"model_choice_2")==portraitCard and find(root.menu,"model_portrait")==preview)
+    assert(find(portraitCard,"model_thumbnail").editorImageLayout.material==
+        (missing and "white" or "h1_character_icon_010"))
+    assert(find(portraitCard,"model_placeholder_text").text==(missing and "HEAD" or ""))
+    assert((preview.modelHidden or false)==missing)
+    assert((find(root.menu,"model_default_card").modelHidden or false)==not missing)
+    if missing then
+        assert(find(root.menu,"model_default_hint").text=="HEAD / PORTRAIT UNAVAILABLE")
+        assert(click("model_apply")[3]=="2","missing portrait must not hide or disable a usable model")
+    end
+end
+assert(elementCount==portraitWidgets,"portrait availability changes must reuse the native widget tree")
+editorData.modelCatalog[16].icon="missing_body_portrait"
+missingMaterials.missing_body_portrait=true
+find(root.menu,"model_bodies"):processEvent({name="button_action"});tick()
+assert(find(find(root.menu,"model_choice_1"),"model_placeholder_text").text=="BODY")
+assert(find(root.menu,"model_default_hint").text=="BODY / PORTRAIT UNAVAILABLE")
+assert(click("model_apply")[3]=="100")
+editorData.modelCatalog[16].icon=""
 checkEditorLayout()
 print("PASS detailed character browser: player identity, portraits/default cards, head/body apply, paging, faction filter, load guard, save/restore and layout")
 root.menu:processEvent({name = "button_secondary"}); tick(); tick()
