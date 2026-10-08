@@ -644,8 +644,10 @@ function Editor.update(menu, data)
         if not equal(previous[item.control.name], settings.values[item.control.name]) then item.element:processEvent({name = "content_refresh"}) end
     end
     if menu.colorPicker then menu.colorPicker.refresh() end
-    menu.feedback:setText(settings.message ~= "" and settings.message or
-        (menu.category=="models" and settings.modelMessage or menu.category=="weapons" and settings.weaponSwapMessage or settings.sceneMessage) or "")
+    local skyFeedback = menu.category == "sun" and settings.skyMessage or ""
+    menu.feedback:setText(skyFeedback ~= "" and skyFeedback or settings.message ~= "" and settings.message or
+        (menu.category=="models" and settings.modelMessage or menu.category=="weapons" and settings.weaponSwapMessage or
+        menu.category=="sun" and settings.skyMessage or settings.sceneMessage) or "")
     if (menu.category == "bone_camera" or menu.category == "lights") and menu.sceneStatus then
         menu.sceneStatus:setText(menu.category == "bone_camera" and (settings.boneAttached and "ATTACHED" or "DETACHED") or
             "POINT " .. tostring(settings.selectedLight or 0) .. " / " .. tostring(settings.lightCount or 0))

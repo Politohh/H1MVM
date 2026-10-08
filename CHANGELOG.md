@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased
+## 2026.10.09
+
+[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.09)
+
+- Reduce the single-EXE download from approximately 600 MB to 50 MB while retaining the complete facial/sniper support assets and all four Theater capture codecs.
+- Read the 45 stock sky presets from the installed MWR game archives when selected, verify their pixel hashes and cache them locally. Sky loading runs in the background; missing or incompatible archives leave the original sky visible with an editor message.
+- Replace the general-purpose FFmpeg with a static capture-only build retaining AV1, H.265, H.264 and ProRes plus the existing MP4/MKV/MOV output options. Include dependency notices, source provenance, build scripts and capture validation tools.
+- Repack the 4096x4096 scope PNG without changing any decoded color or alpha pixels. The lossless scope change saves about 20 KB inside the EXE.
+
+Validation: local Release/x64 build, complete bundle extraction and hash checks, 28 encoder/container/flip/resolution capture cases, native scope decoder pixel parity, all 45 sky pixel hashes and hardware D3D11 texture creation, cache repair/failure checks and Theater UI regressions. In-game visual acceptance remains pending.
+
+## 2026.10.08.2
+
+[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.08.2)
+
+- Bundle all required client support assets into one EXE, including COD4 facial clips and rest rigs, classic sniper animations, scope, skies and FFmpeg. Verify and repair the extracted cache on launch.
 
 - Add Theater Editor > Weapon Swapper: browse native gun kits or replace the first-person gun with another firearm in the same class. Apply, restore, and save/load per-demo selections without rewriting the recording. Kits preserve the recorded attachment; different guns use their standard native setup and animations.
 - Restore a half-second return blend when a classic COD4 sniper's unfinished weapon-lowering action is cancelled back to forced idle. The outgoing authored action continues while fading, driven by replay time; pause holds the pose and seeks/weapon changes clear the transition.

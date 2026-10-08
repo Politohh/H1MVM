@@ -82,19 +82,23 @@ def collect(config):
     add("cod4_snipers/scope.png", config["scope"], config["scope_sha256"])
     add("provenance/snipers.json", sniper / "manifest.json")
 
-    skies = json.loads(Path(config["sky_manifest"]).read_text())
-    if len(skies["assets"]) < 45:
-        raise ValueError("Incomplete sky preset manifest")
+    sky_index = ROOT / "data/sky-presets.json"
+    skies = json.loads(sky_index.read_text())
+    if skies["version"] != 1 or len(skies["assets"]) != 45:
+        raise ValueError("Incomplete sky preset index")
     for sky in skies["assets"]:
-        name = sky["name"] + ".h1sky"
-        source = Path(config["skies"]) / name
-        if not source.is_file():
-            source = Path(config["skies"]) / sky["zone"] / name
-        add("demos/theater/skies/" + name, source, sky["sha256"])
-    add("provenance/skies.json", config["sky_manifest"])
+        if not sky["blocks"] or sum(block["take"] for block in sky["blocks"]) != sky["size"]:
+            raise ValueError("Incomplete indexed sky pixels: " + sky["name"])
+    add("catalogs/skies.json", sky_index)
     add("tools/ffmpeg.exe", config["ffmpeg"], config["ffmpeg_sha256"])
     for name in ("LICENSE", "README.txt"):
         add("licenses/ffmpeg/" + name, Path(config["ffmpeg"]).parent.parent / name)
+    # Capture-only builds retain dependency notices and their exact build recipe.
+    ffmpeg_notices = Path(config["ffmpeg"]).parent.parent / "licenses"
+    if ffmpeg_notices.is_dir():
+        for source in sorted(ffmpeg_notices.rglob("*")):
+            if source.is_file():
+                add("licenses/ffmpeg/" + source.relative_to(ffmpeg_notices).as_posix(), source)
     add("licenses/h1-mod.txt", ROOT / "LICENSE")
     add("SINGLE-FILE-README.md", ROOT / "docs/single-file-release.md")
     for source in sorted((ROOT / "deps").glob("*/LICENSE*")):

@@ -410,6 +410,7 @@ namespace theater_scene
         }
         std::lock_guard lock(state_mutex);
         snapshot = {{"boneAttached",attached},{"boneEntity",attached_entity},{"sceneMessage",status},
+            {"skyMessage",skies.feedback(integer("demo_skybox"))},
             {"lightCount",lights.size()},{"selectedLight",lights.empty()?0:selected+1}};
     }
     class component final : public component_interface

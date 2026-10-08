@@ -22,7 +22,9 @@ class ReleaseInputs(unittest.TestCase):
         self.assertIn("cod4_facial/xmodelparts/head_mp_usmc_tactical_mich_lod01", files)
         self.assertEqual(sum(x.startswith("cod4_facial/xmodelparts/") for x in files), 42)
         self.assertEqual(sum(x.startswith("cod4_facial/xanim/") for x in files), 244)
-        self.assertEqual(sum(x.endswith(".h1sky") for x in files), 45)
+        self.assertFalse(any(x.endswith(".h1sky") for x in files))
+        self.assertIn("catalogs/skies.json", files)
+        self.assertEqual(len(json.loads(files["catalogs/skies.json"][0].read_text())["assets"]), 45)
         self.assertIn("cod4_snipers/viewmodel_remington_putaway", files)
         self.assertIn("cdata/ui_scripts/theater/weapon_swapper.lua", files)
         self.assertIn("tools/ffmpeg.exe", files)
@@ -50,6 +52,10 @@ class ReleaseInputs(unittest.TestCase):
         for name in ("../file", "/file", "C:/file", "a//b", "a/../b", "a\\b", "a/./b", "a:b"):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 bundle.safe_name(name)
+
+    def test_build_does_not_need_extracted_skies(self):
+        config = {k: v for k, v in self.config.items() if k not in ("skies", "sky_manifest")}
+        self.assertIn("catalogs/skies.json", bundle.collect(config))
 
 
 if __name__ == "__main__":
