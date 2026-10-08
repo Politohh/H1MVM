@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added the saved `cod4_fov` toggle for live multiplayer, devmaps and replays. Hip weapon framing follows `cg_fov`, fully aimed FOV stays fixed, and `cg_fovScale` affects both. It also preserves the late zoom transition used by `cod4_snipers`.
+- Stabilized Model Swapper navigation by deferring category changes until button dispatch finishes, reusing widgets and fetching only four visible appearance cards from the native catalog. Filters and paging no longer rebuild the entire menu or copy the full catalog into Lua on every refresh.
+
+Release/x64 compilation and the FOV, sniper and Theater regression checks passed. Native checks verified hip FOV 65/80, unchanged fully aimed FOV 15, and scaled ADS FOV 16.875. Model Swapper's 400-click native stress check passed on the preceding test build; the final build passed its offline interaction regressions.
+
 - Fixed conversion of demos with non-client obituary attackers, including `City_AKu_1-1__4man.dm_1`. Legal source entity references now retain the death as a world-attributed notification instead of aborting conversion or indexing a player row with an entity number.
 - Added **Model Swapper** to Theater Editor: select a replay player, browse head/body appearances by faction, class and collection, then Apply. The full-width browser includes native portraits when available, default appearance cards, scene camera focus, per-player restore and demo-specific save/load.
 - Acquire native character transient fastfiles on demand, preserve weapon/equipment attachments and restore the recorded appearance without modifying the demo or profile. Swaps follow recorded player identities across snapshots and seeks. Weapons and POV hands are outside this first version.

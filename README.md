@@ -84,6 +84,8 @@ Supports **M40A3, R700, Barrett, M21 and Dragunov** with standard scopes. Origin
 
 **[Setup, scope customization and compatibility](docs/cod4-snipers.md)**
 
+Use `cod4_fov 1` for [COD4-style FOV](docs/cod4-fov.md): `cg_fov` changes hip weapon framing, while full ADS stays independent of that setting. `cg_fovScale` scales both hip and aimed views. This toggle also works in regular multiplayer and devmap.
+
 ## Compatibility and remaining work
 
 - Custom mod assets and unknown mappings may be unsupported. Inspect the conversion report for omitted data.

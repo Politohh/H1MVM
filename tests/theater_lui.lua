@@ -2,7 +2,11 @@
 unpack = unpack or table.unpack -- MWR HKS uses the Lua 5.1 global.
 local Element = {}
 Element.__index = Element
-function Element.new(style) return setmetatable({style = style or {}, children = {}, childRecord = {}, handlers = {}, states = {}}, Element) end
+local elementCount=0
+function Element.new(style)
+    elementCount=elementCount+1
+    return setmetatable({style = style or {}, children = {}, childRecord = {}, handlers = {}, states = {}}, Element)
+end
 function Element:addElement(e)
     assert(not e.closed, "closed native elements cannot be reattached")
     if e.id then
@@ -21,7 +25,15 @@ function Element:addEventHandler(name, handler)
     local previous = self.handlers[name]
     self.handlers[name] = function(...) if previous then previous(...) end; return handler(...) end
 end
-function Element:processEvent(event) if self.handlers[event.name] then return self.handlers[event.name](self, event) end end
+local activeModelAction
+function Element:processEvent(event)
+    local previous=activeModelAction
+    if event.name=="button_action" and self.id and self.id:sub(1,6)=="model_" then activeModelAction=self end
+    local result
+    if self.handlers[event.name] then result=self.handlers[event.name](self,event) end
+    activeModelAction=previous
+    return result
+end
 -- The native bulk removal leaves Lua childRecord intact; closeChildren must be
 -- used when rebuilding children with the same IDs.
 function Element:removeAllChildren() self.children = {} end
@@ -58,6 +70,11 @@ function Element:setText(value) self.text = value end
 function Element:setTextStyle(value) self.textStyle = value end
 function Element:makeNotFocusable() self.notFocusable = true end
 function Element:close()
+    local active=activeModelAction
+    while active do
+        assert(active~=self,"Model Swapper must not destroy its active input subtree")
+        active=active.parent
+    end
     self.closed = true
     if self.parent then
         if self.id then self.parent.childRecord[self.id] = nil end
@@ -222,7 +239,22 @@ local function clone(value)
     if type(value)~="table" then return value end
     local result={}; for k,v in pairs(value) do result[k]=clone(v) end; return result
 end
-function game:gettheatereditor() return clone(editorData) end
+function game:gettheatereditor()
+    local data=clone(editorData);data.modelCatalog=nil;return data
+end
+function game:gettheatermodelcatalog(kind,faction,role,collection,page)
+    local matches,collections,seen={},{"All collections"},{["All collections"]=true}
+    for _,c in ipairs(editorData.modelCatalog or {}) do
+        if c.kind==kind then
+            if not seen[c.collection] then collections[#collections+1]=c.collection;seen[c.collection]=true end
+            if (faction=="" or c.faction==faction) and (role=="" or c.role==role) and
+                (collection=="All collections" or c.collection==collection) then matches[#matches+1]=c end
+        end
+    end
+    local pages=math.max(1,math.ceil(#matches/4));page=math.min(math.max(1,page),pages)
+    local items={};for i=(page-1)*4+1,math.min(page*4,#matches) do items[#items+1]=matches[i] end
+    return {items=items,collections=collections,total=#matches,pages=pages,page=page}
+end
 function game:theatereditorset(name, value)
     assert(editorData.values[name] ~= nil, "unknown setting")
     editTicket=editTicket+1
@@ -620,15 +652,17 @@ end
 editorData.modelCatalog[16]={id=100,kind="body",model="body_sas_ct_assault_mp_camo",label="SAS Urban assault",icon="",faction="SAS / Urban",role="assault",collection="Default"}
 tick();root.menu:selectCategory("models","MODEL SWAPPER");tick()
 checkEditorLayout()
-assert(find(root.menu,"model_default_card") and find(root.menu,"model_thumbnail_2"))
+assert(find(root.menu,"model_default_card") and find(root.menu,"model_choice_2"):getChildById("model_thumbnail"))
 assert(#root.menu.list.children==0, "the full-width browser hides the editor category list")
 assert(click("model_player_2")[2]=="model_select" and commands[#commands][3]=="actor:200")
 assert(click("model_apply")[2]=="model_head" and commands[#commands][3]=="1")
-find(root.menu,"model_next"):processEvent({name="button_action"});assert(root.menu.modelPage==2 and find(root.menu,"model_choice_5") and not find(root.menu,"model_choice_1"))
-find(root.menu,"model_next"):processEvent({name="button_action"});assert(root.menu.modelPage==3 and find(root.menu,"model_choice_9"))
-find(root.menu,"model_next"):processEvent({name="button_action"});assert(root.menu.modelPage==4 and find(root.menu,"model_choice_15"))
-find(root.menu,"model_next"):processEvent({name="button_action"});assert(root.menu.modelPage==1)
-find(root.menu,"model_bodies"):processEvent({name="button_action"});assert(find(root.menu,"model_choice_100") and not find(root.menu,"model_choice_1"))
+find(root.menu,"model_next"):processEvent({name="button_action"});tick();assert(root.menu.modelPage==2 and find(root.menu,"model_choice_1").modelChoice==5)
+mouseClick(find(root.menu,"model_choice_2"),90);tick()
+assert(click("model_apply")[3]=="6","reused card callback selects the new page's model")
+find(root.menu,"model_next"):processEvent({name="button_action"});tick();assert(root.menu.modelPage==3 and find(root.menu,"model_choice_1").modelChoice==9)
+find(root.menu,"model_next"):processEvent({name="button_action"});tick();assert(root.menu.modelPage==4 and find(root.menu,"model_choice_3").modelChoice==15)
+find(root.menu,"model_next"):processEvent({name="button_action"});tick();assert(root.menu.modelPage==1)
+find(root.menu,"model_bodies"):processEvent({name="button_action"});tick();assert(find(root.menu,"model_choice_1").modelChoice==100 and find(root.menu,"model_choice_2").modelHidden)
 assert(click("model_apply")[2]=="model_body" and commands[#commands][3]=="100")
 editorData.modelLoading=true;tick()
 local beforeLoad=#commands;mouseClick(find(root.menu,"model_apply"),70);assert(#commands==beforeLoad,"loading must block repeated model apply")
@@ -638,12 +672,32 @@ editorData.modelLoading=false;tick()
 assert(click("model_focus")[2]=="model_focus")
 assert(click("model_restore")[2]=="model_restore")
 assert(click("model_save")[2]=="model_save" and click("model_load")[2]=="model_load")
-find(root.menu,"model_faction"):processEvent({name="button_action"});assert(find(root.menu,"model_no_matches"),"faction filter removes other-faction variants")
+find(root.menu,"model_faction"):processEvent({name="button_action"});tick();assert(find(root.menu,"model_no_matches") and find(root.menu,"model_choice_1").modelHidden,"faction filter hides nonmatching cards")
 assert(find(root.menu,"model_count").text:find("0 APPEARANCES"))
-find(root.menu,"model_clear_filters"):processEvent({name="button_action"});assert(find(root.menu,"model_choice_100"))
-local stableCard=find(root.menu,"model_choice_100")
-tick();tick();assert(find(root.menu,"model_choice_100")==stableCard,"ordinary replay polls preserve browser focus")
-assert(find(root.menu,"model_choice_100").style.height==42,"appearance cards reserve space for readable metadata")
+find(root.menu,"model_clear_filters"):processEvent({name="button_action"});tick();assert(find(root.menu,"model_choice_1"))
+-- Real mouse callbacks keep their button alive through release, then redraw.
+for _,id in ipairs({"model_faction_next","model_faction_previous","model_class","model_collection",
+    "model_heads","model_bodies","model_next","model_previous","model_players_next","model_players_previous","model_clear_filters"}) do
+    local old=assert(find(root.menu,id),id)
+    mouseClick(old,15)
+    assert(not old.closed and root.menu.pendingCategory,"click queues refresh until release finishes")
+    tick()
+    assert(not old.closed and find(root.menu,id)==old and not root.menu.pendingCategory,"next poll refreshes the existing native button")
+end
+find(root.menu,"model_bodies"):processEvent({name="button_action"});tick()
+find(root.menu,"model_clear_filters"):processEvent({name="button_action"});tick()
+local selectedCard=find(root.menu,"model_choice_1")
+mouseClick(selectedCard,90);assert(not selectedCard.closed);tick();assert(not selectedCard.closed and find(root.menu,"model_choice_1")==selectedCard)
+local stableCard=find(root.menu,"model_choice_1")
+tick();tick();assert(find(root.menu,"model_choice_1")==stableCard,"ordinary replay polls preserve browser focus")
+local stableWidgets=elementCount
+for i=1,200 do
+    find(root.menu,"model_faction_next"):processEvent({name="button_action"});tick()
+end
+assert(elementCount<=stableWidgets+8,"repeated filters must reuse native widgets instead of exhausting the UI pool")
+find(root.menu,"model_clear_filters"):processEvent({name="button_action"});tick()
+assert(find(root.menu,"model_choice_1").style.height==42,"appearance cards reserve space for readable metadata")
+assert(find(root.menu,"model_choice_1").textLabel.style.alpha~=0,"native card labels remain visible during reuse")
 checkEditorLayout()
 print("PASS detailed character browser: player identity, portraits/default cards, head/body apply, paging, faction filter, load guard, save/restore and layout")
 root.menu:processEvent({name = "button_secondary"}); tick(); tick()

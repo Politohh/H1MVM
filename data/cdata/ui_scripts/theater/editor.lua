@@ -460,12 +460,25 @@ function Editor.create(parameters, back)
         self.list:closeChildren()
         for _, category in ipairs(categories) do
             local id, label = category[1], category[2]
-            local button = self:AddButton(label, function() self:selectCategory(id, label) end,
+            local button = self:AddButton(label, function()
+                if id == "models" then self:requestCategory(id, label)
+                else self:selectCategory(id, label) end
+            end,
                 nil, true, nil, {height = 26, fadeIn = false})
             Editor.fitButtonBackground(button)
         end
     end
+    function menu:requestCategory(id, label)
+        -- Native input still visits the focused button after its action returns.
+        -- Rebuild on the next Theater poll, outside that input dispatch.
+        self.pendingCategory = {id, label}
+    end
     function menu:selectCategory(id, label)
+        self.pendingCategory = nil
+        if id == "models" and self.category == "models" then
+            Editor.pages.models(self.content, self)
+            return
+        end
         if self.category ~= id then self.settingsPage = 1 end
         if id == "models" then self.list:closeChildren()
         elseif self.category == "models" then self:populateCategories() end
@@ -475,6 +488,7 @@ function Editor.create(parameters, back)
         self.modelBrowser = nil
         -- closeChildren clears MWR's Lua childRecord as well as the native tree.
         self.content:closeChildren()
+        self.content.modelWidgets=nil
         self.controls = {}
         categoryTitle(self.content, "theater_editor_category", label)
         self.help = text(self.content, "theater_editor_help", notes[id] or "", 145, 10)
@@ -487,7 +501,7 @@ function Editor.create(parameters, back)
     menu:populateCategories()
     menu:AddBackButton(function()
         Engine.PlaySound(CoD.SFX.MenuBack)
-        if menu.category == "models" then menu:selectCategory("main", "MAIN")
+        if menu.category == "models" then menu:requestCategory("main", "MAIN")
         elseif menu.colorPicker or menu.skyPicker then menu:selectCategory(menu.category, string.upper(menu.category:gsub("_", " ")))
         else back() end
     end)
@@ -611,6 +625,8 @@ function Editor.update(menu, data)
         else received.values[name] = edit.value end
     end
     for k, v in pairs(received) do settings[k] = v end
+    local navigation = menu.pendingCategory
+    if navigation then menu:selectCategory(navigation[1], navigation[2]) end
     if Editor.updateModels then Editor.updateModels(menu) end
     if changed then
         for _, category in ipairs(categories) do

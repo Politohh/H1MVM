@@ -1,4 +1,5 @@
 #include "component/demo/theater_models_policy.hpp"
+#include "component/demo/theater_models_catalog.hpp"
 #include <cassert>
 #include <iostream>
 int main()
@@ -21,5 +22,18 @@ int main()
     for(auto& part:c.models) part="equipment_full";
     assert(!replace(c,"head_sas_ct_smg_mp","") && replace(c,"","body_sas_ct_assault_mp_camo"));
     assert(c.body=="body_arab_desert_assault_mp_camo"); // No mutation of recorded source.
+    auto catalog=nlohmann::json::array();
+    for(int i=1;i<=2615;++i) catalog.push_back({{"id",i},{"kind",i==2615?"body":"head"},
+        {"model","head_test_"+std::to_string(i)},{"label","Test "+std::to_string(i)},
+        {"faction",i<10?"SAS / Urban":"USMC"},{"role","assault"},{"collection","Default"}});
+    const auto full=catalog_page(catalog,"head","","","All collections",1,"head_test_2","");
+    assert(full["total"]==2614 && full["pages"]==654 && full["items"].size()==4 && full["headLabel"]=="Test 2");
+    const auto last=catalog_page(catalog,"head","","","Default",1000000,"","");
+    assert(last["page"]==654 && last["items"].size()==2 && last["items"][0]["id"]==2613);
+    const auto faction=catalog_page(catalog,"head","SAS / Urban","assault","Default",-10,"","");
+    assert(faction["total"]==9 && faction["page"]==1 && faction["collections"].size()==2);
+    assert(catalog_page(catalog,"head","SAS / Urban","sniper","Default",1,"","")["items"].empty());
+    assert(catalog_page(catalog,"body","USMC","assault","Default",1,"","")["items"].size()==1);
     std::cout<<"PASS head/body composition, equipment/tag preservation, missing head slot and restore\n";
+    std::cout<<"PASS bounded native catalog pages, 2615 variants, filters, page limits and equipped labels\n";
 }

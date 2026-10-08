@@ -23,6 +23,7 @@
 #include "party.hpp"
 #include "demo/theater_ui.hpp"
 #include "demo/theater_editor.hpp"
+#include "demo/theater_models.hpp"
 #include "demo/theater_library.hpp"
 #include "demo/demo_playback.hpp"
 #include "depot_store.hpp"
@@ -38,6 +39,7 @@
 #include <utils/hook.hpp>
 #include <utils/io.hpp>
 #include <utils/binary_resource.hpp>
+#include <utils/flags.hpp>
 
 #include "steam/steam.hpp"
 
@@ -264,6 +266,9 @@ namespace ui_scripting
 			{ return theater_ui::action(name, value); };
 			game_type["gettheatereditor"] = [](const game&, int revision)
 			{ return json_to_lua(theater_editor::state(revision)); };
+            game_type["gettheatermodelcatalog"] = [](const game&, const std::string& kind, const std::string& faction,
+                const std::string& role, const std::string& collection, int page, const std::string& head, const std::string& body)
+            { return json_to_lua(theater_models::choices_page(kind, faction, role, collection, page, head, body)); };
 			game_type["theatereditorset"] = [](const game&, const std::string& name, double value)
 			{ return theater_editor::set(name, value); };
 			game_type["theatereditorcolor"] = [](const game&, const std::string& name, double red, double green, double blue)
@@ -971,6 +976,21 @@ namespace ui_scripting
 			command::add("lui_restart", []
 			{
 				utils::hook::invoke<void>(SELECT_VALUE(0x1052C0_b, 0x27BEC0_b));
+			});
+
+			// Explicit developer launch only: exercise production LUI callbacks
+			// in HKS rather than substituting the offline widget harness.
+			if (utils::flags::has_flag("luicheck")) command::add("lui_testfile", [](const command::params& params)
+			{
+				if (params.size() != 2) return;
+				const std::string path = params[1];
+				scheduler::once([path]
+				{
+					const auto leave = gsl::finally(game::LUI_LeaveCriticalSection);
+					game::LUI_EnterCriticalSection();
+					std::string source;
+					if (lui_running() && utils::io::read_file(path, &source)) load_script("developer_lui_check", source);
+				}, scheduler::lui);
 			});
 
 			// remove unsafe functions

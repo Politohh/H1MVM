@@ -1,6 +1,7 @@
 #include <std_include.hpp>
 #include "loader/component_loader.hpp"
 #include "theater_models.hpp"
+#include "theater_models_catalog.hpp"
 #include "theater_models_policy.hpp"
 #include "demo_game.hpp"
 #include "demo_playback.hpp"
@@ -418,6 +419,12 @@ namespace theater_models
     }
     nlohmann::json state() { return snapshot; } // Copied only by the main-thread editor publisher.
     nlohmann::json choices() { std::lock_guard lock(catalog_mutex); return catalog_json; }
+    nlohmann::json choices_page(const std::string& kind, const std::string& faction, const std::string& role,
+        const std::string& collection, int page, const std::string& head, const std::string& body)
+    {
+        std::lock_guard lock(catalog_mutex);
+        return catalog_page(catalog_json, kind, faction, role, collection, page, head, body);
+    }
     void dump_state(const std::string& label)
     {
         update(); auto data = state(); data["modelCatalog"] = choices();

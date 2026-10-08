@@ -28,6 +28,8 @@ cod4_snipers_status
 
 Disable with `cod4_snipers 0`. To use only flat sniper scopes, disable the full mode and set `cod4_2dScopes 1`.
 
+For COD4-style hip weapon framing, also enable [`cod4_fov 1`](cod4-fov.md). It couples weapon framing to `cg_fov` while preserving the late sniper zoom and flat-scope switch.
+
 To customize the overlay, place a square RGBA PNG named **`scope_upscale.png`** in the preparation folder before using the installer, or pass `-ScopeImage "C:\Assets\my-scope.png"`. The installer copies the image verbatim as `cod4_snipers/scope.png`; transparency defines the visible lens area. Restart H1 after replacing inputs or the executable.
 
 Existing converted demos work with these runtime changes. Reconversion is needed only when a converter update changes the recorded data.

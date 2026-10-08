@@ -3,6 +3,7 @@
 #include "cod4_snipers.hpp"
 #include "cod4_sniper_style.hpp"
 #include "cod4_sniper_animation.hpp"
+#include "cod4_fov.hpp"
 #include "cod4_facial_native.hpp"
 #include "demo_playback.hpp"
 #include "demo_game.hpp"
@@ -19,8 +20,8 @@ namespace cod4_snipers
 {
     namespace
     {
-        game::dvar_t* enabled{}, *scopes{};
-        bool layout_supported{};
+        game::dvar_t* enabled{}, *scopes{}, *fov_enabled{};
+        bool layout_supported{}, projection_supported{};
         game::Material* overlay{};
         utils::hook::detour zoom_fraction_hook;
         utils::hook::detour gun_fov_hook;
@@ -50,6 +51,15 @@ namespace cod4_snipers
         std::atomic_uint64_t zoom_samples{};
         std::atomic<float> last_zoom_ads{}, last_zoom{};
         std::atomic<float> last_gun_ads{}, last_gun_fov{}, last_hip_fov{};
+        std::atomic_uint64_t fov_samples{};
+        std::atomic<float> last_scene_fov{}, last_weapon_fov{}, last_fov_ads{};
+        bool classic_projection(int local_client)
+        {
+            return projection_supported && fov_enabled && fov_enabled->current.enabled
+                && local_client == 0 && game::CL_IsCgameInitialized() && !game::VirtualLobby_Loaded()
+                && (!demo_playback::playing()
+                    || theater_camera::get_mode() == theater_camera::THEATER_CAMERA_FIRST_PERSON);
+        }
         std::atomic<int> sampled_token{}, sampled_remaining{}, sampled_time{};
         std::atomic<double> sampled_seconds{};
         struct saved_definition
@@ -183,13 +193,24 @@ namespace cod4_snipers
         }
         float gun_fov(int local_client, float world_fov)
         {
+            const auto cod4_fov = classic_projection(local_client);
             const auto* cg = game::CG_GetLocalClientGlobals();
             auto* fov = game::Dvar_FindVar("cg_fov");
             auto* scale = game::Dvar_FindVar("cg_fovScale");
-            if (!classic() || local_client != 0 || !cg || !fov || !scale
-                || theater_camera::get_mode() != theater_camera::THEATER_CAMERA_FIRST_PERSON
-                || !scoped_definition(field<unsigned>(cg, 916)))
+            const auto flat_sniper = classic() && local_client == 0 && cg
+                && theater_camera::get_mode() == theater_camera::THEATER_CAMERA_FIRST_PERSON
+                && scoped_definition(field<unsigned>(cg, 916));
+            if (!flat_sniper)
+            {
+                if (const auto projection = cod4::fov::weapon_projection(cod4_fov, true, world_fov, false, 0.f))
+                {
+                    last_scene_fov.store(world_fov); last_weapon_fov.store(*projection);
+                    last_fov_ads.store(cg ? field<float>(cg, 924) : 0.f); ++fov_samples;
+                    return *projection;
+                }
                 return gun_fov_hook.invoke<float>(local_client, world_fov);
+            }
+            if (!fov || !scale) return gun_fov_hook.invoke<float>(local_client, world_fov);
             // Native hashed float dvars encode all four value words. Decode
             // through the engine instead of treating current.value as a float.
             const auto hip_value = std::strtof(game::Dvar_ValueToString(fov, true, fov->current), nullptr);
@@ -206,7 +227,13 @@ namespace cod4_snipers
                 ~hip_guard() { hip_projection = previous; }
             };
             float hip;
-            { hip_guard guard; hip = gun_fov_hook.invoke<float>(local_client, hip_world); }
+            if (const auto projection = cod4::fov::weapon_projection(cod4_fov, true, world_fov, true, hip_world))
+            {
+                hip = *projection;
+                last_scene_fov.store(world_fov); last_weapon_fov.store(hip);
+                last_fov_ads.store(field<float>(cg, 924)); ++fov_samples;
+            }
+            else { hip_guard guard; hip = gun_fov_hook.invoke<float>(local_client, hip_world); }
             if (!std::isfinite(hip) || hip <= 0 || hip >= 180)
                 return gun_fov_hook.invoke<float>(local_client, world_fov);
             const auto ads = field<float>(cg, 924);
@@ -547,6 +574,8 @@ namespace cod4_snipers
             if (!game::environment::is_mp() || game::environment::is_dedi()) return;
             enabled = dvars::register_bool("cod4_snipers", false, 0, "Original COD4 sniper animations, zoom and 2D scopes on remastered models in converted demos");
             scopes = dvars::register_bool("cod4_2dScopes", false, 0, "Use flat COD4 sniper scopes in converted demos");
+            fov_enabled = dvars::register_bool("cod4_fov", false, game::DvarFlags::DVAR_FLAG_SAVED,
+                "Use COD4 weapon/world FOV coupling: cg_fov changes hip framing, ADS stays independent of cg_fov");
             constexpr std::array<std::uint8_t, 3> table_code{0x4C, 0x8D, 0x05};
             layout_supported = !std::memcmp(reinterpret_cast<const void*>(0x2E14EF_b), table_code.data(), table_code.size());
             const auto* draw_call = reinterpret_cast<const std::uint8_t*>(0xEC061_b);
@@ -555,13 +584,24 @@ namespace cod4_snipers
             constexpr std::array<std::uint8_t, 9> zoom_code{0x89, 0x54, 0x24, 0x10, 0x53, 0x48, 0x83, 0xEC, 0x60};
             layout_supported = layout_supported && !std::memcmp(reinterpret_cast<const void*>(0x104ED0_b), zoom_code.data(), zoom_code.size());
             constexpr std::array<std::uint8_t, 10> gun_code{0x48, 0x89, 0x74, 0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x60};
-            layout_supported = layout_supported && !std::memcmp(reinterpret_cast<const void*>(0x1046F0_b), gun_code.data(), gun_code.size());
+            projection_supported = !std::memcmp(reinterpret_cast<const void*>(0x1046F0_b), gun_code.data(), gun_code.size());
+            layout_supported = layout_supported && projection_supported;
+            if (projection_supported) gun_fov_hook.create(0x1046F0_b, gun_fov);
             if (layout_supported)
             {
                 zoom_fraction_hook.create(0x104ED0_b, zoom_fraction);
-                gun_fov_hook.create(0x1046F0_b, gun_fov);
                 utils::hook::call(0xEC061_b, draw_gun);
             }
+            if (!projection_supported) console::warn("COD4 FOV disabled: unsupported weapon projection function\n");
+            command::add("cod4_fov_status", []
+            {
+                console::info("COD4 FOV: enabled=%d supported=%d active=%d samples=%llu ADS=%.6f scene=%.6f weapon=%.6f\n",
+                    fov_enabled && fov_enabled->current.enabled, projection_supported, classic_projection(0),
+                    fov_samples.load(), last_fov_ads.load(), last_scene_fov.load(), last_weapon_fov.load());
+                for (const auto* name : {"cg_fov", "cg_fovScale"})
+                    if (auto* d = game::Dvar_FindVar(name))
+                        console::info("%s = %s\n", name, game::Dvar_ValueToString(d, true, d->current));
+            });
             if (!layout_supported) console::warn("COD4 sniper presentation disabled: unsupported weapon table\n");
             command::add("cod4_snipers_status", []
             {

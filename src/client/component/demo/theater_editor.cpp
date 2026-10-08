@@ -555,7 +555,6 @@ namespace theater_editor
     {
         std::lock_guard lock(mutex); auto copy = snapshot;
         if (cached_revision == copy.value("revision", -1)) { copy.erase("controls"); copy.erase("custom"); }
-        else copy["modelCatalog"] = theater_models::choices();
         return copy;
     }
     int queue_edit(const std::string& name, const std::array<double,3>& values, bool color)
