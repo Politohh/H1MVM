@@ -29,6 +29,7 @@ namespace theater_weapons
         std::set<std::string> held;
         std::optional<load> pending;
         std::atomic<std::shared_ptr<const render_override>> rendered;
+        std::atomic<std::shared_ptr<const std::map<unsigned, unsigned>>> world_rendered;
         utils::hook::detour view_weapon_hook;
         std::string path, source_name, source_label, message;
         unsigned session{}, source_weapon{};
@@ -46,7 +47,8 @@ namespace theater_weapons
             const auto edit = rendered.load();
             // BG_GetViewmodelWeaponIndex, verified at native CG_UpdateWeaponViewmodels
             // 0x1285AB. Only substitute the local render playerstate. Snapshots,
-            // inventory, world weapons, events and ammo retain their recorded values.
+            // inventory, events and ammo retain their recorded values. World
+            // geometry is substituted separately at the native DObj builder.
             if (edit && active() && ps == game::CG_GetLocalClientGlobals() && original == edit->original)
                 return edit->target;
             return original;
@@ -136,6 +138,7 @@ namespace theater_weapons
                 if (cell(furniture,r,0) == c.weapon && cell(furniture,r,2) == "1")
                     for (int col : {3,6}) if (auto n = cell(furniture,r,col); !n.empty()) result.gun_models.insert(n);
             auto add = [&](game::XModel* model) { if (model && model->name) result.models.insert(model->name); };
+            if (!models.base_world && def->worldModel) for (unsigned i=0;i<2;++i) add(def->worldModel[i]);
             if (def->reticleViewModels) for (unsigned i=0;i<64;++i) add(def->reticleViewModels[i]);
             const auto base = utils::hook::invoke<unsigned>(0x2E2290_b, c.weapon.c_str(), nullptr);
             char name[1024]{}; game::BG_GetWeaponNameComplete(base, false, name, sizeof(name));
@@ -150,6 +153,7 @@ namespace theater_weapons
             if (count < 0 || count > 4) throw std::runtime_error("Invalid native weapon attachments");
             for (int i=0;i<count;++i) if (auto* part=parts[i]) {
                 if (!models.attachment_view && part->viewModels) for (int j=0;j<2;++j) add(part->viewModels[j]);
+                if (!models.attachment_world && part->worldModels) for (int j=0;j<2;++j) add(part->worldModels[j]);
                 if (part->reticleViewModels) for (int j=0;j<64;++j) add(part->reticleViewModels[j]);
             }
             auto budget = held; budget.insert(result.models.begin(),result.models.end());
@@ -168,9 +172,20 @@ namespace theater_weapons
                 result->models.push_back(game::DB_FindXAssetHeader(game::ASSET_TYPE_XMODEL,model.c_str(),false).model);
             rendered.store(std::move(result));
         }
+        void publish_world()
+        {
+            std::map<unsigned, unsigned> replacements;
+            for (const auto& [source, edit] : loaded)
+                if (const auto selected = swaps.find(source); selected != swaps.end() && selected->second == edit.id)
+                    replacements.emplace(edit.original, edit.target);
+            const auto previous = world_rendered.load();
+            if (!previous || *previous != replacements)
+                world_rendered.store(std::make_shared<const std::map<unsigned, unsigned>>(std::move(replacements)));
+        }
         std::filesystem::path save_path() { return std::filesystem::path(path + ".weapons.json"); }
         void dump(const std::string& label)
         {
+            theater_models::dump_state("weapon-" + label);
             auto data=snapshot; data["supported"]=supported; data["heldModels"]=held;
             if (const auto edit=rendered.load()) { data["original"]=edit->original; data["target"]=edit->target; }
             data["viewModels"]=nlohmann::json::array();
@@ -189,7 +204,15 @@ namespace theater_weapons
     { const auto e=rendered.load(); return e && active() && (e->original & 255) != (e->target & 255); }
     std::vector<game::XModel*> view_models(unsigned original)
     { const auto e=rendered.load(); return e && e->original == original ? e->models : std::vector<game::XModel*>{}; }
-    void reset() { swaps.clear(); loaded.clear(); pending.reset(); rendered.store(nullptr); message="Recorded weapons restored"; }
+    world_weapon_state world_weapons(const std::uint8_t* entity)
+    {
+        const auto edits = active() ? world_rendered.load() : nullptr;
+        return world_weapons_for(entity, [&](unsigned recorded) {
+            if (edits) if (const auto found = edits->find(recorded); found != edits->end()) return found->second;
+            return recorded;
+        });
+    }
+    void reset() { swaps.clear(); loaded.clear(); pending.reset(); rendered.store(nullptr); world_rendered.store(nullptr); message="Recorded weapons restored"; }
     bool action(const std::string& name, const std::string& argument)
     {
         if (!name.starts_with("weapon_swap_")) return false;
@@ -198,6 +221,7 @@ namespace theater_weapons
         if (name=="weapon_swap_reset") { reset(); return true; }
         if (name=="weapon_swap_restore") {
             swaps.erase(source_name); loaded.erase(source_name); pending.reset(); rendered.store(nullptr);
+            publish_world();
             message="Recorded weapon restored"; return true;
         }
         if (pending) throw std::runtime_error("Wait for the current weapon models to finish loading");
@@ -228,6 +252,7 @@ namespace theater_weapons
                     !compatible(def->weapClass,find_choice(id).category)) throw std::runtime_error("Saved weapon is incompatible");
             }
             swaps=std::move(replacement); loaded.clear(); rendered.store(nullptr);
+            world_rendered.store(nullptr);
             message="Loaded saved swaps; models load when their recorded weapon appears"; return true;
         }
         return false;
@@ -235,14 +260,14 @@ namespace theater_weapons
     void update()
     {
         if (!active()) {
-            rendered.store(nullptr); pending.reset(); loaded.clear(); source_name.clear(); source_category=-1;
+            rendered.store(nullptr); world_rendered.store(nullptr); pending.reset(); loaded.clear(); source_name.clear(); source_category=-1;
             // Requests survive Restore while native DObjs still reference them, then release on exit.
             for (const auto& model:held) utils::hook::invoke<void>(0x76850_b,model.c_str()); held.clear();
             snapshot=nlohmann::json::object(); return;
         }
         const auto current=demo_playback::current_path().string();
         if (path!=current || session!=demo_playback::session_id()) {
-            rendered.store(nullptr); loaded.clear(); pending.reset();
+            rendered.store(nullptr); world_rendered.store(nullptr); loaded.clear(); pending.reset();
             if (path!=current) { swaps.clear(); message.clear(); }
             path=current; session=demo_playback::session_id();
         }
@@ -256,7 +281,7 @@ namespace theater_weapons
         if (pending) {
             if (std::all_of(pending->models.begin(),pending->models.end(),ready)) {
                 swaps[pending->source]=pending->id; loaded[pending->source]=*pending;
-                message="Weapon applied to first-person playback"; pending.reset();
+                message="Weapon applied to first-person and world models"; pending.reset();
             } else if (std::chrono::steady_clock::now()-pending->start>std::chrono::seconds(30)) {
                 message="Weapon models did not load; previous selection retained"; pending.reset();
             }
@@ -271,6 +296,7 @@ namespace theater_weapons
             try { pending=prepare(source_name,source_weapon,find_choice(edit->second)); }
             catch (const std::exception& error) { message=error.what(); swaps.erase(edit); }
         }
+        publish_world();
         snapshot={{"weaponSwapSource",source_name},{"weaponSwapLabel",source_label},{"weaponSwapCategory",source_category},
             {"weaponSwapApplied",swaps.contains(source_name)?swaps.at(source_name):""},{"weaponSwapLoading",pending.has_value()},
             {"weaponSwapMessage",message},{"weaponSwapCount",swaps.size()},{"weaponSwapCatalogCount",catalog.size()}};
@@ -311,18 +337,22 @@ namespace theater_weapons
             });
             // Explicit development run on a disposable copied demo. No automatic
             // changes or sidecar writes during ordinary playback.
-            if (utils::flags::has_flag("weaponswapcheck")) scheduler::schedule([] {
+            if (utils::flags::has_flag("weaponswapcheck") || utils::flags::has_flag("weaponworldcheck")) scheduler::schedule([] {
                 static int stage{}; static auto due=std::chrono::steady_clock::now()+std::chrono::seconds(12);
                 static int origin{};
+                const std::string fixture=utils::flags::has_flag("weaponworldcheck") ?
+                    "theater_weapon_world_check.dm_h1" : "theater_weapon_check.dm_h1";
                 if (std::chrono::steady_clock::now()<due) return scheduler::cond_continue;
                 if (stage==0) {
                     if (!game::VirtualLobby_Loaded()) return scheduler::cond_continue;
-                    command::execute("demoplay theater_weapon_check.dm_h1",false); ++stage;
+                    command::execute(std::format("demoplay \"demos/{}\" fullpath",fixture),false); ++stage;
                     due=std::chrono::steady_clock::now()+std::chrono::seconds(8); return scheduler::cond_continue;
                 }
                 if (!active() || demo_playback::seeking()) return scheduler::cond_continue;
                 const auto next=[&] { ++stage; due=std::chrono::steady_clock::now()+std::chrono::seconds(5); };
                 try {
+                    if (demo_playback::current_path().filename().string()!=fixture)
+                        throw std::runtime_error("Weapon check requires its disposable fixture");
                     update();
                     if (pending) return scheduler::cond_continue;
                     switch(stage) {

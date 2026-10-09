@@ -29,6 +29,8 @@ namespace theater_models
             std::uint8_t* info{};
             composition original, applied;
             bool has_applied{};
+            theater_weapons::world_weapon_state world_weapons{};
+            bool has_world_weapons{};
             unsigned rebuilds{};
             int attachment_mask{};
             void* bgs{};
@@ -236,17 +238,38 @@ namespace theater_models
                 }
             }
         }
+        std::optional<std::array<std::uint8_t, 256>> weapon_entity(int client, const std::uint8_t* entity, std::uint8_t* ci)
+        {
+            if (!active() || client != 0 || !entity || !ci || (entity[10] != 1 && entity[10] != 18)) return {};
+            const auto desired = theater_weapons::world_weapons(entity);
+            const auto recorded = theater_weapons::world_weapons_for(entity, [](unsigned weapon) { return weapon; });
+            if (const auto found = actors.find(*reinterpret_cast<int*>(ci)); found != actors.end() && found->second.info == ci)
+            {
+                auto& actor = found->second;
+                // Include Restore as well as Apply. Paused demos do not get a
+                // fresh snapshot to invalidate the cached native composition.
+                if (actor.has_world_weapons ? actor.world_weapons != desired : desired != recorded)
+                    *reinterpret_cast<unsigned*>(ci + 1160) = 1;
+                actor.world_weapons = desired;
+                actor.has_world_weapons = true;
+            }
+            // Pass a render-only copy through the original builder. Recorded
+            // entity state, events, ammo and the demo file remain untouched.
+            return desired != recorded ? std::optional(theater_weapons::world_entity(entity, desired)) : std::nullopt;
+        }
         int rebuild_player(int client, void* obj, const std::uint8_t* entity, std::uint8_t* ci)
         { if (active() && ci && actors.contains(*reinterpret_cast<int*>(ci)))
               if (const auto context = bgs_slot(); context && *context) actors.at(*reinterpret_cast<int*>(ci)).bgs = *context;
-          apply_character(client, entity, ci); const auto result = player_dobj_hook.invoke<int>(client, obj, entity, ci);
+          apply_character(client, entity, ci); const auto weapon = weapon_entity(client, entity, ci);
+          const auto result = player_dobj_hook.invoke<int>(client, obj, weapon ? weapon->data() : entity, ci);
           if (result && active() && ci && actors.contains(*reinterpret_cast<int*>(ci))) ++actors.at(*reinterpret_cast<int*>(ci)).rebuilds;
           return result; }
         int rebuild_agent(int client, void* obj, const std::uint8_t* entity, std::uint8_t* ci, int attachment_mask)
         { if (active() && ci && actors.contains(*reinterpret_cast<int*>(ci))) actors.at(*reinterpret_cast<int*>(ci)).attachment_mask = attachment_mask;
           if (active() && ci && actors.contains(*reinterpret_cast<int*>(ci)))
               if (const auto context = bgs_slot(); context && *context) actors.at(*reinterpret_cast<int*>(ci)).bgs = *context;
-          apply_character(client, entity, ci); const auto result = agent_dobj_hook.invoke<int>(client, obj, entity, ci, attachment_mask);
+          apply_character(client, entity, ci); const auto weapon = weapon_entity(client, entity, ci);
+          const auto result = agent_dobj_hook.invoke<int>(client, obj, weapon ? weapon->data() : entity, ci, attachment_mask);
           if (result && active() && ci && actors.contains(*reinterpret_cast<int*>(ci))) ++actors.at(*reinterpret_cast<int*>(ci)).rebuilds;
           return result; }
         void acquire(const std::string& model)
@@ -390,10 +413,13 @@ namespace theater_models
             const bool loaded = edit != swaps.end() && (edit->second.head.empty() || ready(edit->second.head)) &&
                 (edit->second.body.empty() || ready(edit->second.body));
             const auto desired = !loaded ? std::optional(a.original) : replace(a.original, edit->second.head, edit->second.body);
-            if (!desired || !a.has_applied || a.applied == *desired || !a.bgs) continue;
+            if (!a.bgs) continue;
             auto* entity = utils::hook::invoke<std::uint8_t*>(0x6BFF0_b, 0, static_cast<short>(slot));
             auto* obj = utils::hook::invoke<void*>(0x4E98E0_b, slot, 0);
             if (!entity || !obj || !(*reinterpret_cast<unsigned*>(entity + 0x23C) & 1)) continue;
+            const bool character_changed = desired && a.has_applied && a.applied != *desired;
+            const bool weapon_changed = a.has_world_weapons && a.world_weapons != theater_weapons::world_weapons(entity + 0x13C);
+            if (!character_changed && !weapon_changed) continue;
             auto** context = bgs_slot(); if (!context) continue;
             const auto saved = *context;
             *context = a.bgs;
@@ -442,7 +468,11 @@ namespace theater_models
                 for (unsigned i = 0; i < count && i < 32; ++i)
                     if (const auto* model = utils::hook::invoke<game::XModel*>(0x5C7730_b, obj, i)) models.push_back(model->name);
             }
-            data["nativeDObjs"].push_back({{"slot", slot}, {"key", a.key}, {"models", models}, {"rebuilds", a.rebuilds}, {"tags", read(a.info).tags}});
+            data["nativeDObjs"].push_back({{"slot", slot}, {"key", a.key}, {"models", models}, {"rebuilds", a.rebuilds},
+                {"worldWeapons", a.world_weapons}, {"tags", read(a.info).tags}});
+            if (const auto* entity = utils::hook::invoke<std::uint8_t*>(0x6BFF0_b, 0, static_cast<short>(slot)))
+                data["nativeDObjs"].back()["recordedWorldWeapons"] = theater_weapons::world_weapons_for(
+                    entity + 0x13C, [](unsigned weapon) { return weapon; });
         }
         data["supported"] = supported; data["demo"] = path;
         // Read-only diagnostic of native MT's 16-byte block bitmap. Ordinary

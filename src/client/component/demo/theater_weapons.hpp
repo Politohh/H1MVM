@@ -1,4 +1,5 @@
 #pragma once
+#include "theater_weapons_policy.hpp"
 #include <json.hpp>
 #include <set>
 #include <string>
@@ -14,4 +15,5 @@ namespace theater_weapons
     std::set<std::string> held_models();
     bool different_weapon();
     std::vector<database::XModel*> view_models(unsigned original);
+    world_weapon_state world_weapons(const std::uint8_t* entity);
 }
