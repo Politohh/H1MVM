@@ -3,6 +3,7 @@
 
 #include "theater_camera.hpp"
 #include "theater_scene.hpp"
+#include "demo_input.hpp"
 #include "cod4_camera.hpp"
 #include "cod4_snipers.hpp"
 #include "demo_game.hpp"     // game::refdef, game::CG_CalcViewValues, game::AxisToAngles, demo_compat::register_enum
@@ -58,8 +59,7 @@ namespace theater_camera
 		// in_mouse_move_stub); consumed each frame by update_freecam. This gives smooth,
 		// real mouse movement -- the old GetCursorPos/recenter approach fought the game's
 		// own recentering and jittered.
-		int g_mouse_dx = 0;
-		int g_mouse_dy = 0;
+		demo_input::mouse_delta mouse_motion;
 
 		// set by the F9 overlay while it's open: freezes ALL freecam input (mouse + keys)
 		// so the mouse only drives the UI cursor and the camera holds still for a clean
@@ -232,8 +232,7 @@ namespace theater_camera
 				const int last_y = *reinterpret_cast<int*>(game::base_address + 0xC9DC3F8);
 				if (last_x != -100000) // the game's recenter sentinel -> skip the teleport jump
 				{
-					g_mouse_dx += x - last_x;
-					g_mouse_dy += y - last_y;
+					mouse_motion.add(x - last_x, y - last_y);
 				}
 			}
 
@@ -250,17 +249,15 @@ namespace theater_camera
 
 			if (!input_available())
 			{
-				g_mouse_dx = 0; // drop any delta captured while input was unavailable
-				g_mouse_dy = 0;
+				mouse_motion.clear(); // drop motion captured while input was unavailable
 				return;
 			}
 
 			// ---- look: real game mouse delta (tapped in in_mouse_move_stub) ----
 			const float sens = demo_camera_sens ? demo_camera_sens->current.value : 0.06f;
-			freecam_angles[1] -= g_mouse_dx * sens;                                            // yaw
-			freecam_angles[0] = std::clamp(freecam_angles[0] + g_mouse_dy * sens, -89.0f, 89.0f); // pitch
-			g_mouse_dx = 0;
-			g_mouse_dy = 0;
+			const auto delta = mouse_motion.take();
+			freecam_angles[1] -= static_cast<float>(delta[0]) * sens;                                            // yaw
+			freecam_angles[0] = std::clamp(freecam_angles[0] + static_cast<float>(delta[1]) * sens, -89.0f, 89.0f); // pitch
 
 			// Arrow keys belong to replay seek/speed shortcuts in every camera
 			// mode; polling them here would also rotate the camera during a seek.
@@ -555,8 +552,7 @@ namespace theater_camera
 				}
 				freecam_seeded = true;
 				last_update_ms = 0;
-				g_mouse_dx = 0;
-				g_mouse_dy = 0;
+				mouse_motion.clear();
 			}
 
 			// third/freecam/dolly all want the player body visible; first-person doesn't.
@@ -677,7 +673,7 @@ namespace theater_camera
 			{
 				const auto* frozen = game::Dvar_FindVar("demo_camera_frozen");
 				if (!frozen || !frozen->current.enabled) update_freecam();
-				else { last_update_ms = 0; g_mouse_dx = g_mouse_dy = 0; }
+				else { last_update_ms = 0; mouse_motion.clear(); }
 
 				// middle-mouse drops a marker while flying (edge-detected) -- no need to
 				// open the F9 panel mid-flight.
@@ -799,6 +795,9 @@ namespace theater_camera
 			hud_session = demo_playback::session_id();
 		}
 		hud_hidden = !hud_hidden;
+		if (!hud_hidden) for (const auto* name : hud_dvar_names)
+			if (auto* d = game::Dvar_FindVar(name); d && !d->current.enabled)
+				game::Dvar_SetFromStringFromSource(d, "1", game::DVAR_SOURCE_INTERNAL);
 		// timeline.lua applies this to mp_hud; F4 owns timeline visibility.
 	}
 
@@ -810,7 +809,7 @@ namespace theater_camera
 		for (int i = 0; i < 3; ++i) { freecam_pos[i] = pose.pos[i]; freecam_angles[i] = pose.angles[i]; }
 		freecam_fov = std::clamp(pose.fov, 1.f, 179.f);
 		freecam_seeded = true;
-		g_mouse_dx = g_mouse_dy = 0;
+		mouse_motion.clear();
 	}
 
 	// overwrite a keyframe's pose (position/rotation/fov), keeping its time

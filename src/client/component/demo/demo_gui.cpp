@@ -8,6 +8,8 @@
 #include "demo_avidemo.hpp"
 #include "cod4_camera.hpp"
 #include "theater_ui.hpp"
+#include "demo_input.hpp"
+#include "game/dvars.hpp"
 
 #include "component/command.hpp"
 #include "component/console.hpp"
@@ -952,8 +954,32 @@ namespace demo_gui
 		}
 
 		utils::hook::detour wnd_proc_hook;
+		game::dvar_t* high_polling_mouse{};
+		std::atomic_uint64_t mouse_messages{}, merged_mouse_messages{};
 		LRESULT wnd_proc_stub(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
+			// Legacy H1 uses absolute WM_MOUSEMOVE positions. Keep the last queued
+			// position, stopping before buttons, wheel, keys, other windows or modifier
+			// changes. Never delay a lone motion event or rescale its displacement.
+			static thread_local bool draining_mouse{};
+			if (msg == WM_MOUSEMOVE && !draining_mouse && high_polling_mouse && high_polling_mouse->current.enabled)
+			{
+				draining_mouse = true;
+				const auto reset = gsl::finally([] { draining_mouse = false; });
+				MSG motion{}; motion.hwnd = hWnd; motion.message = msg; motion.wParam = wParam; motion.lParam = lParam;
+				const auto merged = demo_input::coalesce_motion(motion,
+					[](MSG& next) { return PeekMessageW(&next, nullptr, 0, 0, PM_NOREMOVE | PM_NOYIELD) != 0; },
+					[hWnd](MSG& next) {
+						// PeekMessage can dispatch sent messages between the peek and
+						// remove. Never remove a button/key if that reentrancy changed
+						// the queue. WM_QUIT ignores filters; put it back for the pump.
+						if (!PeekMessageW(&next, hWnd, WM_MOUSEMOVE, WM_MOUSEMOVE, PM_REMOVE | PM_NOYIELD)) return false;
+						if (next.message == WM_QUIT) { PostQuitMessage(static_cast<int>(next.wParam)); return false; }
+						return true;
+					});
+				mouse_messages.fetch_add(1 + merged); merged_mouse_messages.fetch_add(merged);
+				wParam = motion.wParam; lParam = motion.lParam;
+			}
 			// Windows treats F10 as a system/menu key; it may never reach CL_KeyEvent.
 			if (wParam == VK_F10 && (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN || msg == WM_KEYUP || msg == WM_SYSKEYUP))
 			{
@@ -1017,6 +1043,12 @@ namespace demo_gui
 			utils::hook::call(0x6CB170_b, on_frame);
 
 			wnd_proc_hook.create(0x5BFF60_b, wnd_proc_stub);
+			high_polling_mouse = dvars::register_bool("in_mouseHighPolling", true, game::DVAR_FLAG_SAVED,
+				"Combine queued mouse motion for high polling-rate mice without dropping button or wheel input");
+			command::add("mouseinputstatus", [] {
+				console::info("Mouse compatibility=%d motion=%llu combined=%llu (device polling rate unchanged)\n",
+					high_polling_mouse->current.enabled, mouse_messages.load(), merged_mouse_messages.load());
+			});
 		}
 
 		void pre_destroy() override

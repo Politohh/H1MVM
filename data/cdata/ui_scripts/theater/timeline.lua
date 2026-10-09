@@ -313,8 +313,11 @@ local function updateTheater(root)
     -- weapon/grenade frames, popups and crosshair) at its mp_hud parent only.
     -- Theater is attached to the LUI root as a sibling, never below this parent.
     local hideHud = latest.playing and latest.hudHidden == true
-    if gameHud and (hideHud or hudSuppressed) then setAlpha(gameHud, hideHud and 0 or 1) end
+    if gameHud and (latest.playing or hudSuppressed) then setAlpha(gameHud, hideHud and 0 or 1) end
     hudSuppressed = hideHud
+    if latest.playing and gameHud and gameHud.weaponInfo and gameHud.weaponInfo.widget then
+        gameHud.weaponInfo.widget:processEvent({name="h1_theater_weapon_update",label=latest.weaponLabel})
+    end
     -- Native experienceBar_root includes both rank emblems and the XP track.
     -- Hide the widget itself, beneath the stock HUD visibility wrapper, so
     -- normal hud_on/round/player-state events cannot bring it back during replay.

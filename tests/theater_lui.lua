@@ -406,6 +406,8 @@ assert(root.menu and passive.style.alpha == 0)
 assert(hud.style.alpha == 0 and root.menu.panel.style.alpha == 1, "HUD toggle must leave interactive theater controls visible")
 data.hudHidden = false; tick()
 assert(hud.style.alpha == 1 and hud.experienceBar.widget.style.alpha == 0)
+hud:registerAnimationState("native_late_hide",{alpha=0});hud:animateToState("native_late_hide",0)
+tick();assert(hud.style.alpha==1,"visible replay HUD recovers from a late native alpha animation")
 for _, widget in ipairs(hudWidgets) do assert(effectiveAlpha(widget) == 1, "F1 must restore native HUD") end
 
 assert(game.keyboard, "Space must remain available in native theater controls")
@@ -988,7 +990,36 @@ menus.teamScoresHudDef=function()
     end
     return widget
 end
+local actualGamepad=false
+Engine.IsGamepadEnabled=function() return actualGamepad end
+local nativeGamepad=Engine.IsGamepadEnabled
+menus.actionSlotHudDef=function()
+    local widget=Element.new();widget.m_eventHandlers=widget.handlers
+    widget.gamePad=Engine.IsGamepadEnabled()
+    widget:registerEventHandler("button_config_updated",function(self) self.gamePad=Engine.IsGamepadEnabled() end)
+    return widget
+end
+Game.GetPlayerWeaponDisplayName=function() return "R700" end
+local stockWeaponName=Game.GetPlayerWeaponDisplayName
+menus.weaponInfoHudDef=function()
+    local widget=Element.new()
+    widget:registerEventHandler("weapon_change",function(self) self:setText(Game.GetPlayerWeaponDisplayName()) end)
+    return widget
+end
 dofile("data/cdata/ui_scripts/theater/match_hud.lua")
+local actionSlots=menus.actionSlotHudDef()
+assert(actionSlots.gamePad and not actualGamepad and Engine.IsGamepadEnabled==nativeGamepad)
+for _,enabled in ipairs({true,false,true,false}) do
+    actualGamepad=enabled;actionSlots:processEvent({name="button_config_updated"})
+    assert(actionSlots.gamePad and Engine.IsGamepadEnabled==nativeGamepad)
+end
+local weaponHud=menus.weaponInfoHudDef()
+for _,label in ipairs({"Desert Eagle","R700","S-Tac Aggressor","Desert Eagle"}) do
+    weaponHud:processEvent({name="h1_theater_weapon_update",label=label})
+    assert(weaponHud.text==label and Game.GetPlayerWeaponDisplayName==stockWeaponName)
+end
+weaponHud:processEvent({name="h1_theater_weapon_update",label={}})
+assert(weaponHud.text=="Desert Eagle","absent bridge label must retain native text")
 assert(Game.GetTeamScore(1)==3 and Game.GetTeamScore(2)==14)
 -- Fresh HUD construction queries free/spectator teams and may precede the
 -- recorded scores. An unavailable bridge result must not reach native < / >.

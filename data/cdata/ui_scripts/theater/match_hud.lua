@@ -1,6 +1,42 @@
 -- Keep native MWR HUD art while supplying the scores recorded by COD4.
 if Engine.InFrontend() or not game.getcod4teamscore then return end
 local function converted() return Engine.GetDvarBool("demo_cod4PlaybackHud") end
+-- Select only this widget's gamepad artwork. The actual device/input setting
+-- remains unchanged, including while native button configuration events run.
+local function controllerLayout(callback,...)
+    local native=Engine.IsGamepadEnabled
+    Engine.IsGamepadEnabled=function() return true end
+    local ok,result=pcall(callback,...)
+    Engine.IsGamepadEnabled=native
+    if not ok then error(result) end
+    return result
+end
+LUI.overrideMenuBuilder("actionSlotHudDef",function(native,...)
+    local widget=controllerLayout(native,...)
+    local handler=widget and widget.m_eventHandlers and widget.m_eventHandlers.button_config_updated
+    if handler then
+        widget:registerEventHandler("button_config_updated",function(...)
+            return controllerLayout(handler,...)
+        end)
+    end
+    return widget
+end)
+-- Converted snapshots and seeks can omit native weapon_change notifications.
+-- Refresh on Theater's wall clock (also while paused), using the same weapon
+-- selector as the visible POV gun, including applied Weapon Swapper choices.
+LUI.overrideMenuBuilder("weaponInfoHudDef",function(native,...)
+    local widget=native(...)
+    if not widget then return widget end
+    widget:registerEventHandler("h1_theater_weapon_update",function(element,event)
+        if type(event.label)~="string" or event.label=="" then return end
+        local getName=Game.GetPlayerWeaponDisplayName
+        Game.GetPlayerWeaponDisplayName=function() return Engine.Localize(event.label) end
+        local ok,result=pcall(element.processEvent,element,{name="weapon_change"})
+        Game.GetPlayerWeaponDisplayName=getName
+        if not ok then error(result) end
+    end)
+    return widget
+end)
 local nativeScore=Game.GetTeamScore
 Game.GetTeamScore=function(team,...)
     if converted() then

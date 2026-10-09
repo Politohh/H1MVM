@@ -1,5 +1,7 @@
 #pragma once
 #include <array>
+#include <atomic>
+#include <cstdint>
 
 namespace demo_input
 {
@@ -9,6 +11,40 @@ namespace demo_input
     constexpr bool pause_allowed(int catchers, bool theater_keyboard, bool editor_open)
     {
         return !editor_open && (catchers == 0 || (catchers == 0x40 && theater_keyboard));
+    }
+
+    // F1 is a visibility control, not a text/navigation shortcut. Native menu
+    // ownership must not strand a hidden HUD after options or input changes.
+    constexpr bool hud_toggle_allowed(int catchers, bool overlay_open)
+    {
+        return !overlay_open && (catchers & ~0x40) == 0;
+    }
+
+    class mouse_delta
+    {
+    public:
+        void add(int x, int y) { x_.fetch_add(x); y_.fetch_add(y); }
+        std::array<std::int64_t, 2> take() { return {x_.exchange(0), y_.exchange(0)}; }
+        void clear() { (void)take(); }
+    private:
+        std::atomic<std::int64_t> x_{}, y_{};
+    };
+
+    // Only consecutive motion with identical button/modifier state may merge.
+    // Bound work per dispatch even if a device continuously feeds the queue.
+    template<class Message, class Peek, class Pop>
+    unsigned coalesce_motion(Message& current, Peek peek, Pop pop)
+    {
+        unsigned merged{};
+        Message next{};
+        while (merged < 64 && peek(next) && next.message == current.message &&
+            next.hwnd == current.hwnd && next.wParam == current.wParam)
+        {
+            if (!pop(next)) break;
+            current = next;
+            ++merged;
+        }
+        return merged;
     }
 
     class shortcut_key

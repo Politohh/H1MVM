@@ -8,6 +8,7 @@
 #include "demo_avidemo.hpp"
 #include "theater_camera.hpp"
 #include "theater_editor.hpp"
+#include "theater_weapons.hpp"
 #include "component/scheduler.hpp"
 #include "component/command.hpp"
 #include "component/console.hpp"
@@ -107,6 +108,7 @@ namespace theater_ui
             }
             data["keyRevision"] = key_revision;
             theater_editor::update();
+            data["weaponLabel"] = theater_weapons::hud_weapon_label();
             std::lock_guard lock(mutex);
             snapshot = std::move(data);
         }
@@ -141,8 +143,10 @@ namespace theater_ui
         {
             if (key != bindings[i].key) continue;
             // Arrow keys belong to the native editor's category navigation.
-            const bool allowed = ready && (!editor_open() || key == game::K_F1 || key == game::K_F3 || key == game::K_F4) && demo_playback::playing() && demo_playback::is_replay_armed() &&
-                demo_input::pause_allowed(*game::keyCatchers, keyboard_available(), demo_gui::is_open());
+            const bool allowed = demo_playback::playing() && demo_playback::is_replay_armed() &&
+                (key == game::K_F1 ? demo_input::hud_toggle_allowed(*game::keyCatchers, demo_gui::is_open()) :
+                    ready && (!editor_open() || key == game::K_F3 || key == game::K_F4) &&
+                    demo_input::pause_allowed(*game::keyCatchers, keyboard_available(), demo_gui::is_open()));
             const auto result = keys[i].event(down != 0, allowed);
             if (result == demo_input::shortcut_key::result::toggle)
             {

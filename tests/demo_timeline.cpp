@@ -3,6 +3,8 @@
 #include <cassert>
 #include <iostream>
 #include <limits>
+#include <thread>
+#include <deque>
 
 static std::vector<std::uint8_t> footer(std::string extension = {})
 {
@@ -17,6 +19,47 @@ int main()
 {
     using key_result = demo_input::shortcut_key::result;
     demo_input::shortcut_key space;
+    assert(demo_input::hud_toggle_allowed(0, false));
+    assert(demo_input::hud_toggle_allowed(0x40, false)); // F1 survives native options/menu ownership.
+    for (int catcher : {1, 8, 0x10, 0x41, 0x48}) assert(!demo_input::hud_toggle_allowed(catcher, false));
+    assert(!demo_input::hud_toggle_allowed(0, true));
+    // Consume concurrently with a high-rate producer: every count must arrive
+    // once, even when a render-frame exchange races an input packet.
+    demo_input::mouse_delta motion;
+    std::atomic_bool produced{};
+    std::thread producer([&] { for (int i=0;i<80000;++i) motion.add(3,-2); produced=true; });
+    std::int64_t dx{},dy{};
+    while (!produced.load()) { const auto d=motion.take(); dx+=d[0];dy+=d[1]; }
+    producer.join(); const auto tail=motion.take();dx+=tail[0];dy+=tail[1];
+    assert(dx==240000 && dy==-160000);
+    motion.add(10,20); motion.clear(); assert((motion.take()==std::array<std::int64_t,2>{0,0}));
+    struct message { int hwnd,message,wParam,x; };
+    for (const int rate : {1000,8000})
+    {
+        std::deque<message> queue;
+        for (int i=1;i<=rate;++i) queue.push_back({1,0x200,0,i});
+        queue.push_back({1,0x201,1,rate}); // Click must remain after all preceding motion.
+        queue.push_back({1,0x200,1,rate+1});
+        queue.push_back({1,0x20a,0,rate+1}); // Wheel is never coalesced.
+        unsigned dispatched{}; int last{};
+        while (queue.front().message==0x200)
+        {
+            auto current=queue.front();queue.pop_front();
+            const auto merged=demo_input::coalesce_motion(current,
+                [&](message& m) { if(queue.empty()) return false; m=queue.front();return true; },
+                [&](message& m) { if(queue.empty()) return false;m=queue.front();queue.pop_front();return true; });
+            assert(merged<=64);last=current.x;++dispatched;
+        }
+        assert(last==rate && dispatched==static_cast<unsigned>((rate+64)/65));
+        assert(queue.front().message==0x201 && queue.size()==3);
+    }
+    for (const message barrier : {message{2,0x200,0,2},message{1,0x200,1,2},message{1,0x100,0,2}})
+    {
+        message current{1,0x200,0,1}; bool popped{};
+        assert(demo_input::coalesce_motion(current,[&](message& m){m=barrier;return true;},
+            [&](message&){popped=true;return true;})==0);
+        assert(!popped && current.x==1);
+    }
     assert(demo_input::pause_allowed(0, false, false));
     assert(demo_input::pause_allowed(0x40, true, false)); // actual native MWR menu
     assert(!demo_input::pause_allowed(0x40, false, false)); // unrelated native menu

@@ -202,6 +202,16 @@ namespace theater_weapons
     std::set<std::string> held_models() { return held; }
     bool different_weapon()
     { const auto e=rendered.load(); return e && active() && (e->original & 255) != (e->target & 255); }
+    std::string hud_weapon_label()
+    {
+        if (!active()) return {};
+        const auto* ps = game::CG_GetLocalClientGlobals();
+        const auto weapon = ps ? view_weapon(ps) : 0;
+        char name[1024]{};
+        if (weapon & 255) game::BG_GetWeaponNameComplete(weapon, false, name, sizeof(name));
+        const auto* def = definition(split_name(name).weapon);
+        return def && def->szDisplayName ? def->szDisplayName : "";
+    }
     std::vector<game::XModel*> view_models(unsigned original)
     { const auto e=rendered.load(); return e && e->original == original ? e->models : std::vector<game::XModel*>{}; }
     world_weapon_state world_weapons(const std::uint8_t* entity)
