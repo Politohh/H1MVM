@@ -4,6 +4,7 @@ namespace theater_editor
 {
     // Engine access stays on the main pipeline; Lua receives an immutable copy.
     void update();
+    bool dof_available();
     nlohmann::json state(int revision);
     int set(const std::string& name, double value);
     int set_color(const std::string& name, double red, double green, double blue);

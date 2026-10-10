@@ -631,6 +631,12 @@ for _, label in ipairs({"MISC", "BONE CAMERA", "SSAO", "FOG", "DOF", "SUN", "LIG
     find(root.menu, "native_" .. label):processEvent({name = "button_action"}); tick()
     checkEditorLayout()
 end
+editorData.dofMessage = "DOF unavailable. Enable Depth of Field in Graphics options, then apply the video settings."
+find(root.menu, "native_DOF"):processEvent({name="button_action"}); tick()
+assert(root.menu.feedback.text == editorData.dofMessage, "DOF resource guidance must stay visible on the DOF page")
+editorData.dofMessage = ""; tick()
+assert(root.menu.feedback.text ~= "DOF unavailable. Enable Depth of Field in Graphics options, then apply the video settings.",
+    "guidance must clear when the renderer has DOF resources")
 find(root.menu, "native_WEAPON"):processEvent({name = "button_action"}); tick()
 click("setting_cg_drawGun"); assert(editorData.values.cg_drawGun == 0)
 find(root.menu, "native_MAIN"):processEvent({name = "button_action"}); tick()
@@ -638,6 +644,27 @@ assert(find(root.menu, "theater_editor_status").text == "PAUSED   1x")
 assert(click("editor_save_preset")[2] == "save_preset")
 assert(click("editor_load_preset")[2] == "load_preset")
 assert(click("editor_reset_all")[2] == "reset_all")
+-- Default DOF exposes only the six cinematic controls, with values and help.
+local dofNames = {"r_dof_enable", "demo_dof_mouse", "demo_dof_speed", "r_dof_physical_focusDistance", "r_dof_physical_fstop", "r_dof_physical_bokehEnable"}
+for index, name in ipairs(dofNames) do
+    editorData.controls[#editorData.controls+1] = {page="dof",name=name,label=name,kind=index>=3 and index<=5 and "float" or "bool",min=0,max=1,step=.01}
+    editorData.values[name] = .2
+end
+editorData.revision=editorData.revision+1; tick()
+find(root.menu,"native_DOF"):processEvent({name="button_action"}); tick()
+assert(#root.menu.controls==6 and not root.menu.dofAdvanced)
+assert(find(root.menu,"dof_value_demo_dof_speed").text=="VALUE  0.2")
+assert(find(root.menu,"dof_hint_demo_dof_speed").text:find("Higher = faster",1,true))
+editorData.values.demo_dof_speed=.8; tick()
+assert(find(root.menu,"dof_value_demo_dof_speed").text=="VALUE  0.8")
+local advancedTab=find(root.menu,"dof_advanced")
+advancedTab:processEvent({name="button_action"})
+assert(not advancedTab.closed and root.menu.pendingCategory, "DOF navigation must defer destruction until input finishes")
+tick(); assert(advancedTab.closed and root.menu.dofAdvanced and #root.menu.controls==0)
+find(root.menu,"dof_basic"):processEvent({name="button_action"}); tick()
+assert(#root.menu.controls==6)
+assert(click("editor_reset")[3]=="dof", "Basic resets the complete DOF tab")
+checkEditorLayout()
 -- Real pages can be much larger than the native viewport. Every item must
 -- remain reachable and action buttons must not overlap the settings columns.
 for _, page in ipairs({"fog", "lights", "dof"}) do
@@ -650,6 +677,7 @@ end
 editorData.revision = editorData.revision+1; tick()
 for _, page in ipairs({"fog", "lights", "dof"}) do
     find(root.menu, "native_" .. string.upper(page)):processEvent({name="button_action"}); tick()
+    if page=="dof" then find(root.menu,"dof_advanced"):processEvent({name="button_action"}); tick() end
     local seen, pages = {}, page=="dof" and 3 or 5
     for _=1,pages do
         checkEditorLayout()
@@ -871,6 +899,15 @@ local libraryClock=1000
 local libraryPlaying=false
 local libraryBusy=false
 local librarySplitCalls={}
+local splitEvents={{time=3000,kind="round_start",label="Round start"},{time=12550,kind="kill",label="Alice > Bob",
+    attacker="Alice",victim="Bob",weapon="remington700_mp",icon="test_r700_icon",iconRatio=4},
+    {time=33000,kind="round_end",label="Round end"}}
+local eventReady=true
+function game:gettheaterevents() return {ready=eventReady,events=splitEvents,message="Recorded events"} end
+function game:theaterbookmark(id,time)
+    for i,e in ipairs(splitEvents) do if e.kind=="bookmark" and e.time==time then table.remove(splitEvents,i);return true end end
+    splitEvents[#splitEvents+1]={time=time,kind="bookmark",label="Bookmark"};return true
+end
 function game:theaterclock() return libraryClock end
 function game:gettheaterlibrary(page,filter)
     local visible={}
@@ -903,8 +940,17 @@ find(library,"library_convert"):processEvent({name="button_action"})
 assert(libraryActions[#libraryActions][1]=="convertfile","conversion picker stays visible for H1 selections")
 local fifth=library.cards[5].element
 local previousGrid=library.grid
+local previewBeforeHover=find(library,"preview_filename")
 fifth:processEvent({name="button_over"})
+assert(library.selected=="demo_2" and find(library,"preview_filename")==previewBeforeHover,
+    "hovering another card must preserve the clicked demo and its action widgets")
+fifth:processEvent({name="button_action",mouse=true})
 assert(library.selected=="demo_5" and find(library,"preview_filename").text=="recording_5.dm_h1")
+for _,card in ipairs(library.cards) do card.element:processEvent({name="button_over",mouse=true}) end
+assert(library.selected=="demo_5" and find(library,"preview_filename").text=="recording_5.dm_h1",
+    "crossing cards on the way to Play or Split must not retarget the action")
+find(library,"library_play"):processEvent({name="button_action"})
+assert(libraryActions[#libraryActions][1]=="play" and libraryActions[#libraryActions][2]=="demo_5")
 library:refresh()
 assert(library.cards[5].element==fifth and library.selected=="demo_5","poll must not replace focus/selection")
 libraryRevision=2; library:refresh()
@@ -934,6 +980,11 @@ for _,format in ipairs({"ready","source"}) do
     find(owner,"library_split"):processEvent({name="button_action"})
     local split=root.menu
     assert(split.id=="h1_theater_split" and split.start==0 and split.finish==61)
+    local controls=find(split,"split_controls")
+    assert(controls.parent==split and controls~=split.list and controls.stencil,"clip controls must bypass native vertical-list reflow")
+    for _,child in ipairs(controls.children) do
+        assert(child.style.top>=0 and child.style.top+(child.style.height or 0)<=controls.style.height,"clip controls stay inside their clipped panel")
+    end
     assert(find(split,"split_format").text==(format=="source" and "COD4 → H1 CLIP" or "H1 CLIP"))
     find(split,"split_start"):processEvent({name="button_right"})
     find(split,"split_finish"):processEvent({name="button_left"})
@@ -950,6 +1001,8 @@ for _,format in ipairs({"ready","source"}) do
     libraryBusy=false; split:processEvent({name="split_poll"})
     assert(not split.submitted and split.help.text=="Library ready")
     split:processEvent({name="button_secondary"})
+    assert(root.menu==split,"Back must be deferred until input dispatch completes")
+    split:processEvent({name="split_poll"})
     assert(root.menu.id=="h1_theater_library" and root.menu.selected==selected and root.menu.filter==format,
         "Back returns to the selected recording/filter without stacking duplicate menus")
 end
@@ -958,6 +1011,48 @@ root.menu=menus.h1_theater_library({})
 assert(not find(root.menu,"library_split"),"unsupported native H1 recordings must not offer independent-snapshot cuts")
 libraryEntries[1].splittable=true
 print("PASS Theater splitter: both inputs, range adjustments, millisecond requests, duplicate/busy protection, progress and unsupported-format gating")
+
+root.menu=menus.h1_theater_library({})
+find(root.menu,"library_split"):processEvent({name="button_action"})
+local eventSplit=root.menu
+find(eventSplit,"split_filter_kill"):processEvent({name="button_action"})
+assert(find(eventSplit,"event_attacker_1").text=="Alice" and find(eventSplit,"event_victim_1").text=="Bob")
+local killIcon=find(eventSplit,"event_icon_1").states.icon
+assert(killIcon.left==342 and killIcon.right==270 and killIcon.width==nil and killIcon.alpha==1,
+    "kill icon uses the native reversed-edge flip with its original aspect ratio")
+assert(find(eventSplit,"event_weapon_1").text=="")
+find(eventSplit,"split_event_1"):processEvent({name="button_action"})
+assert(eventSplit.cursor==12.55,"killfeed preserves exact recorded milliseconds")
+find(eventSplit,"split_set_in"):processEvent({name="button_action"})
+assert(eventSplit.start==12.55)
+find(eventSplit,"split_bookmark"):processEvent({name="button_action"});eventSplit:processEvent({name="split_poll"})
+find(eventSplit,"split_filter_bookmark"):processEvent({name="button_action"})
+assert(find(eventSplit,"split_event_1").caption.text:find("Bookmark"))
+assert(find(eventSplit,"event_icon_1").style.alpha==0 and find(eventSplit,"event_attacker_1").text=="","reused bookmark row clears the kill widgets")
+find(eventSplit,"split_bookmark"):processEvent({name="button_action"});eventSplit:processEvent({name="split_poll"})
+assert(find(eventSplit,"split_event_1").disabled)
+find(eventSplit,"split_filter_round"):processEvent({name="button_action"})
+find(eventSplit,"split_event_2"):processEvent({name="button_action"})
+find(eventSplit,"split_set_out"):processEvent({name="button_action"})
+assert(eventSplit.finish==33 and eventSplit.cursor==33)
+local allocatedSplit=elementCount
+for i=1,80 do
+    find(eventSplit,"split_filter_all"):processEvent({name="button_action"})
+    find(eventSplit,"split_event_next"):processEvent({name="button_action"})
+    eventSplit:processEvent({name="split_poll"})
+end
+assert(elementCount==allocatedSplit,"event paging and polling must reuse widgets")
+local timeline=find(eventSplit,"split_timeline")
+local left,top=timeline:getRect()
+timeline:mouse({name="mousedown",root=root,x=left+526,y=top+20})
+timeline:mouse({name="mouseup",root=root,x=left+526,y=top+20})
+assert(eventSplit.cursor==30.5,"timeline click maps to recording time")
+libraryBusy=true
+find(eventSplit,"split_set_in"):processEvent({name="button_action"})
+assert(eventSplit.start==12.55,"busy operations preserve the range")
+libraryBusy=false
+print("PASS event splitter: killfeed, rounds, saved bookmark actions, millisecond boundaries, bounded widgets and timeline mouse input")
+root.menu=nil
 
 root.menu=menus.h1_theater_library({})
 local playbackCard=root.menu.cards[1].element

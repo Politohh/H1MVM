@@ -1,6 +1,7 @@
 #pragma once
 #include "cod4_match.hpp"
 #include "cod4_event_entities.hpp"
+#include "demo_event.hpp"
 #include <charconv>
 #include <array>
 #include <map>
@@ -43,6 +44,11 @@ namespace cod4
         model_metadata result;
         for (const auto& entry : entries)
         {
+            if (entry.starts_with("@event:") || entry.starts_with("@event2:"))
+            {
+                if (!demo_events::parse(entry)) throw std::runtime_error("Invalid recorded timeline event");
+                continue; // Frontend event annotations do not affect playback.
+            }
             if (entry.starts_with("@teamscore:"))
             {
                 auto text = entry.substr(11);

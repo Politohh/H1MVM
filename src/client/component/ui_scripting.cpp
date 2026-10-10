@@ -261,6 +261,10 @@ namespace ui_scripting
 			{ return theater_library::action(name, id); };
             game_type["theaterlibrarysplit"] = [](const game&, const std::string& id, int start, int end)
             { return theater_library::split(id, start, end); };
+            game_type["gettheaterevents"] = [](const game&, const std::string& id)
+            { return json_to_lua(theater_library::events(id)); };
+            game_type["theaterbookmark"] = [](const game&, const std::string& id, int time)
+            { return theater_library::bookmark(id, time); };
             game_type["theaterlibraryreturn"] = [](const game&) { return theater_library::consume_return(); };
 			game_type["theaterkeyboard"] = [](const game&, bool value) { theater_ui::set_keyboard_available(value); };
 			game_type["gettheaterstate"] = [](const game&, int cached_revision, int cached_keys)

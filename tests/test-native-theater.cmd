@@ -5,6 +5,14 @@ call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build
 if not "%errorlevel%"=="0" exit /b 1
 call tests\run-cod4-fov.cmd
 if not "%errorlevel%"=="0" exit /b 1
+cl /nologo /std:c++20 /EHsc /W4 /O2 /I src\client tests\theater_dof.cpp /Fe:build\theater_dof_test.exe /Fo:build\theater_dof_test.obj
+if not "%errorlevel%"=="0" exit /b 1
+build\theater_dof_test.exe
+if not "%errorlevel%"=="0" exit /b 1
+cl /nologo /std:c++20 /EHsc /W4 /O2 /I src\client tests\theater_focus.cpp d3d11.lib /Fe:build\theater_focus_test.exe /Fo:build\theater_focus_test.obj
+if not "%errorlevel%"=="0" exit /b 1
+build\theater_focus_test.exe
+if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c++20 /EHsc /W4 /O2 /I src\client tests\demo_timeline.cpp /Fe:build\demo_timeline_test.exe /Fo:build\demo_timeline_test.obj
 if not "%errorlevel%"=="0" exit /b 1
 build\demo_timeline_test.exe

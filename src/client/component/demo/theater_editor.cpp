@@ -1,5 +1,8 @@
 #include <std_include.hpp>
 #include "theater_editor.hpp"
+#include "theater_dof.hpp"
+#include "theater_focus.hpp"
+#include "theater_focus_math.hpp"
 #include "theater_camera.hpp"
 #include "theater_scene.hpp"
 #include "theater_models.hpp"
@@ -62,10 +65,12 @@ namespace theater_editor
             {"fog", "r_sky_fog_min_angle", "SKY FOG MIN ANGLE", 1},
             {"fog", "r_sky_fog_max_angle", "SKY FOG MAX ANGLE", 1},
             {"dof", "r_dof_enable", "DEPTH OF FIELD", 1},
+            {"dof", "demo_dof_mouse", "MOUSE AUTOFOCUS", 1},
+            {"dof", "demo_dof_speed", "FOCUS SPEED", .01},
             {"dof", "r_dof_tweak", "DOF OVERRIDE MODE", 1},
             {"dof", "r_dof_physical_enable", "PHYSICAL DOF", 1},
             {"dof", "r_dof_physical_focusDistance", "FOCUS DISTANCE", 25},
-            {"dof", "r_dof_physical_fstop", "F-STOP", .125},
+            {"dof", "r_dof_physical_fstop", "APERTURE (F-STOP)", .125},
             {"dof", "r_dof_physical_filmDiagonal", "FILM DIAGONAL", .5},
             {"dof", "r_dof_physical_bokehEnable", "BOKEH", 1},
             {"dof", "r_dof_physical_bokehPreset", "BOKEH PRESET", 1},
@@ -205,6 +210,30 @@ namespace theater_editor
             return std::stod(value);
         }
 
+        constexpr auto dof_unavailable = "DOF unavailable. Enable Depth of Field in Graphics options, then apply the video settings.";
+
+        bool dof_resources_ready()
+        {
+            if (!game::environment::is_mp()) return false;
+            auto* quality = game::Dvar_FindVar("r_dof_limit");
+            if (!quality) return false;
+            // Same active resource flags read by H1 MP's DOF setup (0x1C2B40)
+            // and render-target allocation (0x6AACE0), not the pending video options.
+            const auto flags = *reinterpret_cast<const std::uint32_t*>(0xEA74DE8_b);
+            return dof::resources_ready(static_cast<int>(read_value(quality)), flags);
+        }
+
+        void guard_dof_override()
+        {
+            if (dof_resources_ready()) return;
+            auto* override_mode = game::Dvar_FindVar("r_dof_tweak");
+            if (override_mode && read_value(override_mode) == 1)
+            {
+                game::Dvar_SetFromStringFromSource(override_mode, "Off", game::DVAR_SOURCE_INTERNAL);
+                message = dof_unavailable;
+            }
+        }
+
         bool apply(const std::string& name, double value)
         {
             if (!std::isfinite(value)) return false;
@@ -214,6 +243,8 @@ namespace theater_editor
             const auto j = describe(*e);
             if (!j) return false;
             value = std::clamp(value, j->at("min").get<double>(), j->at("max").get<double>());
+            if (name == "r_dof_tweak" && !dof::allows_edit(name, static_cast<int>(std::round(value)), dof_resources_ready()))
+                return false;
             auto* d = game::Dvar_FindVar(name.substr(0, name.find("#")).c_str());
             std::string text;
             if (e->channel >= 0)
@@ -235,6 +266,22 @@ namespace theater_editor
         // reset keep the explicitly saved/default override state.
         void activate_override(const std::string& name)
         {
+            if (name == "r_dof_enable" || name == "demo_dof_mouse" ||
+                name == "r_dof_physical_focusDistance" || name == "r_dof_physical_fstop" ||
+                name == "r_dof_physical_bokehEnable")
+            {
+                const auto set = [](const char* key, const char* value)
+                { if (auto* d = game::Dvar_FindVar(key)) game::Dvar_SetFromStringFromSource(d, value, game::DVAR_SOURCE_INTERNAL); };
+                if (name == "r_dof_enable" && read_value(game::Dvar_FindVar(name.c_str())) == 0)
+                {
+                    set("demo_dof_mouse", "0"); set("r_dof_tweak", "Off"); return;
+                }
+                if (name == "demo_dof_mouse" && read_value(game::Dvar_FindVar(name.c_str())) == 0) return;
+                if (name == "r_dof_physical_focusDistance") set("demo_dof_mouse", "0");
+                if (!dof_resources_ready()) { message = dof_unavailable; return; }
+                set("r_dof_enable", "1"); set("r_dof_physical_enable", "1"); set("r_dof_tweak", "On");
+                return;
+            }
             std::string target;
             if (name.starts_with("demo_sun_") && name != "demo_sun_override") target = "demo_sun_override";
             else if (name.starts_with("demo_light_") && name != "demo_light_index" && name != "demo_light_override") target = "demo_light_override";
@@ -248,8 +295,9 @@ namespace theater_editor
             else if (name == "r_lightGridIntensity" || name == "r_lightGridContrast") target = "r_lightGridEnableTweaks";
             else if (name.starts_with("r_primaryLightTweak")) target = "r_primaryLightUseTweaks";
             else if (name.starts_with("r_viewModelPrimaryLightTweak")) target = "r_viewModelPrimaryLightUseTweaks";
-            else if (name.starts_with("r_dof_") && name != "r_dof_enable" && name != "r_dof_tweak" && name != "r_dof_physical_enable")
+            else if (dof::activates_override(name))
             {
+                if (!dof_resources_ready()) return;
                 if (auto* d = game::Dvar_FindVar("r_dof_tweak")) game::Dvar_SetFromStringFromSource(d, "On", game::DVAR_SOURCE_INTERNAL);
                 return;
             }
@@ -353,14 +401,22 @@ namespace theater_editor
                 if (line.starts_with("// slider ")) { auto name = line.substr(10); if ((find(name) || std::any_of(colors.begin(),colors.end(),[&](const auto& c) { return c.name==name; })) && sliders.size() < 20) sliders.push_back(name); continue; }
                 if (line.empty() || line.starts_with("//")) continue;
                 std::istringstream tokens(line); std::string name, extra; double value;
-                if (!(tokens >> name >> value) || (tokens >> extra) || !std::isfinite(value) || (!find(name) && name != "freecam_fov"))
+                if (!(tokens >> name >> value) || (tokens >> extra) || !std::isfinite(value))
                     throw std::runtime_error("Invalid preset; no settings were changed");
+                // Preserve saved transition timing from the earlier response-time control.
+                if (name == "demo_dof_response")
+                { name = "demo_dof_speed"; value = theater_focus::speed_from_response(static_cast<float>(value)); }
+                if (!find(name) && name != "freecam_fov") throw std::runtime_error("Invalid preset; no settings were changed");
                 changes.emplace_back(name, value);
             }
             theater_scene::restore_lights(points);
-            for (const auto& [name, value] : changes) (void)apply(name, value);
+            guard_dof_override();
+            bool skipped_dof = false;
+            for (const auto& [name, value] : changes)
+                if (!apply(name, value) && name == "r_dof_tweak") skipped_dof = true;
             custom = std::move(sliders);
             message = "Loaded " + file.generic_string();
+            if (skipped_dof) message += ". " + std::string(dof_unavailable);
         }
         void save_path()
         {
@@ -426,6 +482,7 @@ namespace theater_editor
                 }
                 if (name == "reset_all" || argument == "camera") theater_camera::set_freecam_fov(90);
                 if (name == "reset_all") { theater_scene::reset_editor(); theater_models::reset(); theater_weapons::reset(); }
+                guard_dof_override();
                 message = name == "reset_all" ? "Reset all editor settings; dolly markers retained" : "Reset " + argument + " to engine defaults";
             }
             else if (name == "add_slider")
@@ -455,10 +512,13 @@ namespace theater_editor
         }
     }
 
+    bool dof_available() { return dof_resources_ready(); }
+
     void update()
     {
         theater_models::update();
         theater_weapons::update();
+        if (demo_playback::is_replay_armed()) guard_dof_override();
         { std::lock_guard lock(mutex); if (!theater_ui::editor_open() && pending.empty()) return; }
         if (catalog.empty() || catalog_session != demo_playback::session_id())
         {
@@ -522,6 +582,7 @@ namespace theater_editor
             acknowledgements[name] = change.serial;
             if (!applied) message = "Cannot apply " + name + " in the current demo state";
             else message.clear();
+            if (name.starts_with("r_dof_") && !dof_resources_ready()) message = dof_unavailable;
         }
         nlohmann::json controls = nlohmann::json::array(), values = nlohmann::json::object();
         std::set<std::string> color_channels;
@@ -547,6 +608,7 @@ namespace theater_editor
         const auto first = bounds ? bounds->first : 0;
         nlohmann::json data = {{"revision", revision}, {"controls", std::move(controls)}, {"values", std::move(values)},
             {"custom", custom}, {"acks", acknowledgements}, {"session", demo_playback::session_id()}, {"message", message}, {"markers", theater_camera::get_keyframes().size()},
+            {"dofMessage", dof_resources_ready() ? theater_focus::status() : dof_unavailable},
             {"captureIn", demo_avidemo::has_in() ? demo_avidemo::in_point() - first : -1},
             {"captureOut", demo_avidemo::has_out() ? demo_avidemo::out_point() - first : -1},
             {"armed", demo_avidemo::is_armed()}, {"frames", demo_avidemo::captured_frames()}, {"ffmpeg", demo_avidemo::ffmpeg_path()}};

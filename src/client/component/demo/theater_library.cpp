@@ -7,6 +7,8 @@
 #include "demo_playback.hpp"
 #include "demo_utils.hpp"
 #include "cod4_camera.hpp"
+#include "cod4_demo_events.hpp"
+#include "cod4_weapon_catalog.hpp"
 #include "component/command.hpp"
 #include "component/scheduler.hpp"
 #include "component/console.hpp"
@@ -33,6 +35,29 @@ namespace theater_library
         int revision{};
         std::string message;
         std::filesystem::path root;
+        std::string event_id;
+        std::filesystem::file_time_type event_modified{};
+        nlohmann::json event_state;
+
+        std::vector<int> read_bookmarks(const entry& item)
+        {
+            const auto path = item.path + ".bookmarks.json";
+            if (!std::filesystem::exists(path)) return {};
+            if (std::filesystem::file_size(path)>16384) throw std::runtime_error("Bookmark file is too large");
+            std::ifstream file(path);
+            const auto json = nlohmann::json::parse(file);
+            if (!json.is_array() || json.size()>500) throw std::runtime_error("Invalid bookmark file");
+            std::vector<int> result;
+            for (const auto& value : json)
+            {
+                if (!value.is_number_integer()) throw std::runtime_error("Invalid bookmark time");
+                const auto time=value.get<std::int64_t>();
+                if (time<0 || time>item.details.duration) throw std::runtime_error("Bookmark is outside recording");
+                result.push_back(static_cast<int>(time));
+            }
+            std::sort(result.begin(),result.end()); result.erase(std::unique(result.begin(),result.end()),result.end());
+            return result;
+        }
 
         bool supported(const std::filesystem::path& path)
         { return path.extension() == ".dm_1" || path.extension() == ".dm_h1"; }
@@ -118,7 +143,7 @@ namespace theater_library
             std::sort(found.begin(), found.end(), [](const entry& a, const entry& b)
             { return a.modified != b.modified ? a.modified > b.modified : a.path < b.path; });
             std::lock_guard lock(mutex);
-            entries = std::move(found); ++revision;
+            entries = std::move(found); event_id.clear(); ++revision;
             message = std::format("{} demos in your library", entries.size());
         }
 
@@ -181,6 +206,54 @@ namespace theater_library
                 if (game::DB_FindXAssetHeader(game::ASSET_TYPE_MATERIAL, name.c_str(), 0).material) return name;
             return {};
         }
+
+        // Resolve only resident, real kill-icon materials on the calling UI
+        // thread. The file decoder never accesses the game asset database.
+        nlohmann::json with_icons(nlohmann::json data)
+        {
+            std::map<std::string,std::pair<std::string,int>> cache;
+            for(auto& event:data["events"])
+            {
+                if(event.value("kind","")!="kill") continue;
+                const auto source=event.value("weapon","");
+                const auto cause=event.value("cause",0u);
+                const auto key=source+":"+std::to_string(cause);
+                if(!cache.contains(key))
+                {
+                    game::Material* material{};int ratio=1;
+                    const auto resident_material=[](const char* name)->game::Material*
+                    {
+                        return game::DB_XAssetExists(game::ASSET_TYPE_MATERIAL,name) && !game::DB_IsXAssetDefault(game::ASSET_TYPE_MATERIAL,name)
+                            ? game::DB_FindXAssetHeader(game::ASSET_TYPE_MATERIAL,name,false).material : nullptr;
+                    };
+                    if(!source.empty())
+                    {
+                        const auto mapping=std::find_if(cod4::weapon_mappings.begin(),cod4::weapon_mappings.end(),[&](const auto& m){return m.source==source;});
+                        if(mapping!=cod4::weapon_mappings.end())
+                        {
+                            // Alternate GL kills must never borrow the rifle icon.
+                            const auto weapon=std::string(mapping->base);
+                            if(mapping->alternate) material=resident_material("hud_icon_40mm_grenade");
+                            else if(game::DB_XAssetExists(game::ASSET_TYPE_WEAPON,weapon.c_str()) && !game::DB_IsXAssetDefault(game::ASSET_TYPE_WEAPON,weapon.c_str()))
+                            {
+                                const auto* def=game::DB_FindXAssetHeader(game::ASSET_TYPE_WEAPON,weapon.c_str(),false).weapon;
+                                if(def) { material=def->killIcon;ratio=def->killIconRatio==game::WEAPON_ICON_RATIO_4TO1?4:def->killIconRatio==game::WEAPON_ICON_RATIO_2TO1?2:1; }
+                            }
+                        }
+                    }
+                    if(!material && cause)
+                    {
+                        const auto mod=cause&127u;
+                        const auto name=mod==8?"killiconheadshot":mod==7?"killiconmelee":mod==9?"killiconcrush":mod==11?"killiconfalling":mod==12?"killiconsuicide":mod==15?"killiconimpact":"killicondied";
+                        material=resident_material(name);
+                    }
+                    const auto name=material && material->name?material->name:"";
+                    cache[key]={name,ratio};
+                }
+                event["icon"]=cache.at(key).first;event["iconRatio"]=cache.at(key).second;
+            }
+            return data;
+        }
     }
 
     nlohmann::json state(int page, const std::string& filter)
@@ -213,6 +286,110 @@ namespace theater_library
                 {"duration", info.duration}, {"material", thumbnail(info.map)}, {"error", item.error}});
         }
         return result;
+    }
+
+    nlohmann::json events(const std::string& id)
+    {
+        entry selected;
+        {
+            std::lock_guard lock(mutex);
+            const auto it=std::find_if(entries.begin(),entries.end(),[&](const entry& e){return e.id==id;});
+            if (it==entries.end() || !it->error.empty()) return {{"ready",true},{"message","Recording unavailable"},{"events",nlohmann::json::array()}};
+            if (event_id==id && event_modified==it->modified) return with_icons(event_state);
+            if (stopping || busy.exchange(true)) return {{"ready",false}};
+            selected=*it;
+        }
+        if (worker.joinable()) worker.join();
+        worker=std::jthread([selected](std::stop_token stop)
+        {
+            const auto finish=gsl::finally([]{busy=false;});
+            nlohmann::json data={{"ready",true},{"events",nlohmann::json::array()},{"message",""}};
+            try
+            {
+                std::vector<demo_events::event> list;
+                int first{};
+                if (selected.source)
+                {
+                    const auto source=demo_events::read_source(selected.path);
+                    list=source.events;first=source.camera.frames.front().time;
+                    data["message"]=cod4::recorded_gametype(source.camera.configstrings)=="sd" ? "Round markers follow the recorded S&D timer." : "Round boundaries unavailable for this game mode.";
+                }
+                else
+                {
+                    std::ifstream file(selected.path,std::ios::binary);
+                    const auto tail=demo_file::read_footer(file);
+                    if (!tail) throw std::runtime_error("Recording has no timeline footer");
+                    first=tail->first; list=selected.details.events;
+                    const auto index=demo_timeline::decode(tail->bytes,tail->first,tail->last);
+                    const bool incomplete=std::any_of(list.begin(),list.end(),[](const auto& e){return e.kind=="kill" && e.attacker.empty();}) || list.empty();
+                    auto original=std::filesystem::path(selected.path);original.replace_extension(".dm_1");
+                    if(incomplete && index && std::filesystem::is_regular_file(original))
+                    {
+                        try
+                        {
+                            const auto source=demo_events::read_source(original);
+                            if(demo_events::matches(source,*index,selected.details.map,tail->first,tail->last))
+                            { list=source.events;data["message"]="Player names and kill weapons decoded from the verified original recording."; }
+                            else data["message"]="Original recording does not match this clip's kill index; its names were not used.";
+                        }
+                        catch(const std::exception& e) { data["message"]=std::string("Could not read the original recording: ")+e.what(); }
+                    }
+                    std::size_t kills{};
+                    for (const auto& e:list) if(e.kind=="kill" && e.time>=tail->first && e.time<=tail->last) ++kills;
+                    // Older conversions retain exact kill times but no names or round data.
+                    if (index && kills<index->events.size())
+                    {
+                        for (std::size_t i=kills;i<index->events.size();++i)
+                        {
+                            const auto& e=index->events[i];
+                            list.push_back({e.time,"kill",(e.attacker==2046?"World":"Player "+std::to_string(e.attacker+1))+" > Player "+std::to_string(e.victim+1)});
+                        }
+                        if(data["message"]=="") data["message"]="Full kill details need the matching .dm_1 beside this older recording.";
+                    }
+                    else if (list.empty()) data["message"]="No recorded events available. You can still add bookmarks and cut a range.";
+                }
+                std::stable_sort(list.begin(),list.end(),[](const auto& a,const auto& b){return a.time<b.time;});
+                for (const auto& e:list)
+                    if (e.time>=first && static_cast<std::int64_t>(e.time)-first<=selected.details.duration && data["events"].size()<10000)
+                        data["events"].push_back({{"time",e.time-first},{"kind",e.kind},{"label",e.label},
+                            {"attacker",e.attacker},{"victim",e.victim},{"weapon",e.weapon},{"cause",e.cause}});
+                for (const auto time:read_bookmarks(selected))
+                    data["events"].push_back({{"time",time},{"kind","bookmark"},{"label","Bookmark"}});
+            }
+            catch (const std::exception& e) { data["message"]=e.what(); }
+            if (stop.stop_requested()) return;
+            std::lock_guard lock(mutex);
+            event_id=selected.id; event_modified=selected.modified; event_state=std::move(data);
+        });
+        return {{"ready",false}};
+    }
+
+    bool bookmark(const std::string& id, int time)
+    {
+        std::lock_guard lock(mutex);
+        const auto it=std::find_if(entries.begin(),entries.end(),[&](const entry& e){return e.id==id;});
+        if (it==entries.end() || busy || time<0 || time>it->details.duration) return false;
+        try
+        {
+            auto marks=read_bookmarks(*it);
+            const auto found=std::find(marks.begin(),marks.end(),time);
+            if (found!=marks.end()) marks.erase(found);
+            else { if(marks.size()>=500) return false; marks.push_back(time); }
+            std::sort(marks.begin(),marks.end());
+            const auto target=it->path+".bookmarks.json", temporary=target+".tmp";
+            std::ofstream file(temporary,std::ios::trunc); file << nlohmann::json(marks).dump(); file.close();
+            if (!file || !MoveFileExW(std::filesystem::path(temporary).c_str(),std::filesystem::path(target).c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))
+                throw std::runtime_error("Cannot save bookmarks");
+            // Update the cached index without decoding the recording again.
+            if (event_id==id)
+            {
+                auto& list=event_state["events"];
+                for (auto e=list.begin();e!=list.end();) if((*e)["kind"]=="bookmark") e=list.erase(e); else ++e;
+                for (const auto mark:marks) list.push_back({{"time",mark},{"kind","bookmark"},{"label","Bookmark"}});
+            }
+            return true;
+        }
+        catch(const std::exception& e) { message=e.what(); return false; }
     }
 
     bool action(const std::string& name, const std::string& id)

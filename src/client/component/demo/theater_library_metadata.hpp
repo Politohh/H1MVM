@@ -1,6 +1,7 @@
 #pragma once
 #include "cod4_demo_reader.hpp"
 #include "demo_file_footer.hpp"
+#include "demo_event.hpp"
 #include <limits>
 #include <climits>
 
@@ -11,6 +12,7 @@ namespace theater_library
         std::string map, gametype, map_title, mode_title, recorded;
         int duration{};
         bool converted{};
+        std::vector<demo_events::event> events;
     };
 
     inline std::vector<std::string> strings(std::span<const char> bytes)
@@ -62,6 +64,8 @@ namespace theater_library
                         result.converted = fields[1] == "H1 COD4 conversion v1" || fields[1] == "H1 COD4 conversion v2"
                             || fields[1] == "H1 COD4 conversion v3" || fields[1] == "H1 COD4 conversion v4"
                             || fields[1] == "H1 COD4 conversion v5";
+                        for (std::size_t i=9;i<fields.size();++i)
+                            if (const auto event=demo_events::parse(fields[i])) result.events.push_back(*event);
                     }
                 }
                 else if (size >= 8)

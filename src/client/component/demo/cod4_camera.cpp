@@ -14,6 +14,7 @@
 #include "cod4_conversion_compression.hpp"
 #include "demo_timeline.hpp"
 #include "demo_splitter.hpp"
+#include "cod4_demo_events.hpp"
 #include "cod4_gun_events.hpp"
 #include "cod4_actor_translation.hpp"
 #include "cod4_replay_agents.hpp"
@@ -1697,6 +1698,16 @@ namespace cod4_camera
             { header += std::format("@impact:{}:{}", entity, time); header.push_back('\0'); }
             if (!car_effect_times.empty())
             { header += std::format("@fx:{}:{}", car_effect_index, car_effect_name); header.push_back('\0'); }
+            // Keep names and recorded round boundaries with the converted demo.
+            // Respect both the metadata record and native chunk size limits.
+            auto records = std::count(header.begin(), header.end(), '\0');
+            for (const auto& event : demo_events::collect(track, world))
+            {
+                if (event.time < track.frames.front().time || event.time > track.frames.back().time) continue;
+                const auto record = demo_events::encode(event);
+                if (records >= 2000 || header.size()+record.size()+1 > 120000) break;
+                header += record; header.push_back('\0'); ++records;
+            }
             demo_utils::write_id_and_size(output, header.size(), demo_utils::demo_data_id::gen_header);
             output.write(header.data(), header.size());
             const auto map_header = track.map + std::string(1, '\0') + cod4::recorded_gametype(track.configstrings) + std::string(1, '\0');

@@ -11,6 +11,7 @@
 
 #include "component/command.hpp"
 #include "component/console.hpp"
+#include "component/scheduler.hpp"
 #include "utils/hook.hpp"
 
 #include <algorithm>
@@ -80,6 +81,30 @@ namespace theater_camera
 		bool hud_hidden = false;
 		unsigned hud_session = 0;
 		int saved_cheats = -1;                     // sv_cheats original (cg_draw2D is cheat-locked)
+		const char* const name_dvars[] = {"cg_DrawFriendlyNames", "cg_DrawCrosshairNames"};
+		std::array<std::optional<std::string>, 2> saved_names;
+
+		void update_freecam_names()
+		{
+			const bool hide = demo_playback::playing() && demo_playback::is_replay_armed() &&
+				demo_camera && demo_camera->current.integer == THEATER_CAMERA_FREECAM;
+			for (std::size_t i = 0; i < saved_names.size(); ++i)
+			{
+				auto* d = game::Dvar_FindVar(name_dvars[i]);
+				if (!d) continue;
+				const std::string current = game::Dvar_ValueToString(d, true, d->current);
+				if (hide)
+				{
+					if (!saved_names[i]) saved_names[i] = current;
+					if (current != "0") game::Dvar_SetFromStringFromSource(d, "0", game::DVAR_SOURCE_INTERNAL);
+				}
+				else if (saved_names[i])
+				{
+					game::Dvar_SetFromStringFromSource(d, saved_names[i]->c_str(), game::DVAR_SOURCE_INTERNAL);
+					saved_names[i].reset();
+				}
+			}
+		}
 
 		// The exact render view applied THIS frame (cached at the end of the CG_CalcView
 		// hook). The marker overlay projects from this, not a live refdef read, so markers
@@ -1037,6 +1062,8 @@ namespace theater_camera
 			command::add("demo_camera_capture", []() { capture_keyframe(); });
 			command::add("demo_camera_clear", []() { clear_keyframes(); });
 			command::add("demo_cinematic", []() { start_cinematic(); });
+			// Also runs after leaving playback, when CG_CalcViewValues may stop running.
+			scheduler::loop(update_freecam_names, scheduler::main);
 		}
 	};
 }

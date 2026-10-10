@@ -1,5 +1,7 @@
 #include "component/demo/demo_splitter.hpp"
 #include "component/demo/theater_library_metadata.hpp"
+#include "component/demo/cod4_demo_events.hpp"
+#include "component/demo/cod4_model_metadata.hpp"
 #include <cassert>
 #include <iostream>
 #include <sstream>
@@ -23,6 +25,8 @@ static std::string fixture(bool delta = false)
     std::string header;
     for (const auto& field : {"", "H1 COD4 conversion v5", "v0.0.5", "1", "", "COD4", "", "mp_crash", "war", "@model:123:body"})
     { header += field; header.push_back(0); }
+    header += demo_events::encode({15000,"kill","Alice > Bob","Alice","Bob","remington700_mp",0}); header.push_back(0);
+    header += demo_events::encode({16000,"round_end","Round end (timer stopped)"}); header.push_back(0);
     demo_splitter::write_chunk(file, 5, bytes(header));
     demo_splitter::write_chunk(file, 1, bytes(std::string("mp_crash\0war\0", 13)));
     demo_splitter::write_chunk(file, 7, bytes("facial metadata"));
@@ -55,6 +59,8 @@ static void validate_clip(std::istream& input, std::istream& output, int first, 
     assert(tail && tail->first == first && tail->last == last);
     const auto info = theater_library::read_native(output);
     assert(info.converted && info.map == "mp_crash" && info.duration == last - first);
+    assert(info.events.size()==2 && info.events[0].label=="Alice > Bob" && info.events[1].kind=="round_end");
+    assert(info.events[0].attacker=="Alice" && info.events[0].victim=="Bob" && info.events[0].weapon=="remington700_mp");
     // Retained compressed snapshot payloads must be byte-identical to source.
     std::map<int, std::pair<std::vector<std::uint8_t>, std::vector<std::uint8_t>>> originals;
     const auto collect = [&](std::istream& stream, bool verify)
@@ -100,6 +106,29 @@ static void validate_clip(std::istream& input, std::istream& output, int first, 
 
 int main(int argc, char** argv)
 {
+    assert(demo_events::clean("^1Alice\n") == "Alice");
+    assert(!demo_events::parse("@event:-1:kill:bad") && !demo_events::parse("@event:1:unknown:bad"));
+    assert(!demo_events::parse("@event:1x:kill:bad"));
+    const auto event=demo_events::parse(demo_events::encode({42,"kill","Name: 1 > Name: 2"}));
+    assert(event && event->time==42 && event->label=="Name: 1 > Name: 2");
+    const auto rich=demo_events::encode({42,"kill","","Name: 1","Name: 2","ak47_mp",135});
+    const auto decoded=demo_events::parse(rich);
+    assert(decoded && decoded->attacker=="Name: 1" && decoded->victim=="Name: 2" && decoded->weapon=="ak47_mp" && decoded->cause==135);
+    assert(!demo_events::parse("@event2:1:xx:42:ak47_mp:0"));
+    assert(!demo_events::parse("@event2:1:41:42:bad/weapon:0"));
+    assert(!demo_events::parse("@event2:1:41:42:ak47_mp:257"));
+    (void)cod4::parse_model_metadata({rich});
+    (void)cod4::parse_model_metadata({demo_events::encode({42,"round_start","Round start"})});
+    cod4::camera_track eventCamera;eventCamera.configstrings={{0,"\\g_gametype\\sd"},{11,"0"}};
+    cod4::world_track world;
+    world.commands={{100,1,1,"d 11 9000"},{110,2,1,"d 11 9000"},{200,3,2,"d 11 9500"},
+        {300,4,3,"d 11 0"},{400,5,4,"d 11 bad"},{500,6,5,"d 11 12000"}};
+    const auto rounds=demo_events::collect(eventCamera,world);
+    assert(rounds.size()==3 && rounds[0].time==100 && rounds[1].kind=="round_end" && rounds[2].time==500);
+    eventCamera.configstrings[11]="8000";
+    assert(demo_events::collect(eventCamera,world).size()==2); // Do not invent a start before the demo.
+    eventCamera.configstrings[0]="\\g_gametype\\war";
+    assert(demo_events::collect(eventCamera,world).empty()); // Other modes do not imply rounds.
     const auto original = fixture();
     std::stringstream input(original), output;
     const auto cut = demo_splitter::split_native(input, output, 3500, 8500);

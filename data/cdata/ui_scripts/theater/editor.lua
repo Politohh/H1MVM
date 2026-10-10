@@ -239,9 +239,10 @@ end
 
 Editor.valueRow = valueRow
 
-local function controlButton(content, control, index, menu)
+local function controlButton(content, control, index, menu, positionX, positionY)
     local x, y = 465 + math.floor((index - 1) / 10) * 328,
         (menu.category == "sliders" and 205 or 185) + ((index - 1) % 10) * 31
+    x, y = positionX or x, positionY or y
     local element
     if control.name == "demo_skybox" then
         element = nativeButton(content, "setting_" .. control.name, "SKYBOX: "..display(control), x,y,316,
@@ -262,6 +263,7 @@ local function controlButton(content, control, index, menu)
             function(v) return submit(control,control.inverted and -v or v) end, menu)
     end
     menu.controls[#menu.controls + 1] = {element = element, control = control}
+    return element
 end
 
 local notes = {
@@ -270,7 +272,7 @@ local notes = {
     bone_camera = "SELECT AN ACTOR AND BONE, THEN ATTACH. OFFSET IS PRESERVED; DETACH RETAINS FREECAM.",
     ssao = "H1 SSAO MODES AND OVERRIDES. ENABLE SSAO OVERRIDE TO USE TWEAK VALUES.",
     fog = "SAMPLE THE MAP FIRST, THEN ENABLE ATMOSPHERE OVERRIDE. COLOR, HEIGHT AND HAZE ARE LIVE.",
-    dof = "H1 PHYSICAL AND GAUSSIAN DOF. PARAMETERS DEPEND ON THE SELECTED MODE.",
+    dof = "FREECAM / DOLLY: F4 FREES THE CURSOR. MOVE IT OVER THE SCENE TO FOCUS. EDITOR PAUSES AUTOFOCUS.",
     sun = "SUN LIGHT DIRECTION / COLOR / INTENSITY AND FLARE. BAKED LIGHTING STAYS BAKED.",
     lights = "EDIT MAP LIGHTS OR PLACE UP TO 16 POINT LIGHTS AT THE CAMERA. SELECTED POINT SETTINGS ARE LIVE.",
     streams = "CAPTURE CURRENT SETTINGS OR OMIT PLAYERS. OUTPUT: DEMOS/AVI. REQUIRES FFMPEG.",
@@ -528,19 +530,65 @@ Editor.registerPage("main", function(content, menu)
     nativeButton(content, "editor_reset_all", "RESET ALL EDITOR SETTINGS", 629, 410, 316, function() return request("reset_all") end)
 end)
 
+local dofBasics = {
+    {"r_dof_enable", "Enable the cinematic depth-of-field effect."},
+    {"demo_dof_mouse", "Continuously focus beneath the free cursor."},
+    {"demo_dof_speed", "Higher = faster. 1 = instant focus."},
+    {"r_dof_physical_focusDistance", "Manual focus. Adjusting this turns autofocus off."},
+    {"r_dof_physical_fstop", "Lower f-number = stronger background blur."},
+    {"r_dof_physical_bokehEnable", "Shape out-of-focus highlights."}
+}
+local dofBasicNames = {}
+for _, item in ipairs(dofBasics) do dofBasicNames[item[1]] = true end
+
 local function settingsPage(id)
     Editor.registerPage(id, function(content, menu)
+        if id == "dof" then
+            local function view(advanced)
+                menu.dofAdvanced, menu.settingsPage = advanced, 1
+                menu:requestCategory("dof", "DOF")
+            end
+            nativeButton(content, "dof_basic", (not menu.dofAdvanced and "> " or "") .. "BASIC", 465, 175, 316, function() view(false) end)
+            nativeButton(content, "dof_advanced", (menu.dofAdvanced and "> " or "") .. "ADVANCED", 793, 175, 316, function() view(true) end)
+            if not menu.dofAdvanced then
+                local byName = {}
+                for _, control in ipairs(settings.controls) do if control.page == id then byName[control.name] = control end end
+                for index, item in ipairs(dofBasics) do
+                    local control, y = byName[item[1]], 225 + (index - 1) * 48
+                    if control then
+                        local button = controlButton(content, control, index, menu, 465, y)
+                        local style = layout(793, y + 8, 316, 12)
+                        style.font = CoD.TextSettings.TitleFontTiny.Font
+                        style.alignment = LUI.Alignment.Left
+                        local hint = LUI.UIText.new(style); hint.id = "dof_hint_" .. control.name
+                        hint:setText(item[2]); content:addElement(hint)
+                        if control.kind == "float" then
+                            local valueStyle = layout(473, y + 29, 308, 11)
+                            valueStyle.font, valueStyle.alignment = CoD.TextSettings.TitleFontTiny.Font, LUI.Alignment.Left
+                            local value = LUI.UIText.new(valueStyle); value.id = "dof_value_" .. control.name; content:addElement(value)
+                            local function refresh() value:setText((control.name == "r_dof_physical_fstop" and "f/" or "VALUE  ") .. display(control)) end
+                            button:addEventHandler("content_refresh", refresh); refresh()
+                        end
+                    end
+                end
+                nativeButton(content, "editor_reset", "RESET DOF", 793, 560, 316, function() return request("reset", id) end)
+                return
+            end
+        end
         local items = {}
         for _, control in ipairs(settings.controls) do
-            if control.page == id then items[#items + 1] = control end
+            if control.page == id and (id ~= "dof" or not dofBasicNames[control.name]) then items[#items + 1] = control end
         end
         local actions = id == "camera" or id == "streams" or id == "bone_camera" or id == "fog" or id == "lights" or id == "misc"
-        local capacity = actions and 10 or 20
+        local capacity = id == "dof" and 16 or actions and 10 or 20
         local pages = math.max(1, math.ceil(#items / capacity))
         menu.settingsPage = math.max(1, math.min(menu.settingsPage or 1, pages))
         local first = (menu.settingsPage - 1) * capacity
         for i = first + 1, math.min(first + capacity, #items) do
-            controlButton(content, items[i], i - first, menu)
+            local index = i - first
+            if id == "dof" then
+                controlButton(content, items[i], index, menu, 465 + math.floor((index - 1) / 8) * 328, 225 + ((index - 1) % 8) * 31)
+            else controlButton(content, items[i], index, menu) end
         end
         if #items > 0 then
             nativeButton(content, "editor_reset", "RESET THIS TAB", 793, 560, 316, function() return request("reset", id) end)
@@ -549,7 +597,7 @@ local function settingsPage(id)
         if pages > 1 then
             local function turn(direction)
                 menu.settingsPage = (menu.settingsPage - 1 + direction) % pages + 1
-                menu:selectCategory(id, string.upper(id:gsub("_", " ")))
+                menu:requestCategory(id, string.upper(id:gsub("_", " ")))
             end
             nativeButton(content, "editor_previous_page", "< PREVIOUS", 465, 515, 153, function() turn(-1) end)
             nativeButton(content, "editor_next_page", "NEXT >  " .. menu.settingsPage .. "/" .. pages, 628, 515, 153, function() turn(1) end)
@@ -645,7 +693,8 @@ function Editor.update(menu, data)
     end
     if menu.colorPicker then menu.colorPicker.refresh() end
     local skyFeedback = menu.category == "sun" and settings.skyMessage or ""
-    menu.feedback:setText(skyFeedback ~= "" and skyFeedback or settings.message ~= "" and settings.message or
+    local dofFeedback = menu.category == "dof" and settings.dofMessage or ""
+    menu.feedback:setText(dofFeedback ~= "" and dofFeedback or skyFeedback ~= "" and skyFeedback or settings.message ~= "" and settings.message or
         (menu.category=="models" and settings.modelMessage or menu.category=="weapons" and settings.weaponSwapMessage or
         menu.category=="sun" and settings.skyMessage or settings.sceneMessage) or "")
     if (menu.category == "bone_camera" or menu.category == "lights") and menu.sceneStatus then
