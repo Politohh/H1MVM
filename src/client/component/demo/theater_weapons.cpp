@@ -25,6 +25,8 @@ namespace theater_weapons
             std::chrono::steady_clock::time_point start; };
         std::vector<choice> catalog;
         std::map<std::string, std::string> swaps;
+        std::map<std::string, unsigned> camos, originals;
+        nlohmann::json camo_catalog = nlohmann::json::array();
         std::map<std::string, load> loaded;
         std::set<std::string> held;
         std::optional<load> pending;
@@ -85,6 +87,20 @@ namespace theater_weapons
             !game::DB_IsXAssetDefault(game::ASSET_TYPE_XMODEL, name.c_str()); }
         void discover()
         {
+            if (camo_catalog.empty()) if (auto* t = table("mp/camotable.csv"))
+            {
+                auto choices = nlohmann::json::array();
+                for (int row = 0; row < t->rowCount; ++row)
+                {
+                    const auto id_text = cell(t,row,0), material = cell(t,row,8);
+                    if (id_text.empty() || id_text.find_first_not_of("0123456789") != id_text.npos) continue;
+                    const auto id = std::stoul(id_text);
+                    if (id > 511 || (id && (!game::DB_XAssetExists(game::ASSET_TYPE_MATERIAL,material.c_str()) ||
+                        game::DB_IsXAssetDefault(game::ASSET_TYPE_MATERIAL,material.c_str())))) continue;
+                    choices.push_back({{"id",id},{"label",id ? cell(t,row,2) : "No camo"},{"icon",id ? cell(t,row,4) : ""}});
+                }
+                std::lock_guard lock(catalog_mutex); camo_catalog = std::move(choices);
+            }
             if (!catalog.empty()) return;
             auto* kits = table("mp/furniturekits.csv");
             if (!kits || kits->columnCount < 7) return;
@@ -147,7 +163,7 @@ namespace theater_weapons
                 utils::hook::invoke<int>(0x658E0_b, c.kit.c_str()) < 0) throw std::runtime_error("Native weapon kit ID is unavailable");
             const auto variant = utils::hook::invoke<unsigned>(0x2E2D50_b, base, attachment.c_str(), c.kit.c_str(), 0, 0, nullptr);
             if (!variant || variant >= 1024) throw std::runtime_error("Native weapon kit registry is full");
-            result.target = base | (variant << 17);
+            result.target = with_camo(base | (variant << 17), camo_id(original));
             std::array<game::WeaponAttachment*,4> parts{};
             const auto count = utils::hook::invoke<int>(0x2E0C20_b, result.target, parts.data());
             if (count < 0 || count > 4) throw std::runtime_error("Invalid native weapon attachments");
@@ -168,6 +184,7 @@ namespace theater_weapons
         void publish(const load& edit)
         {
             auto result = std::make_shared<render_override>(); result->original = edit.original; result->target = edit.target;
+            if (const auto c = camos.find(edit.source); c != camos.end()) result->target = with_camo(result->target,c->second);
             for (const auto& model : edit.gun_models)
                 result->models.push_back(game::DB_FindXAssetHeader(game::ASSET_TYPE_XMODEL,model.c_str(),false).model);
             rendered.store(std::move(result));
@@ -178,6 +195,12 @@ namespace theater_weapons
             for (const auto& [source, edit] : loaded)
                 if (const auto selected = swaps.find(source); selected != swaps.end() && selected->second == edit.id)
                     replacements.emplace(edit.original, edit.target);
+            for (const auto& [source, camo] : camos)
+                if (const auto original = originals.find(source); original != originals.end())
+                {
+                    auto& target = replacements.try_emplace(original->second,original->second).first->second;
+                    target = with_camo(target,camo);
+                }
             const auto previous = world_rendered.load();
             if (!previous || *previous != replacements)
                 world_rendered.store(std::make_shared<const std::map<unsigned, unsigned>>(std::move(replacements)));
@@ -222,12 +245,33 @@ namespace theater_weapons
             return recorded;
         });
     }
-    void reset() { swaps.clear(); loaded.clear(); pending.reset(); rendered.store(nullptr); world_rendered.store(nullptr); message="Recorded weapons restored"; }
+    void reset() { swaps.clear(); camos.clear(); originals.clear(); loaded.clear(); pending.reset(); rendered.store(nullptr); world_rendered.store(nullptr); message="Recorded weapons restored"; }
     bool action(const std::string& name, const std::string& argument)
     {
-        if (!name.starts_with("weapon_swap_")) return false;
+        if (!name.starts_with("weapon_swap_") && !name.starts_with("camo_")) return false;
         if (!active()) throw std::runtime_error("Weapon Swapper is available during demo playback only");
         discover();
+        if (name.starts_with("camo_"))
+        {
+            if (name == "camo_apply")
+            {
+                const auto separator = argument.rfind('|');
+                if (separator == argument.npos || argument.substr(0,separator) != source_name || !firearm(source_category))
+                    throw std::runtime_error("The recorded weapon changed; select the camo again");
+                const auto value = argument.substr(separator+1);
+                if (value.empty() || value.find_first_not_of("0123456789") != value.npos || value.size()>3)
+                    throw std::runtime_error("Invalid camo");
+                const auto id = std::stoul(value);
+                if (std::none_of(camo_catalog.begin(),camo_catalog.end(),[&](const auto& c) { return c.at("id") == id; }))
+                    throw std::runtime_error("Camo material is not installed");
+                camos[source_name] = static_cast<unsigned>(id);
+                message = "Camo applied to POV and world gun; kit and attachments preserved";
+            }
+            else if (name == "camo_restore") { camos.erase(source_name); message = "Recorded camo restored"; }
+            else if (name == "camo_reset") { camos.clear(); message = "All recorded camos restored"; }
+            else return false;
+            rendered.store(nullptr); publish_world(); return true;
+        }
         if (name=="weapon_swap_reset") { reset(); return true; }
         if (name=="weapon_swap_restore") {
             swaps.erase(source_name); loaded.erase(source_name); pending.reset(); rendered.store(nullptr);
@@ -278,7 +322,8 @@ namespace theater_weapons
         const auto current=demo_playback::current_path().string();
         if (path!=current || session!=demo_playback::session_id()) {
             rendered.store(nullptr); world_rendered.store(nullptr); loaded.clear(); pending.reset();
-            if (path!=current) { swaps.clear(); message.clear(); }
+            originals.clear();
+            if (path!=current) { swaps.clear(); camos.clear(); message.clear(); }
             path=current; session=demo_playback::session_id();
         }
         discover();
@@ -286,6 +331,7 @@ namespace theater_weapons
         source_weapon=ps ? field<unsigned>(ps,916) : 0;
         char name[1024]{}; if (source_weapon&255) game::BG_GetWeaponNameComplete(source_weapon,false,name,sizeof(name));
         source_name=name; const auto identity=split_name(source_name); auto* def=definition(identity.weapon);
+        if (source_weapon & 255) originals[source_name] = source_weapon;
         source_category=def ? def->weapClass : -1; source_label=def && def->szDisplayName ? def->szDisplayName : "Waiting for a recorded gun";
         if (!held.empty()) utils::hook::invoke<void>(0x757A0_b);
         if (pending) {
@@ -297,9 +343,16 @@ namespace theater_weapons
             }
         }
         const auto edit=swaps.find(source_name);
-        if (edit==swaps.end()) rendered.store(nullptr);
+        if (edit==swaps.end()) {
+            if (camos.contains(source_name)) {
+                const auto target = with_camo(source_weapon,camos.at(source_name));
+                if (const auto value=rendered.load(); !value || value->original!=source_weapon || value->target!=target)
+                    publish(load{source_name,"",source_weapon,source_weapon});
+            } else rendered.store(nullptr);
+        }
         else if (const auto cached=loaded.find(source_name); cached!=loaded.end() && cached->second.id==edit->second) {
-            if (const auto value=rendered.load(); !value || value->original!=source_weapon || value->target!=cached->second.target)
+            const auto target = camos.contains(source_name) ? with_camo(cached->second.target,camos.at(source_name)) : cached->second.target;
+            if (const auto value=rendered.load(); !value || value->original!=source_weapon || value->target!=target)
                 publish(cached->second);
         } else if (!pending) {
             rendered.store(nullptr);
@@ -309,9 +362,12 @@ namespace theater_weapons
         publish_world();
         snapshot={{"weaponSwapSource",source_name},{"weaponSwapLabel",source_label},{"weaponSwapCategory",source_category},
             {"weaponSwapApplied",swaps.contains(source_name)?swaps.at(source_name):""},{"weaponSwapLoading",pending.has_value()},
-            {"weaponSwapMessage",message},{"weaponSwapCount",swaps.size()},{"weaponSwapCatalogCount",catalog.size()}};
+            {"weaponSwapMessage",message},{"weaponSwapCount",swaps.size()},{"weaponSwapCatalogCount",catalog.size()},
+            {"camoApplied",camos.contains(source_name) ? static_cast<int>(camos.at(source_name)) : -1},
+            {"camoRecorded",camo_id(source_weapon)}};
     }
     nlohmann::json state() { return snapshot; }
+    nlohmann::json camo_choices() { std::lock_guard lock(catalog_mutex); return camo_catalog; }
     nlohmann::json choices_page(const std::string& source, const std::string& weapon, int page)
     {
         std::lock_guard lock(catalog_mutex);

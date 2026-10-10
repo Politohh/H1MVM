@@ -13,10 +13,16 @@
 #include "demo_avidemo.hpp"
 #include "component/scheduler.hpp"
 #include "component/console.hpp"
+#include "component/fastfiles.hpp"
+#include "component/filesystem.hpp"
 #include "game/game.hpp"
 #include "utils/io.hpp"
+#include "utils/hook.hpp"
 #include <cmath>
 #include <iomanip>
+#include "loader/component_loader.hpp"
+#include "component/command.hpp"
+#include "utils/flags.hpp"
 
 namespace theater_editor
 {
@@ -69,11 +75,12 @@ namespace theater_editor
             {"dof", "demo_dof_speed", "FOCUS SPEED", .01},
             {"dof", "r_dof_tweak", "DOF OVERRIDE MODE", 1},
             {"dof", "r_dof_physical_enable", "PHYSICAL DOF", 1},
-            {"dof", "r_dof_physical_focusDistance", "FOCUS DISTANCE", 25},
+            {"dof", "r_dof_physical_focusDistance", "FOCUS DISTANCE", .25},
             {"dof", "r_dof_physical_fstop", "APERTURE (F-STOP)", .125},
             {"dof", "r_dof_physical_filmDiagonal", "FILM DIAGONAL", .5},
             {"dof", "r_dof_physical_bokehEnable", "BOKEH", 1},
-            {"dof", "r_dof_physical_bokehPreset", "BOKEH PRESET", 1},
+            {"dof", "r_dof_physical_bokehPreset", "BOKEH QUALITY", 1},
+            {"dof", "r_dof_physical_bokehShape", "BOKEH SHAPE", 1},
             {"dof", "r_dof_physical_bokehRotation", "BOKEH ROTATION", 1},
             {"dof", "r_dof_physical_bokehSharpness", "BOKEH SHARPNESS", .01},
             {"dof", "r_dof_physical_viewModelFocusDistance", "VIEWMODEL FOCUS", 1},
@@ -130,6 +137,113 @@ namespace theater_editor
         int serial{};
         nlohmann::json acknowledgements = nlohmann::json::object();
 
+        nlohmann::json vision_choices = nlohmann::json::array();
+        std::string selected_vision;
+        unsigned vision_session = ~0u;
+        std::uint8_t* vision_owner{};
+        // H1 CG_VisionSetStartLerp_To (0x335CD0): three 212-byte
+        // buffers for the base slot plus its 12-byte lerp state. Other
+        // vision slots (damage/night vision/etc.) remain engine-owned.
+        constexpr std::array<std::size_t,3> vision_offsets{1120,2392,3664};
+        std::array<std::array<std::uint8_t,212>,3> original_vision{};
+        std::array<std::uint8_t,12> original_vision_lerp{};
+        std::array<std::uint8_t,212> applied_vision{};
+        bool vision_saved{};
+
+        bool update_vision_stub(int local_client, std::uint8_t* cvs, int time)
+        {
+            // The map's volume update runs immediately before this call. Apply
+            // the chosen base before native interpolation/compositing, retaining
+            // native damage/night-vision slots and the normal renderer path.
+            if (local_client == 0 && vision_saved && !selected_vision.empty() &&
+                vision_session == demo_playback::session_id() && demo_playback::is_replay_armed() &&
+                vision_owner && cvs == vision_owner + 0x175758 && !game::VirtualLobby_Loaded())
+            {
+                std::memcpy(cvs+3664,applied_vision.data(),applied_vision.size());
+                *reinterpret_cast<int*>(cvs+4944)=1;
+            }
+            return utils::hook::invoke<bool>(0x335DE0_b,local_client,cvs,time);
+        }
+
+        bool vision_name(const std::string& name)
+        { return !name.empty() && name.size() <= 45 && name.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_-") == name.npos; }
+
+        void refresh_visions()
+        {
+            std::set<std::string> names;
+            auto add = [&](const std::string& path) {
+                if (!path.starts_with("vision/") || !path.ends_with(".vision")) return;
+                const auto name = path.substr(7,path.size()-14);
+                if (vision_name(name)) names.insert(name);
+            };
+            fastfiles::enum_assets(game::ASSET_TYPE_RAWFILE,[&](game::XAssetHeader h) {
+                if (h.rawfile && h.rawfile->name && h.rawfile->len > 0 && h.rawfile->len < 98304) add(h.rawfile->name);
+            },false);
+            for (const auto& root : filesystem::get_search_paths())
+            {
+                std::error_code ec;
+                const auto directory = std::filesystem::path(root)/"vision";
+                for (std::filesystem::directory_iterator it(directory,ec), end; !ec && it!=end; it.increment(ec))
+                    if (it->is_regular_file(ec)) add("vision/"+it->path().filename().string());
+            }
+            vision_choices=nlohmann::json::array();
+            for (const auto& name : names) vision_choices.push_back({{"id",name},{"label",name},{"icon",""}});
+        }
+
+        void restore_vision()
+        {
+            auto* cg = reinterpret_cast<std::uint8_t*>(game::CG_GetLocalClientGlobals());
+            if (vision_saved && vision_session == demo_playback::session_id() && cg == vision_owner &&
+                demo_playback::is_replay_armed() && game::CL_IsCgameInitialized())
+            {
+                auto* cvs = cg + 0x175758; // Native CG server-command call at 0xF47FB.
+                for (std::size_t i=0;i<vision_offsets.size();++i)
+                    std::memcpy(cvs+vision_offsets[i],original_vision[i].data(),212);
+                std::memcpy(cvs+4936,original_vision_lerp.data(),12);
+            }
+            vision_saved=false; selected_vision.clear();
+        }
+
+        void apply_vision(const std::string& name)
+        {
+            if (!vision_name(name) || !game::CL_IsCgameInitialized() || game::VirtualLobby_Loaded())
+                throw std::runtime_error("Vision is available in a loaded demo only");
+            const auto path="vision/"+name+".vision";
+            std::string buffer;
+            if (!filesystem::read_file(path,&buffer))
+            {
+                if (!game::DB_XAssetExists(game::ASSET_TYPE_RAWFILE,path.c_str()) ||
+                    game::DB_IsXAssetDefault(game::ASSET_TYPE_RAWFILE,path.c_str()))
+                    throw std::runtime_error("Vision file is not installed");
+                auto* raw=game::DB_FindXAssetHeader(game::ASSET_TYPE_RAWFILE,path.c_str(),false).rawfile;
+                if (!raw || raw->len <= 0 || raw->len >= 98304) throw std::runtime_error("Invalid vision file size");
+                buffer.resize(raw->len+1);
+                game::DB_GetRawBuffer(raw,buffer.data(),static_cast<int>(buffer.size()));
+            }
+            if (buffer.empty() || buffer.size() >= 98304) throw std::runtime_error("Invalid vision file size");
+            alignas(16) std::array<std::uint8_t,212> parsed{};
+            // Use the native loader, including its missing-field defaults and
+            // medium-tint fallback. The availability check above prevents its
+            // silent fallback to default.vision. It parses vision fields only,
+            // never console commands, and writes into our temporary buffer.
+            if (!utils::hook::invoke<bool>(0x3364E0_b,name.c_str(),parsed.data()))
+                throw std::runtime_error("Cannot parse vision file");
+            auto* cg=reinterpret_cast<std::uint8_t*>(game::CG_GetLocalClientGlobals());
+            if (!cg) throw std::runtime_error("Demo scene is not ready");
+            auto* cvs=cg+0x175758;
+            if (!vision_saved)
+            {
+                for (std::size_t i=0;i<vision_offsets.size();++i)
+                    std::memcpy(original_vision[i].data(),cvs+vision_offsets[i],212);
+                std::memcpy(original_vision_lerp.data(),cvs+4936,12);
+                vision_owner=cg; vision_saved=true;
+            }
+            applied_vision=parsed;
+            std::memcpy(cvs+3664,parsed.data(),212);
+            *reinterpret_cast<int*>(cvs+4944)=1; // Native immediate base vision, no time-scaled blend.
+            selected_vision=name; message="Applied vision: "+name+". Baked map lighting is unchanged.";
+        }
+
         const entry* find(const std::string& name)
         {
             const auto it = std::find_if(catalog.begin(), catalog.end(), [&](const entry& e) { return e.name == name; });
@@ -185,6 +299,11 @@ namespace theater_editor
             const double window = distance ? 100000. : (j["kind"] == "int" ? 256. : 100.);
             if (!std::isfinite(lo) || lo < -1.e8) lo = -window;
             if (!std::isfinite(hi) || hi > 1.e8) hi = window;
+            // H1 permits f/0.125..512 for debugging. Keep the editor in the
+            // documented photographic range; this does not alter native domains.
+            if (e.name == "r_dof_physical_fstop" || e.name == "r_dof_physical_viewModelFstop")
+            { lo = std::max(lo, 1.); hi = std::min(hi, 22.); }
+            if (e.name == "r_dof_physical_focusDistance") j["logarithmic"] = true;
             if (lo > hi) return {};
             j["min"] = lo; j["max"] = hi;
             if (std::string_view(e.name) == "avi_codec") j["choices"] = {"AV1", "H.265", "H.264", "PRORES 4444"};
@@ -462,10 +581,25 @@ namespace theater_editor
         }
         void run(const std::string& name, const std::string& argument)
         {
-            if (name == "save_preset") save_preset(argument);
+            if (name == "vision_apply") apply_vision(argument);
+            else if (name == "vision_restore") { restore_vision(); message="Original map vision restored"; }
+            else if (name == "vision_refresh") { refresh_visions(); message="Refreshed installed and custom vision files"; }
+            else if (name == "save_preset") save_preset(argument);
             else if (name == "load_preset") load_preset(argument);
             else if (name == "save_path") save_path();
             else if (name == "load_path") load_path();
+            else if (name == "dof_cinematic")
+            {
+                if (!dof_resources_ready()) throw std::runtime_error(dof_unavailable);
+                for (const auto& [key, value] : std::initializer_list<std::pair<const char*, double>>{
+                    {"r_dof_enable",1}, {"r_dof_physical_enable",1}, {"r_dof_physical_fstop",2.8},
+                    {"r_dof_physical_filmDiagonal",43.2}, {"r_dof_physical_bokehEnable",1},
+                    {"r_dof_physical_bokehPreset",2}, {"r_dof_physical_bokehShape",2},
+                    {"r_dof_physical_bokehSharpness",.8}, {"r_dof_physical_bokehRotation",0},
+                    {"demo_dof_speed",.2}, {"demo_dof_mouse",1}, {"r_dof_tweak",1}})
+                    if (!apply(key,value)) throw std::runtime_error("Cannot apply cinematic DOF setting: " + std::string(key));
+                message = "Cinematic defaults: f/2.8, full-frame sensor, High circular bokeh and mouse autofocus.";
+            }
             else if (name == "reset" || name == "reset_all")
             {
                 if (name == "reset_all" && theater_camera::is_hud_hidden()) theater_camera::toggle_hud();
@@ -481,7 +615,7 @@ namespace theater_editor
                         game::Dvar_Reset(game::Dvar_FindVar(base.c_str()), game::DVAR_SOURCE_INTERNAL);
                 }
                 if (name == "reset_all" || argument == "camera") theater_camera::set_freecam_fov(90);
-                if (name == "reset_all") { theater_scene::reset_editor(); theater_models::reset(); theater_weapons::reset(); }
+                if (name == "reset_all") { restore_vision(); theater_scene::reset_editor(); theater_models::reset(); theater_weapons::reset(); }
                 guard_dof_override();
                 message = name == "reset_all" ? "Reset all editor settings; dolly markers retained" : "Reset " + argument + " to engine defaults";
             }
@@ -516,12 +650,20 @@ namespace theater_editor
 
     void update()
     {
+        if (!demo_playback::playing() || vision_session != demo_playback::session_id())
+        {
+            // A map load initializes a fresh native vision state. Never copy
+            // the old map's buffers into a new cg allocation or replay session.
+            vision_saved=false; vision_owner=nullptr; selected_vision.clear(); vision_choices.clear();
+            vision_session=demo_playback::session_id();
+        }
         theater_models::update();
         theater_weapons::update();
         if (demo_playback::is_replay_armed()) guard_dof_override();
         { std::lock_guard lock(mutex); if (!theater_ui::editor_open() && pending.empty()) return; }
         if (catalog.empty() || catalog_session != demo_playback::session_id())
         {
+            refresh_visions();
             catalog.assign(std::begin(entries), std::end(entries));
             for (const auto& e : theater_scene::settings()) catalog.push_back({e.page,e.name,e.label,e.step});
             const entry extras[] = {
@@ -607,6 +749,7 @@ namespace theater_editor
         const auto bounds = demo_playback::time_bounds();
         const auto first = bounds ? bounds->first : 0;
         nlohmann::json data = {{"revision", revision}, {"controls", std::move(controls)}, {"values", std::move(values)},
+            {"visionChoices",vision_choices},{"visionApplied",selected_vision},
             {"custom", custom}, {"acks", acknowledgements}, {"session", demo_playback::session_id()}, {"message", message}, {"markers", theater_camera::get_keyframes().size()},
             {"dofMessage", dof_resources_ready() ? theater_focus::status() : dof_unavailable},
             {"captureIn", demo_avidemo::has_in() ? demo_avidemo::in_point() - first : -1},
@@ -639,11 +782,12 @@ namespace theater_editor
     int set_color(const std::string& name, double red, double green, double blue) { return queue_edit(name,{red,green,blue},true); }
     bool action(const std::string& name, const std::string& argument)
     {
-        static const std::set<std::string> allowed{"save_preset", "load_preset", "save_path", "load_path", "reset", "reset_all", "add_slider", "remove_slider",
+        static const std::set<std::string> allowed{"save_preset", "load_preset", "save_path", "load_path", "reset", "reset_all", "dof_cinematic", "add_slider", "remove_slider",
             "capture_in", "capture_out", "capture_clear", "capture_start", "capture_stop", "toggle_hud",
             "bone_attach", "bone_detach", "bone_next", "point_add", "point_next", "point_remove", "point_clear", "fog_sample",
             "model_select", "model_head", "model_body", "model_restore", "model_reset_all", "model_focus", "model_save", "model_load",
-            "weapon_swap_apply", "weapon_swap_restore", "weapon_swap_reset", "weapon_swap_save", "weapon_swap_load"};
+            "weapon_swap_apply", "weapon_swap_restore", "weapon_swap_reset", "weapon_swap_save", "weapon_swap_load",
+            "camo_apply", "camo_restore", "camo_reset", "vision_apply", "vision_restore", "vision_refresh"};
         if (!allowed.contains(name) || !demo_playback::is_replay_armed() || !theater_ui::editor_open() || argument.size() > 128) return false;
         const auto session = demo_playback::session_id();
         scheduler::once([name, argument, session]
@@ -651,7 +795,7 @@ namespace theater_editor
             if (session != demo_playback::session_id() || !demo_playback::is_replay_armed() || (demo_avidemo::is_capturing() && name != "capture_stop")) return;
             // Edits queued before Reset/Load cannot reapply after the action.
             // Acknowledge discarded requests so optimistic Lua values release.
-            if (name == "reset" || name == "reset_all" || name == "load_preset")
+            if (name == "reset" || name == "reset_all" || name == "load_preset" || name == "dof_cinematic")
             {
                 std::lock_guard lock(mutex);
                 for (const auto& [setting, change] : pending) acknowledgements[setting] = change.serial;
@@ -662,4 +806,89 @@ namespace theater_editor
         }, scheduler::main);
         return true;
     }
+
+    // Opt-in integration check; ordinary playback never starts or edits a demo.
+    class check_component final : public component_interface
+    {
+        void post_unpack() override
+        {
+            if (!game::environment::is_mp()) return;
+            utils::hook::call(0xF61C5_b,update_vision_stub);
+            if (!utils::flags::has_flag("appearancecheck")) return;
+            scheduler::schedule([] {
+                static int stage{};
+                static const auto started=GetTickCount64();
+                static auto due=started+12000;
+                static nlohmann::json report={{"ok",false}};
+                static std::array<std::uint8_t,212> applied{};
+                static unsigned recorded{},camouflage{};
+                static std::string gun;
+                auto finish=[&] {
+                    restore_vision();
+                    if (demo_playback::is_replay_armed()) theater_weapons::action("camo_reset","");
+                    utils::io::write_file("appearance-check.json",report.dump(2));
+                    command::execute("quit",false); return scheduler::cond_end;
+                };
+                const auto now=GetTickCount64();
+                if (now-started>120000) { report["error"]="Timeout at stage "+std::to_string(stage); return finish(); }
+                if (now<due) return scheduler::cond_continue;
+                try {
+                    if (!stage) {
+                        if (!game::VirtualLobby_Loaded()) return scheduler::cond_continue;
+                        command::execute("demoplay \"demos/theater_weapon_check.dm_h1\" fullpath",false);
+                        ++stage; due=now+8000; return scheduler::cond_continue;
+                    }
+                    if (!demo_playback::is_replay_armed() || !game::CL_IsCgameInitialized() || demo_playback::seeking()) return scheduler::cond_continue;
+                    if (demo_playback::current_path().filename()!="theater_weapon_check.dm_h1") throw std::runtime_error("Wrong test recording");
+                    auto* cg=reinterpret_cast<std::uint8_t*>(game::CG_GetLocalClientGlobals());
+                    if (!cg) return scheduler::cond_continue;
+                    auto* cvs=cg+0x175758;
+                    if (stage==1) {
+                        if (!demo_playback::paused()) demo_playback::toggle_pause();
+                        theater_weapons::update(); refresh_visions();
+                        report["visions"]=vision_choices.size();
+                        const auto choices=theater_weapons::camo_choices(); report["camos"]=choices.size();
+                        if (vision_choices.empty() || choices.size()<2) throw std::runtime_error("Native catalogues unavailable");
+                        gun=theater_weapons::state().value("weaponSwapSource","");
+                        recorded=utils::hook::invoke<unsigned>(0x2E1270_b,cg);
+                        camouflage=choices.at(1).at("id").get<unsigned>();
+                        theater_weapons::action("camo_apply",gun+"|"+std::to_string(camouflage));
+                        apply_vision("mp_crash");
+                        std::memcpy(applied.data(),cvs+3664,212);
+                        report["visionChanged"]=applied!=original_vision[2];
+                    } else if (stage==2) {
+                        const auto view=utils::hook::invoke<unsigned>(0x2E1270_b,cg);
+                        report["recordedWeapon"]=recorded;report["viewWeapon"]=view;
+                        if (((view>>8)&511)!=camouflage || (view&~0x1ff00u)!=(recorded&~0x1ff00u))
+                            throw std::runtime_error("View camo or preserved weapon bits mismatch");
+                        std::array<std::uint8_t,256> entity{}; entity[10]=1;
+                        std::memcpy(entity.data()+0x4c,&recorded,4);
+                        report["worldWeapon"]=theater_weapons::world_weapons(entity.data())[0];
+                        if (theater_weapons::world_weapons(entity.data())[0]!=view) throw std::runtime_error("World camo mismatch");
+                        if (std::memcmp(cvs+3664,applied.data(),212)) {
+                            report["visionDifferences"]=nlohmann::json::array();
+                            for (unsigned i=0;i<212;++i) if (cvs[3664+i]!=applied[i])
+                                report["visionDifferences"].push_back({i,applied[i],cvs[3664+i]});
+                            report["visionStyle"]=*reinterpret_cast<int*>(cvs+4944);
+                            throw std::runtime_error("Applied vision did not persist");
+                        }
+                        const auto original=original_vision; const auto lerp=original_vision_lerp;
+                        restore_vision();
+                        for (std::size_t i=0;i<vision_offsets.size();++i)
+                            if (std::memcmp(cvs+vision_offsets[i],original[i].data(),212)) throw std::runtime_error("Vision restore mismatch");
+                        if (std::memcmp(cvs+4936,lerp.data(),12)) throw std::runtime_error("Vision lerp restore mismatch");
+                        report["visionRestored"]=true;
+                        theater_weapons::action("camo_restore","");
+                    } else {
+                        if (utils::hook::invoke<unsigned>(0x2E1270_b,cg)!=recorded) throw std::runtime_error("Camo restore mismatch");
+                        report["ok"]=report.value("visionChanged",false); return finish();
+                    }
+                    ++stage;due=now+3000;
+                    report["stage"]=stage;utils::io::write_file("appearance-check.json",report.dump(2));
+                } catch (const std::exception& error) { report["error"]=error.what(); return finish(); }
+                return scheduler::cond_continue;
+            },scheduler::main,100ms);
+        }
+    };
 }
+REGISTER_COMPONENT(theater_editor::check_component)

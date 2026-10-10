@@ -46,7 +46,8 @@ def collect(config):
     for source in sorted((ROOT / "data/cdata").rglob("*")):
         if source.is_file():
             add("cdata/" + source.relative_to(ROOT / "data/cdata").as_posix(), source)
-    for required in ("theater/__init__.lua", "theater/model_swapper.lua", "theater/weapon_swapper.lua"):
+    for required in ("theater/__init__.lua", "theater/model_swapper.lua", "theater/weapon_swapper.lua",
+                     "theater/appearance_pickers.lua", "patches/startup_lobby.lua"):
         if "cdata/ui_scripts/" + required not in files:
             raise ValueError("Missing client UI: " + required)
 

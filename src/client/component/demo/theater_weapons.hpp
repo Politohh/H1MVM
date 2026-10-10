@@ -12,6 +12,7 @@ namespace theater_weapons
     bool action(const std::string& name, const std::string& argument);
     nlohmann::json state();
     nlohmann::json choices_page(const std::string& source, const std::string& weapon, int page);
+    nlohmann::json camo_choices();
     std::set<std::string> held_models();
     bool different_weapon();
     std::string hud_weapon_label();

@@ -11,6 +11,15 @@ int main()
     assert(r700.weapon=="h1_remington700_mp" && r700.attachment=="acog" && r700.furniture=="base");
     const auto standard=split_name("h1_junsnp_mp");
     assert(standard.weapon=="h1_junsnp_mp" && standard.attachment=="none" && standard.furniture=="base");
+    const auto painted=split_name("h1_remington700_mp_a#acog_f#ndl_camo012");
+    assert(painted.weapon==r700.weapon && painted.attachment=="acog" && painted.furniture=="ndl");
+    for (unsigned id=0;id<512;++id) {
+        constexpr unsigned original=0x9f7abc53u;
+        const auto painted_weapon=with_camo(original,id);
+        assert(camo_id(painted_weapon)==id);
+        assert((painted_weapon&~0x1ff00u)==(original&~0x1ff00u));
+        assert(with_camo(painted_weapon,camo_id(original))==original);
+    }
     assert(identifier(r700.weapon) && identifier(r700.attachment));
     for (const auto* bad:{"", "../base", "C:\\x", "kit/name", "foo|bar", "foo;quit"}) assert(!identifier(bad));
     assert(!identifier(std::string(64,'a')));

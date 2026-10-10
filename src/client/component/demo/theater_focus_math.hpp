@@ -5,6 +5,12 @@
 
 namespace theater_focus
 {
+    constexpr bool input_allowed(int catchers, bool theater_owns_input)
+    {
+        // The Theater editor uses the same native LUI catcher as the timeline.
+        // Console/chat/other menus must still pause scene focus.
+        return catchers == 0 || (catchers == 0x40 && theater_owns_input);
+    }
     constexpr float world_depth_range = 63.f / 64.f;
     // The projection used for the sampled frame: hardware depth = A + B / viewZ.
     // Works for regular and reversed Z; never use current-camera constants on an older sample.

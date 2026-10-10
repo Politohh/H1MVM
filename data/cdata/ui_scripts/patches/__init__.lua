@@ -8,6 +8,7 @@ if game:issingleplayer() then
 end
 
 require("disable_useless_things")
+require("startup_lobby")
 
 if Engine.InFrontend() then
     require("shader_dialog")

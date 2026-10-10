@@ -9,7 +9,9 @@ blur controls. Both views use the same settings and complete-tab reset.
 Autofocus
 is continuous in freecam/dolly. Show the Theater cursor with F4 and move it over
 the scene; hide the cursor to retain that screen position while moving the camera.
-Editor/console interaction and loss of game focus suspend sampling. Focus Speed
+Focus continues behind the Theater editor. Console/chat, unrelated menus and
+loss of game focus suspend sampling. The status line reports active focus distance
+or why focus is paused. Focus Speed
 runs from .001 to 1: higher values focus faster and 1 is instant. The default
 is .2, a 20 percent transition per 60 Hz frame, normalized to elapsed time to
 keep the same transition duration at other frame rates. Old presets containing
@@ -17,6 +19,16 @@ keep the same transition duration at other frame rates. Old presets containing
 Manual Focus Distance turns autofocus off. Enabling DOF or adjusting the main
 optical controls activates physical DOF automatically; disabling DOF also
 disables autofocus, so it cannot immediately turn the effect back on.
+
+The aperture sliders cover f/1 to f/22 instead of H1's debugging range of
+f/0.125 to f/512. Manual scene focus uses a logarithmic slider for precision
+at close distances, with a readout in metres (engine distances remain inches).
+Readouts update immediately during slider dragging and arrow clicks.
+**Cinematic Defaults** enables autofocus and physical DOF at f/2.8 with a
+43.2 mm sensor diagonal, High-quality circular bokeh and the native 0.8
+sharpness. It retains focus distance until a valid scene sample arrives.
+The same resource guard gates this action; it never changes graphics quality
+or recreates the video device automatically.
 
 Graphics DOF must be enabled and its video settings applied. The existing resource
 guard still gates the native override. Active autofocus enables physical DOF.
@@ -52,7 +64,9 @@ Validation: `tests/theater_focus.cpp` checks depth conversion, sky/invalid
 samples, response invariance across frame rates, and real D3D11 WARP pixel
 readback. The opt-in `-mousefocuscheck` uses a disposable
 `demos/theater_mouse_focus_check.dm_h1`, temporarily applies DOF quality,
-samples two screen positions, verifies names in/out of freecam, writes
+checks focus while the native editor is open, applies cinematic defaults from
+an intentionally excessive f-stop, samples two screen positions, verifies
+the usable aperture range and names in/out of freecam, writes
 `mouse-focus-check.json`, restores quality/names and quits. Never launch this
 flag against an existing interactive H1 session. Visual blur/framing acceptance
 remains separate from numerical/runtime checks.

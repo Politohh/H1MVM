@@ -4,11 +4,18 @@ Put `h1-mod.exe` in your existing Modern Warfare Remastered game directory and l
 The original MWR game installation is still required. No separate client support pack,
 COD4 installation, Python, or FFmpeg installation is required by this release.
 
-The EXE contains the Theater UI (including Model Swapper and Weapon Swapper), all
+The EXE contains the Theater UI (including Model Swapper, Weapon Swapper, Camo Swapper and Vision), all
 catalogued COD4 facial source clips/rest rigs, the five classic sniper animation sets
 and scope, a small index of 45 native sky presets, and FFmpeg for movie capture. Game weapon/kit models and
 portraits continue to come from the installed MWR game assets; this package does not
 create portraits that are absent from those assets.
+
+Camo Swapper reads the native camo table and materials from MWR. Vision lists the
+`.vision` assets loaded by MWR; applying a preset uses the native vision loader.
+Neither feature requires exported asset folders, a development checkout, or an
+additional download. Optional custom `.vision` files in `h1-mod/vision` extend the
+Vision list; built-in presets work without that folder. Vision changes supported
+color grading and runtime lighting fields, not another map's baked lighting or sky.
 
 On first launch the EXE verifies and extracts its support files into
 `%LOCALAPPDATA%/h1-mod/bundles/<content hash>/`. Allow roughly 65 MB for this cache in

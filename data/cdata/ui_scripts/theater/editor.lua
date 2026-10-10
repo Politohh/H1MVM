@@ -3,6 +3,20 @@
 local Editor = {pages = {}}
 local settings = {revision = -1, controls = {}, custom = {}, values = {}}
 local pending = {}
+local backgroundDim = true
+-- Native vignette has no ID. Name only the Theater instance so the toggle
+-- can remove both its edge shading and the separate full-screen darken layer.
+local nativeVignette = LUI.MenuTemplate.AddVignette
+if nativeVignette then
+    LUI.MenuTemplate.AddVignette = function(menu, ...)
+        nativeVignette(menu, ...)
+        if menu.type == "h1_theater_editor" then
+            local child, last = menu:getFirstChild(), nil
+            while child do last=child;child=child:getNextSibling() end
+            menu.theaterVignette=last
+        end
+    end
+end
 -- Move the whole editor column, including picker hit boxes and animation
 -- states, above the independent bottom-anchored timeline and its hints.
 local CONTENT_OFFSET_Y = -80
@@ -10,7 +24,8 @@ local categories = {
     {"main", "MAIN"}, {"camera", "CAMERA"}, {"misc", "MISC"},
     {"bone_camera", "BONE CAMERA"}, {"ssao", "SSAO"}, {"fog", "FOG"},
     {"dof", "DOF"}, {"sun", "SUN"}, {"lights", "LIGHTS"},
-    {"streams", "STREAMS"}, {"weapon", "WEAPON"}, {"models", "MODEL SWAPPER"}, {"weapons", "WEAPON SWAPPER"}, {"sliders", "SLIDERS"}
+    {"vision", "VISION"}, {"streams", "STREAMS"}, {"weapon", "WEAPON"}, {"models", "MODEL SWAPPER"},
+    {"weapons", "WEAPON SWAPPER"}, {"camos", "CAMO SWAPPER"}, {"sliders", "SLIDERS"}
 }
 
 function Editor.registerPage(id, builder)
@@ -83,12 +98,13 @@ end
 
 local function request(name, argument)
     local accepted = game:theatereditoraction(name, argument or "")
-    if accepted and (name == "reset" or name == "reset_all" or name == "load_preset") then pending = {} end
+    if accepted and (name == "reset" or name == "reset_all" or name == "load_preset" or name == "dof_cinematic") then pending = {} end
     return accepted
 end
 
 local function display(control)
     local value = settings.values[control.name] or control.min
+    if control.name == "r_dof_physical_focusDistance" then return string.format("%.2f m", value * .0254) end
     if control.kind == "bool" then return value ~= 0 and "ON" or "OFF" end
     if control.choices then return control.choices[math.floor(value) + 1] or tostring(value) end
     return string.format("%.4g", value)
@@ -130,21 +146,31 @@ local function valueRow(content, id, label, x, y, control, getter, setter, menu)
     local slider = control.kind == "float" and control.max > control.min
     local function readout()
         if control.format then return control.format(getter()) end
+        if control.name == "r_dof_physical_focusDistance" then return string.format("%.2f m", getter() * .0254) end
         if control.name == "demo_sun_timeofday" then
             local minutes = math.floor(getter()*60+.5)
             return string.format("%02d:%02d", math.floor(minutes/60), minutes%60)
         end
         return string.format("%.4g", getter())
     end
-    local refresh
+    local refresh, button
+    local function fractionOf(value)
+        value = math.max(control.min, math.min(control.max, value))
+        if control.logarithmic then return math.log((1 + value)/(1 + control.min)) / math.log((1 + control.max)/(1 + control.min)) end
+        return (value - control.min)/(control.max - control.min)
+    end
+    local function valueAt(fraction)
+        if control.logarithmic then return (1 + control.min) * ((1 + control.max)/(1 + control.min)) ^ fraction - 1 end
+        return control.min + fraction * (control.max - control.min)
+    end
     local function change(direction)
         local nextValue = getter() + direction * control.step
         if slider then nextValue = math.max(control.min, math.min(control.max, nextValue))
         elseif nextValue > control.max then nextValue = control.min
         elseif nextValue < control.min then nextValue = control.max end
-        if setter(nextValue) and refresh then refresh(); menu.help:setText(label .. "  /  " .. readout()) end
+        if setter(nextValue) and refresh then button:processEvent({name="content_refresh"}); menu.help:setText(label .. "  /  " .. readout()) end
     end
-    local button = nativeButton(content, id, label, x, y, 316,
+    button = nativeButton(content, id, label, x, y, 316,
         not slider and function() change(1) end or nil, {maxLabelWidth = 178})
     button:registerEventHandler("button_left", function(_,event) change(-1); event.handled=true; return true end)
     button:registerEventHandler("button_right", function(_,event) change(1); event.handled=true; return true end)
@@ -170,7 +196,7 @@ local function valueRow(content, id, label, x, y, control, getter, setter, menu)
         local fill = image(track, id .. "_fill", 2, 2, 0, 4, {r=.35,g=.7,b=.43})
         local thumb = image(track, id .. "_thumb", 1, -1, 2, 10, {r=.8,g=.9,b=.82})
         refresh = function()
-            local fraction = math.max(0, math.min(1, (getter()-control.min)/(control.max-control.min)))
+            local fraction = fractionOf(getter())
             fill:registerAnimationState("value", layout(2, 2, 64 * fraction, 4)); fill:animateToState("value", 0)
             thumb:registerAnimationState("value", layout(1 + 64 * fraction, -1, 2, 10)); thumb:animateToState("value", 0)
         end
@@ -203,11 +229,11 @@ local function valueRow(content, id, label, x, y, control, getter, setter, menu)
     local function drag(event)
         local px=pointer(event); if not px then return end
         local fraction=math.max(0,math.min(1,(px-226)/64))
-        local value=control.min+fraction*(control.max-control.min)
+        local value=valueAt(fraction)
         value=math.max(control.min,math.min(control.max,
             control.min+math.floor((value-control.min)/control.step+.5)*control.step))
         if value~=getter() and setter(value) then
-            refresh(); menu.help:setText(label .. "  /  " .. readout())
+            button:processEvent({name="content_refresh"}); menu.help:setText(label .. "  /  " .. readout())
         end
     end
     local pressed
@@ -272,7 +298,7 @@ local notes = {
     bone_camera = "SELECT AN ACTOR AND BONE, THEN ATTACH. OFFSET IS PRESERVED; DETACH RETAINS FREECAM.",
     ssao = "H1 SSAO MODES AND OVERRIDES. ENABLE SSAO OVERRIDE TO USE TWEAK VALUES.",
     fog = "SAMPLE THE MAP FIRST, THEN ENABLE ATMOSPHERE OVERRIDE. COLOR, HEIGHT AND HAZE ARE LIVE.",
-    dof = "FREECAM / DOLLY: F4 FREES THE CURSOR. MOVE IT OVER THE SCENE TO FOCUS. EDITOR PAUSES AUTOFOCUS.",
+    dof = "FREECAM / DOLLY: MOVE THE CURSOR OVER THE SCENE TO FOCUS, EVEN WITH THE EDITOR OPEN.",
     sun = "SUN LIGHT DIRECTION / COLOR / INTENSITY AND FLARE. BAKED LIGHTING STAYS BAKED.",
     lights = "EDIT MAP LIGHTS OR PLACE UP TO 16 POINT LIGHTS AT THE CAMERA. SELECTED POINT SETTINGS ARE LIVE.",
     streams = "CAPTURE CURRENT SETTINGS OR OMIT PLAYERS. OUTPUT: DEMOS/AVI. REQUIRES FFMPEG.",
@@ -454,6 +480,17 @@ function Editor.create(parameters, back)
         showTopRightSmallBar = true, uppercase_title = true, skipAnim = true
     })
     menu.id = "h1_theater_editor"
+    local function refreshDim()
+        local darken = menu:getChildById("h1_theater_editor_darken")
+        if darken then darken:setAlpha(backgroundDim and 1 or 0) end
+        if menu.theaterVignette then menu.theaterVignette:setAlpha(backgroundDim and 1 or 0) end
+        menu.dimButton.textLabel:setText("BACKGROUND DIM: " .. (backgroundDim and "ON" or "OFF"))
+    end
+    menu.dimButton = nativeButton(menu, "editor_background_dim", "", 0, 552, 310, function()
+        backgroundDim = not backgroundDim
+        refreshDim()
+    end)
+    refreshDim()
     menu.content = LUI.UIElement.new({leftAnchor = true, rightAnchor = true,
         topAnchor = true, bottomAnchor = true, left = 0, right = 0,
         top = CONTENT_OFFSET_Y, bottom = CONTENT_OFFSET_Y})
@@ -466,7 +503,7 @@ function Editor.create(parameters, back)
                 if id == "models" or id == "weapons" then self:requestCategory(id, label)
                 else self:selectCategory(id, label) end
             end,
-                nil, true, nil, {height = 24, fadeIn = false})
+                nil, true, nil, {height = 21, fadeIn = false})
             Editor.fitButtonBackground(button)
         end
     end
@@ -534,8 +571,8 @@ local dofBasics = {
     {"r_dof_enable", "Enable the cinematic depth-of-field effect."},
     {"demo_dof_mouse", "Continuously focus beneath the free cursor."},
     {"demo_dof_speed", "Higher = faster. 1 = instant focus."},
-    {"r_dof_physical_focusDistance", "Manual focus. Adjusting this turns autofocus off."},
-    {"r_dof_physical_fstop", "Lower f-number = stronger background blur."},
+    {"r_dof_physical_focusDistance", "Manual distance in metres. Adjusting disables autofocus."},
+    {"r_dof_physical_fstop", "f/1 = shallow focus. f/22 = deeper focus."},
     {"r_dof_physical_bokehEnable", "Shape out-of-focus highlights."}
 }
 local dofBasicNames = {}
@@ -571,6 +608,7 @@ local function settingsPage(id)
                         end
                     end
                 end
+                nativeButton(content, "dof_cinematic", "CINEMATIC DEFAULTS", 465, 560, 316, function() return request("dof_cinematic") end)
                 nativeButton(content, "editor_reset", "RESET DOF", 793, 560, 316, function() return request("reset", id) end)
                 return
             end
@@ -638,6 +676,7 @@ for _, category in ipairs(categories) do
 end
 require("model_swapper")(Editor,nativeButton,image,settings,request)
 require("weapon_swapper")(Editor,nativeButton,image,settings,request)
+require("appearance_pickers")(Editor,nativeButton,image,settings,request)
 
 Editor.registerPage("sliders", function(content, menu)
     nativeButton(content, "editor_reset_all", "RESET ALL EDITOR SETTINGS", 465, 560, 316, function() return request("reset_all") end)
@@ -679,6 +718,7 @@ function Editor.update(menu, data)
     if navigation then menu:selectCategory(navigation[1], navigation[2]) end
     if Editor.updateModels then Editor.updateModels(menu) end
     if Editor.updateWeapons then Editor.updateWeapons(menu) end
+    if Editor.updateAppearancePickers then Editor.updateAppearancePickers(menu) end
     if changed then
         for _, category in ipairs(categories) do
             if menu.category == category[1] then menu:selectCategory(category[1], category[2]); break end
@@ -695,7 +735,7 @@ function Editor.update(menu, data)
     local skyFeedback = menu.category == "sun" and settings.skyMessage or ""
     local dofFeedback = menu.category == "dof" and settings.dofMessage or ""
     menu.feedback:setText(dofFeedback ~= "" and dofFeedback or skyFeedback ~= "" and skyFeedback or settings.message ~= "" and settings.message or
-        (menu.category=="models" and settings.modelMessage or menu.category=="weapons" and settings.weaponSwapMessage or
+        (menu.category=="models" and settings.modelMessage or (menu.category=="weapons" or menu.category=="camos") and settings.weaponSwapMessage or
         menu.category=="sun" and settings.skyMessage or settings.sceneMessage) or "")
     if (menu.category == "bone_camera" or menu.category == "lights") and menu.sceneStatus then
         menu.sceneStatus:setText(menu.category == "bone_camera" and (settings.boneAttached and "ATTACHED" or "DETACHED") or

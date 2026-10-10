@@ -40,4 +40,6 @@ if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c++20 /EHsc /MT /I deps\lua tests\theater_lui.cpp build\bin\x64\Release\lua.lib /Fe:build\theater_lui_test.exe /Fo:build\theater_lui_test.obj
 if not "%errorlevel%"=="0" exit /b 1
 build\theater_lui_test.exe
+if not "%errorlevel%"=="0" exit /b 1
+build\theater_lui_test.exe tests\startup_lobby.lua
 exit /b %errorlevel%

@@ -69,6 +69,7 @@ function Element:pixelsToUnits(x,y) return x,y end
 function Element:setText(value) self.text = value end
 function Element:setTextStyle(value) self.textStyle = value end
 function Element:setUseStencil(value) self.stencil = value end
+function Element:setAlpha(value) self.alphaMultiplier = value end
 function Element:makeNotFocusable() self.notFocusable = true end
 function Element:close()
     local active=activeModelAction
@@ -184,10 +185,18 @@ function LUI.UIGenericButton.ButtonLabelFactory(settings, label, _, _, width, fo
     element:animateToState("default", 0)
     return element
 end
-function LUI.MenuTemplate.new(_, options)
+function LUI.MenuTemplate.AddVignette(menu)
+    menu:addElement(Element.new({alpha=1}))
+end
+function LUI.MenuTemplate.new(parameters, options)
     -- Native MenuTemplate applies DesignGrid gutters to its full-window root.
     local menu = Element.new({left=30, top=30, width=1220, height=660})
     menu.nativeOptions = options
+    menu.type = parameters.type
+    if menu.type == "h1_theater_editor" then
+        local darken=Element.new({alpha=.5});darken.id=menu.type.."_darken";menu:addElement(darken)
+        LUI.MenuTemplate.AddVignette(menu)
+    end
     menu.list = Element.new(); menu:addElement(menu.list)
     function menu:AddButton(label, callback, _, _, _, options)
         options=options or {}
@@ -285,6 +294,11 @@ function game:gettheaterweaponcatalog(source,weapon,page)
     page=math.max(1,math.min(2,page));local items={}
     for i=(page-1)*4+1,math.min(page*4,#all) do items[#items+1]=all[i] end
     return {items=items,weapons=guns,total=#all,page=page,pages=2,category="Sniper rifles"}
+end
+function game:gettheatercamos()
+    local result={}
+    for i=0,8 do result[#result+1]={id=i,label=i==0 and "No camo" or "Camo "..i,icon=i==0 and "" or "camo_icon"} end
+    return result
 end
 function game:theatereditorcolor(name,r,g,b)
     assert(editorData.values[name]~=nil,"unknown color")
@@ -463,6 +477,22 @@ tick(); tick()
 assert(root.menu.id == "h1_theater_editor" and passive.style.alpha == 0)
 assert(game.keyboard, "native editor keeps playback Space available")
 assert(root.menu.nativeOptions.menu_width == 310)
+local dimButton=assert(find(root.menu,"editor_background_dim"))
+local dimLayer=assert(find(root.menu,"h1_theater_editor_darken"))
+local vignette=assert(root.menu.theaterVignette)
+assert(dimLayer.alphaMultiplier==1 and vignette.alphaMultiplier==1)
+dimButton:processEvent({name="button_action"})
+assert(dimLayer.alphaMultiplier==0 and vignette.alphaMultiplier==0 and dimLayer.style.alpha==.5,
+    "dim off removes full-screen and edge shading without changing native opacity")
+root.menu:selectCategory("dof","DOF")
+assert(find(root.menu,"editor_background_dim")==dimButton and dimLayer.alphaMultiplier==0,
+    "toggle remains accessible and keeps its state across tabs")
+assert(root.menu.panel.style.alpha==1 and root.menu.content.style.alpha~=0,
+    "removing dim preserves editor controls and timeline")
+dimButton:processEvent({name="button_action"})
+assert(dimLayer.alphaMultiplier==1 and vignette.alphaMultiplier==1)
+root.menu:selectCategory("main","MAIN")
+tick()
 local function checkEditorLayout(titleId)
     local title = assert(find(root.menu,titleId or "theater_editor_category"))
     assert(title.style.font==CoD.TextSettings.H1TitleFont.Font and
@@ -482,7 +512,7 @@ local function checkEditorLayout(titleId)
     end
 end
 checkEditorLayout()
-assert(not root.menu.list.scrolling and #root.menu.list.children == 14)
+assert(not root.menu.list.scrolling and #root.menu.list.children == 16)
 for _, button in ipairs(root.menu.list.children) do checkBackground(button) end
 assert(root.menu.category == "main")
 assert(find(root.menu, "theater_editor_demo").text == "test.dm_h1")
@@ -649,10 +679,20 @@ local dofNames = {"r_dof_enable", "demo_dof_mouse", "demo_dof_speed", "r_dof_phy
 for index, name in ipairs(dofNames) do
     editorData.controls[#editorData.controls+1] = {page="dof",name=name,label=name,kind=index>=3 and index<=5 and "float" or "bool",min=0,max=1,step=.01}
     editorData.values[name] = .2
+    if name=="r_dof_physical_focusDistance" then
+        local control=editorData.controls[#editorData.controls]
+        control.max,control.step,control.logarithmic=10000,.25,true
+    end
 end
 editorData.revision=editorData.revision+1; tick()
 find(root.menu,"native_DOF"):processEvent({name="button_action"}); tick()
 assert(#root.menu.controls==6 and not root.menu.dofAdvanced)
+local focusRow=find(root.menu,"setting_r_dof_physical_focusDistance")
+mouseClick(focusRow,258) -- midpoint: logarithmic distance, not 5000 engine units
+assert(math.abs(editorData.values.r_dof_physical_focusDistance - 99) < .3)
+tick(); assert(find(root.menu,"dof_value_r_dof_physical_focusDistance").text=="VALUE  2.51 m",
+    "focus readout: " .. find(root.menu,"dof_value_r_dof_physical_focusDistance").text)
+assert(click("dof_cinematic")[2]=="dof_cinematic")
 assert(find(root.menu,"dof_value_demo_dof_speed").text=="VALUE  0.2")
 assert(find(root.menu,"dof_hint_demo_dof_speed").text:find("Higher = faster",1,true))
 editorData.values.demo_dof_speed=.8; tick()
@@ -833,7 +873,7 @@ editorData.modelCatalog[16].icon=""
 checkEditorLayout()
 print("PASS detailed character browser: player identity, portraits/default cards, head/body apply, paging, faction filter, load guard, save/restore and layout")
 root.menu:processEvent({name = "button_secondary"}); tick(); tick()
-assert(root.menu.category=="main" and #root.menu.list.children==14, "browser Back restores the category hub")
+assert(root.menu.category=="main" and #root.menu.list.children==16, "browser Back restores the category hub")
 editorData.weaponSwapSource="h1_remington700_mp_a#none_f#base"
 editorData.weaponSwapLabel="R700";editorData.weaponSwapLoading=false;editorData.weaponSwapCount=0
 tick();root.menu:requestCategory("weapons","WEAPON SWAPPER");tick()
@@ -855,8 +895,35 @@ editorData.weaponSwapLoading=false;tick();click("weapon_save")
 assert(commands[#commands][2]=="weapon_swap_save")
 click("weapon_restore");assert(commands[#commands][2]=="weapon_swap_restore")
 find(root.menu,"weapon_back"):processEvent({name="button_action"});assert(root.menu.category=="weapons","Back must defer destroying the focused button")
-tick();assert(root.menu.category=="main" and #root.menu.list.children==14)
+tick();assert(root.menu.category=="main" and #root.menu.list.children==16)
 print("PASS Weapon Swapper catalog paging, kit selection, same-category gun selection, bounded widget reuse, loading guard and deferred Back")
+root.menu:requestCategory("camos","CAMO SWAPPER");tick()
+local function appearanceClick(id) find(root.menu,id):processEvent({name="button_action"}) end
+local camoRow=assert(find(root.menu,"appearance_row_1"))
+assert(camoRow.textLabel.text=="> No camo")
+assert(click("appearance_apply")[3]==editorData.weaponSwapSource.."|0","zero is a valid camo choice")
+appearanceClick("appearance_next");tick()
+assert(find(root.menu,"appearance_row_1")==camoRow and camoRow.textLabel.text=="> Camo 7")
+assert(not find(root.menu,"appearance_row_3").choice,"last page must clear reused choices")
+local allocatedAppearances=elementCount
+for i=1,80 do appearanceClick("appearance_next");tick();appearanceClick("appearance_previous");tick() end
+assert(elementCount==allocatedAppearances,"camo paging must reuse native widgets")
+assert(click("appearance_restore")[2]=="camo_restore")
+assert(click("appearance_refresh")[2]=="camo_reset")
+editorData.weaponSwapSource="h1_beretta_mp_a#none_f#base";tick()
+assert(click("appearance_apply")[3]==editorData.weaponSwapSource.."|7","apply must use the current recorded gun")
+root.menu:requestCategory("main","MAIN");tick()
+editorData.visionChoices={{id="mp_backlot",label="mp_backlot",icon=""},{id="mp_crash",label="mp_crash",icon=""}}
+root.menu:requestCategory("vision","VISION");tick()
+assert(click("appearance_apply")[2]=="vision_apply" and commands[#commands][3]=="mp_backlot")
+appearanceClick("appearance_row_2");tick();assert(click("appearance_apply")[3]=="mp_crash")
+assert(find(root.menu,"appearance_preview").style.alpha==0,"visions need no external portrait files")
+assert(click("appearance_restore")[2]=="vision_restore")
+assert(click("appearance_refresh")[2]=="vision_refresh")
+editorData.visionChoices={};tick()
+local emptyCommands=#commands;appearanceClick("appearance_apply");assert(#commands==emptyCommands,"empty catalogue cannot apply a stale preset")
+root.menu:requestCategory("main","MAIN");tick()
+print("PASS Camo/Vision selection, no-camo ID, paging reuse, source change, restore and empty catalogues")
 root.menu:processEvent({name = "button_secondary"}); tick(); tick()
 assert(root.menu.id == "h1_theater_controls", "editor Back returns to the timeline")
 root.menu.children[2]:processEvent({name = "button_secondary"}); tick()

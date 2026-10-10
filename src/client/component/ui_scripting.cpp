@@ -73,6 +73,11 @@ namespace ui_scripting
 
 		globals_t globals{};
 
+		// Process lifetime, deliberately outside the frontend VM state: returning
+		// from a demo or restarting LUI must not press Play Online a second time.
+		bool startup_lobby_pending = true;
+		bool startup_lobby_inflight = false;
+
 		bool is_loaded_script(const std::string& name)
 		{
 			return globals.loaded_scripts.contains(name);
@@ -244,6 +249,10 @@ namespace ui_scripting
 			using game = table;
 			auto game_type = game();
 			lua["game"] = game_type;
+			game_type["startuplobbypending"] = [](const game&) { return startup_lobby_pending; };
+			game_type["startuplobbyloading"] = [](const game&) { return startup_lobby_pending || startup_lobby_inflight; };
+			game_type["beginstartuplobby"] = [](const game&) { startup_lobby_pending = false; startup_lobby_inflight = true; };
+			game_type["finishstartuplobby"] = [](const game&) { startup_lobby_pending = false; startup_lobby_inflight = false; };
 
 			game_type["theaterready"] = [](const game&, bool value) { theater_ui::set_ready(value); };
 			game_type["gettheaterlibrary"] = [](const game&, int page, const std::string& filter)
@@ -266,6 +275,7 @@ namespace ui_scripting
             game_type["theaterbookmark"] = [](const game&, const std::string& id, int time)
             { return theater_library::bookmark(id, time); };
             game_type["theaterlibraryreturn"] = [](const game&) { return theater_library::consume_return(); };
+            game_type["gettheatercamos"] = [](const game&) { return json_to_lua(theater_weapons::camo_choices()); };
 			game_type["theaterkeyboard"] = [](const game&, bool value) { theater_ui::set_keyboard_available(value); };
 			game_type["gettheaterstate"] = [](const game&, int cached_revision, int cached_keys)
 			{ return json_to_lua(theater_ui::state(cached_revision, cached_keys)); };

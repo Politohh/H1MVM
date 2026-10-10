@@ -9,6 +9,10 @@
 int main()
 {
     using namespace theater_focus;
+    assert(input_allowed(0, false)); // unobstructed camera
+    assert(input_allowed(0x40, true)); // editor and timeline continue following the cursor
+    assert(!input_allowed(0x40, false)); // unrelated native menu
+    for (int catchers : {1, 8, 0x10, 0x41, 0x48, 0x50}) assert(!input_allowed(catchers, true));
     assert(std::abs(*view_depth(.99f, 1.f, -1.f) - 100.f) < .001f);
     assert(std::abs(*view_depth(.01f, 0.f, 1.f) - 100.f) < .001f);
     // H1's physical DOF reserves the top 1/64 of reversed depth for viewmodels.

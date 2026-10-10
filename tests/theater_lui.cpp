@@ -4,11 +4,11 @@ extern "C" {
 #include "lualib.h"
 }
 #include <iostream>
-int main()
+int main(int argc, char** argv)
 {
     auto* lua = luaL_newstate();
     luaL_openlibs(lua);
-    const auto result = luaL_dofile(lua, "tests/theater_lui.lua");
+    const auto result = luaL_dofile(lua, argc > 1 ? argv[1] : "tests/theater_lui.lua");
     if (result) std::cerr << lua_tostring(lua, -1) << '\n';
     lua_close(lua);
     return result ? 1 : 0;

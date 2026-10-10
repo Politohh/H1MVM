@@ -32,11 +32,17 @@ namespace theater_weapons
     }
     inline bool firearm(int category) { return category >= 0 && category <= 5; }
     inline bool compatible(int source, int target) { return firearm(source) && source == target; }
+    // BG_GetWeaponNameComplete extracts the native camo from bits 8..16.
+    constexpr unsigned camo_id(unsigned weapon) { return (weapon >> 8) & 511u; }
+    constexpr unsigned with_camo(unsigned weapon, unsigned camo)
+    { return (weapon & ~0x1ff00u) | ((camo & 511u) << 8); }
     inline bool identifier(std::string_view value)
     { return !value.empty() && value.size() < 64 && value.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_") == value.npos; }
     struct identity { std::string weapon, attachment = "none", furniture = "base"; };
     inline identity split_name(std::string_view value)
     {
+        // Native complete names append _camoNNN after the furniture kit.
+        if (const auto camo = value.rfind("_camo"); camo != value.npos) value = value.substr(0, camo);
         identity result;
         const auto a = value.find("_a#"), f = value.find("_f#");
         result.weapon = value.substr(0, a);

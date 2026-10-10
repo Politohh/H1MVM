@@ -27,7 +27,7 @@ namespace theater_focus
         request requested;
         sample measured;
         bool depth_available{};
-        unsigned render_epoch{}, session{};
+        unsigned render_epoch{}, session{}, focused_epoch{~0u};
         std::chrono::steady_clock::time_point last_update{};
         float point_x{.5f}, point_y{.5f};
         std::string feedback;
@@ -111,9 +111,10 @@ namespace theater_focus
         const auto mode = theater_camera::get_mode();
         const bool cinematic = mode == theater_camera::THEATER_CAMERA_FREECAM || mode == theater_camera::THEATER_CAMERA_DOLLY;
         const auto hwnd = *reinterpret_cast<HWND*>(0xC9DD2E0_b);
+        const bool foreground = hwnd && (check_run || GetForegroundWindow() == hwnd);
+        const bool input_ready = input_allowed(*game::keyCatchers, theater_ui::keyboard_available());
         const bool active = enabled && cinematic && demo_playback::playing() && demo_playback::is_replay_armed() &&
-            hwnd && (check_run || GetForegroundWindow() == hwnd) && (*game::keyCatchers & ~0x40) == 0 &&
-            !theater_ui::editor_open() && theater_editor::dof_available();
+            foreground && input_ready && theater_editor::dof_available();
         if (session != demo_playback::session_id())
         {
             session = demo_playback::session_id(); point_x = point_y = .5f;
@@ -121,7 +122,7 @@ namespace theater_focus
         }
         // The engine recenters the Win32 cursor while flying. Only read its position
         // when the Theater cursor is actually free; otherwise retain the last focus point.
-        if (active && theater_ui::interactive())
+        if (active && theater_ui::interactive() && !check_run)
         {
             POINT cursor{}; RECT client{};
             if (GetCursorPos(&cursor) && ScreenToClient(hwnd, &cursor) && GetClientRect(hwnd, &client) && client.right > 0 && client.bottom > 0)
@@ -143,8 +144,11 @@ namespace theater_focus
             value = measured; available = depth_available; epoch = requested.epoch;
         }
         feedback.clear();
-        if (!enabled) return;
-        feedback = "Mouse autofocus: F4 shows the cursor. Hide it to keep the last focus point. Editor pauses focus.";
+        if (!enabled) { feedback = "Manual focus. Enable Mouse Autofocus to follow the cursor."; return; }
+        if (!cinematic) feedback = "Mouse autofocus paused: switch to Free Camera or Dolly.";
+        else if (!foreground) feedback = "Mouse autofocus paused: return to H1.";
+        else if (!input_ready) feedback = "Mouse autofocus paused: close the console, chat or other menu.";
+        else feedback = "Mouse autofocus: waiting for scene depth.";
         if (!active) return;
         if (check_run) ++active_updates;
         // The editor's resource guard is mandatory before any forced native DOF.
@@ -154,15 +158,20 @@ namespace theater_focus
                     game::Dvar_SetFromStringFromSource(d, "1", game::DVAR_SOURCE_INTERNAL);
         if (auto* d = game::Dvar_FindVar("r_dof_tweak"))
             if (d->current.integer != 1) game::Dvar_SetFromStringFromSource(d, "On", game::DVAR_SOURCE_INTERNAL);
-        if (!available) feedback = "Mouse autofocus: waiting for the scene depth buffer.";
-        if (value.epoch != epoch || !value.time || now - value.time > 250) return;
+        if (!available || value.epoch != epoch || !value.time || now - value.time > 250) return;
         auto* focus = game::Dvar_FindVar("r_dof_physical_focusDistance");
         if (!focus || (focus->type != game::value && focus->type != game::value_hashed)) return;
         const float target = std::clamp(value.distance, focus->domain.value.min, focus->domain.value.max);
         const float current = std::stof(game::Dvar_ValueToString(focus, true, focus->current));
-        const float distance = smooth_focus(current, target, dt, focus_speed ? focus_speed->current.value : .2f);
+        // A new demo/camera activation has no valid previous focus. Seed from
+        // its first depth sample instead of racking from the old scene's plane.
+        const float distance = focused_epoch != epoch ? target :
+            smooth_focus(current, target, dt, focus_speed ? focus_speed->current.value : .2f);
+        focused_epoch = epoch;
         const auto text = std::format("{:.6f}", distance);
         game::Dvar_SetFromStringFromSource(focus, text.c_str(), game::DVAR_SOURCE_INTERNAL);
+        feedback = std::format("Mouse focus ACTIVE: {:.2f} m. {}", distance * .0254f,
+            theater_ui::interactive() ? "Following the cursor, including behind the editor." : "F4 frees the cursor to move the focus point.");
     }
 
     std::string status() { return feedback; }
@@ -238,11 +247,23 @@ namespace theater_focus
                     report["namesBefore"] = names;
                     theater_camera::set_mode(theater_camera::THEATER_CAMERA_FREECAM);
                     set("r_dof_enable", "0"); set("r_dof_physical_enable", "0");
+                    set("r_dof_physical_fstop", "441.4"); // reproduce the unusable old slider range
                     set("demo_dof_mouse", "1"); set("demo_dof_speed", "1");
+                    if (!theater_ui::action("editor", 0))
+                    { report["error"] = "Could not open the native Theater editor"; return finish(); }
                     active_updates = 0; focus_started = now;
                     ++stage; due = now + 5000;
                 }
-                else if (stage == 3 || stage == 4)
+                else if (stage == 3)
+                {
+                    report["editorOpen"] = theater_ui::editor_open();
+                    { std::lock_guard lock(mutex); report["focusActiveInEditor"] = requested.active && measured.time && now - measured.time <= 250; }
+                    if (!report["editorOpen"].get<bool>() || !report["focusActiveInEditor"].get<bool>() ||
+                        !theater_editor::action("dof_cinematic", ""))
+                    { report["error"] = "Mouse focus or cinematic defaults unavailable in the editor"; return finish(); }
+                    ++stage; due = now + 3000;
+                }
+                else if (stage == 4 || stage == 5)
                 {
                     sample value; bool available;
                     { std::lock_guard lock(mutex); value = measured; available = depth_available;
@@ -255,20 +276,30 @@ namespace theater_focus
                     report["resources"] = theater_editor::dof_available();
                     report["physicalEnabled"] = get("r_dof_physical_enable") == "1" && get("r_dof_enable") == "1";
                     report["namesDuring"] = {get("cg_DrawFriendlyNames"), get("cg_DrawCrosshairNames")};
-                    report[stage == 3 ? "center" : "right"] = {{"depthAvailable", available}, {"distance", value.distance},
+                    report["aperture"] = get("r_dof_physical_fstop");
+                    report["bokehQuality"] = get("r_dof_physical_bokehPreset");
+                    const auto editor_state = theater_editor::state(-1);
+                    for (const auto& c : editor_state.at("controls"))
+                    {
+                        if (c.at("name") == "r_dof_physical_fstop") report["apertureRange"] = {c.at("min"),c.at("max")};
+                        if (c.at("name") == "r_dof_physical_focusDistance") report["logarithmicFocus"] = c.value("logarithmic", false);
+                    }
+                    report[stage == 4 ? "center" : "right"] = {{"depthAvailable", available}, {"distance", value.distance},
                         {"sampleAge", value.time ? now - value.time : 0}, {"focus", get("r_dof_physical_focusDistance")}};
                     const bool hidden = get("cg_DrawFriendlyNames") == "0" && get("cg_DrawCrosshairNames") == "0";
                     if (!available || !value.time || now - value.time > 500 || !hidden || !report["physicalEnabled"].get<bool>())
                     { report["error"] = "Depth unavailable, stale or names visible"; return finish(); }
                     report["namesHidden"] = hidden;
-                    if (stage == 3) point_x = .8f;
-                    else { set("demo_dof_mouse", "0"); theater_camera::set_mode(theater_camera::THEATER_CAMERA_FIRST_PERSON); }
+                    if (stage == 4) point_x = .8f;
+                    else { set("demo_dof_mouse", "0"); theater_camera::set_mode(theater_camera::THEATER_CAMERA_FIRST_PERSON); theater_ui::close(); }
                     ++stage; due = now + 3000;
                 }
                 else
                 {
                     report["namesAfter"] = {get("cg_DrawFriendlyNames"), get("cg_DrawCrosshairNames")};
-                    report["ok"] = get("cg_DrawFriendlyNames") == names[0] && get("cg_DrawCrosshairNames") == names[1];
+                    report["ok"] = get("cg_DrawFriendlyNames") == names[0] && get("cg_DrawCrosshairNames") == names[1] &&
+                        std::abs(std::stof(report["aperture"].get<std::string>()) - 2.8f) < .01f &&
+                        report["apertureRange"] == nlohmann::json::array({1,22}) && report.value("logarithmicFocus",false);
                     return finish();
                 }
                 report["stage"] = stage;
