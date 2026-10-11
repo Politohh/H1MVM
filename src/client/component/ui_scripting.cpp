@@ -286,6 +286,9 @@ namespace ui_scripting
             game_type["gettheatermodelcatalog"] = [](const game&, const std::string& kind, const std::string& faction,
                 const std::string& role, const std::string& collection, int page, const std::string& head, const std::string& body)
             { return json_to_lua(theater_models::choices_page(kind, faction, role, collection, page, head, body)); };
+            game_type["gettheaterwardrobe"] = [](const game&, const std::string& kind, const std::string& category,
+                const std::string& group, int page, const std::string& query, const std::string& team)
+            { return json_to_lua(theater_models::wardrobe(kind, category, group, page, query, team)); };
             game_type["gettheaterweaponcatalog"] = [](const game&, const std::string& source, const std::string& weapon, int page)
             { return json_to_lua(theater_weapons::choices_page(source, weapon, page)); };
 			game_type["theatereditorset"] = [](const game&, const std::string& name, double value)

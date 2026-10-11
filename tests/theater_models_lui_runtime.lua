@@ -19,7 +19,7 @@ local function widgetCount(element)
     while child do total=total+widgetCount(child);child=child:getNextSibling() end
     return total
 end
-local ids={'model_faction_next','model_faction_previous','model_faction','model_class','model_collection','model_clear_filters','model_heads','model_bodies','model_next','model_previous','model_players_next','model_players_previous'}
+local ids={'model_category','model_browse_back','model_customize','model_browse_back','model_manage','model_browse_back','model_next','model_previous','model_player_selector','model_browse_back'}
 local function fail(err)
     stage=-1
     print('[LUI CHECK] FAILED ONCE: '..tostring(err))
@@ -30,6 +30,7 @@ local function step()
     if stage==0 then
         menu=find(root,'h1_theater_editor')
         if menu then
+            menu.modelFilter=nil
             local original=menu.selectCategory
             menu.selectCategory=function(self,id,label)
                 local ok,err=pcall(original,self,id,label)
@@ -43,17 +44,14 @@ local function step()
     assert(find(root,'h1_theater_editor')==menu,'editor disappeared')
     if menu.pendingCategory then return end
     assert(menu.category=='models','model page missing')
-    if not baselineWidgets then baselineWidgets=widgetCount(menu) end
+    -- Warm every filter/card variant before checking steady-state reuse.
+    if count==#ids*4 then baselineWidgets=widgetCount(menu) end
     if count<400 then
         local id=ids[count%#ids+1]
         local b=assert(find(menu,id),'missing '..id)
-        local oldFaction=menu.modelFaction
-        local oldRole=menu.modelRole
+        local oldFilter=menu.modelFilter
         b:processEvent({name='button_action',controller=0})
         assert(menu.pendingCategory,'callback did not request refresh: '..id)
-        if id=='model_faction_next' or id=='model_faction_previous' or id=='model_faction' then
-            assert(menu.modelFaction~=oldFaction,'faction callback did not change selection')
-        elseif id=='model_class' then assert(menu.modelRole~=oldRole,'class callback did not change selection') end
         count=count+1
         if count%20==0 then print('[LUI CHECK] CLICKS '..count..' '..id) end
     else
@@ -75,5 +73,5 @@ root:addEventHandler('h1_theater_update',function()
     local ok,err=pcall(step)
     if not ok then fail(err) end
 end)
-game:theateraction('editor',0)
+if not find(root,'h1_theater_editor') then game:theateraction('editor',0) end
 print('[LUI CHECK] START')

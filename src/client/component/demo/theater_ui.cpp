@@ -240,7 +240,7 @@ namespace theater_ui
                 selected_key = static_cast<int>(theater_camera::set_keyframe_time(selected_key, *current));
             else if (name == "clear" && !theater_camera::is_cinematic_playing()) { theater_camera::clear_keyframes(); selected_key = -1; }
             else if (name == "cinematic")
-            { if (theater_camera::is_cinematic_playing()) theater_camera::stop_cinematic(); else (void)theater_camera::start_cinematic(); }
+            { (void)theater_camera::prepare_cinematic(); visible = true; }
             else if (name == "advanced") { close(); demo_gui::toggle(); }
             else if (name == "stop") { close(); demo_playback::stopplay(); }
         }, scheduler::main);

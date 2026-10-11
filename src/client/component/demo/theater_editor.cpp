@@ -786,6 +786,7 @@ namespace theater_editor
             "capture_in", "capture_out", "capture_clear", "capture_start", "capture_stop", "toggle_hud",
             "bone_attach", "bone_detach", "bone_next", "point_add", "point_next", "point_remove", "point_clear", "fog_sample",
             "model_select", "model_head", "model_body", "model_restore", "model_reset_all", "model_focus", "model_save", "model_load",
+            "model_preview_look", "model_preview_head", "model_preview_body", "model_keep", "model_cancel",
             "weapon_swap_apply", "weapon_swap_restore", "weapon_swap_reset", "weapon_swap_save", "weapon_swap_load",
             "camo_apply", "camo_restore", "camo_reset", "vision_apply", "vision_restore", "vision_refresh"};
         if (!allowed.contains(name) || !demo_playback::is_replay_armed() || !theater_ui::editor_open() || argument.size() > 128) return false;

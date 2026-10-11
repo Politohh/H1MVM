@@ -107,133 +107,160 @@ return function(Editor, createButton, createImage, settings, request)
         for _,a in ipairs(settings.modelPlayers or {}) do keys[#keys+1]=a.key..":"..a.name..":"..tostring(a.visible) end
         local d=settings.modelDetail or {}
         return table.concat(keys,"|")..(settings.modelSelected or "")..tostring(settings.modelCatalogRevision)..
-            tostring(settings.modelLoading)..tostring(d.head)..tostring(d.body)
+            tostring(settings.modelLoading)..tostring(settings.modelPreview)..tostring(d.head)..tostring(d.body)
     end
     local function build(content,menu)
         used={}
         menu.modelBrowser=true
-        menu.modelKind=menu.modelKind or "head"
-        menu.modelFaction=menu.modelFaction or 1
-        menu.modelRole=menu.modelRole or 1
-        menu.modelCollection=menu.modelCollection or "Default"
+        menu.wardrobeKind=menu.wardrobeKind or "look"
+        menu.wardrobeCategory=menu.wardrobeCategory or "All looks"
+        menu.wardrobeGroup=menu.wardrobeGroup or ""
+        menu.wardrobeQuery=menu.wardrobeQuery or ""
+        menu.wardrobeTeam=menu.wardrobeTeam or ""
         menu.modelPage=menu.modelPage or 1
-        menu.playerPage=menu.playerPage or 1
-        local function redraw() menu:requestCategory("models","MODEL SWAPPER") end
-        local function filterChanged() menu.modelPage=1;menu.modelPick=nil;redraw() end
+        local function redraw()
+            menu.modelDismissedMessage=settings.modelMessage
+            menu:requestCategory("models","MODEL SWAPPER")
+        end
+        local function action(name,value)
+            menu.modelDismissedMessage=nil
+            return request(name,value)
+        end
+        local function browse(kind)
+            menu.wardrobeKind=kind or menu.wardrobeKind
+            menu.wardrobeGroup="";menu.wardrobeTeam="";menu.wardrobeLookName=nil;menu.wardrobePane=nil;menu.modelPage=1;redraw()
+        end
+        local function pane(name)
+            menu.wardrobePane=menu.wardrobePane~=name and name or nil
+            menu.modelPage=1;redraw()
+        end
+        local busy=settings.modelLoading
+        local selected=settings.modelSelected or ""
         local players=settings.modelPlayers or {}
         local detail=settings.modelDetail or {}
-        local selected=settings.modelSelected or ""
-        local busy=settings.modelLoading
-        place(menu.help,75,145,1044,12)
-        place(menu.feedback,75,595,1044,10)
-        menu.help:setText("CHOOSE A PLAYER, PICK AN APPEARANCE, THEN APPLY. YOUR ORIGINAL DEMO STAYS UNCHANGED.")
-        button(content,"model_back","< BACK TO EDITOR",75,174,250,function() menu:requestCategory("main","MAIN") end)
-        text(content,"model_players_heading","1. SELECT PLAYER",75,219,250,16,green)
-        text(content,"model_catalog_heading","2. CHOOSE APPEARANCE",365,174,405,16,green)
-        text(content,"model_preview_heading","3. APPLY TO PLAYER",805,174,304,16,green)
-        local playerPages=math.max(1,math.ceil(#players/7))
-        menu.playerPage=math.max(1,math.min(playerPages,menu.playerPage))
-        for i=(menu.playerPage-1)*7+1,math.min(menu.playerPage*7,#players) do
-            local a=players[i]
-            local y=242+((i-1)%7)*38
-            button(content,"model_player_"..((i-1)%7+1),(a.key==selected and "> " or "")..(a.name~="" and a.name or "Player "..a.slot),
-                75,y,250,function() request("model_select",a.key) end)
-            text(content,"model_player_info_"..((i-1)%7+1),a.visible and "IN THIS SCENE" or "OUT OF VIEW / NOT SPAWNED",82,y+29,236,9)
-        end
-        if #players==0 then text(content,"model_no_players","Waiting for replay players...",75,251,250,12) end
-        button(content,"model_players_previous","<",75,520,35,function() menu.playerPage=(menu.playerPage-2)%playerPages+1;redraw() end)
-        button(content,"model_players_next","PLAYERS  "..menu.playerPage.." / "..playerPages.."   >",116,520,209,
-            function() menu.playerPage=menu.playerPage%playerPages+1;redraw() end)
-
-        button(content,"model_heads",menu.modelKind=="head" and "> HEADS" or "HEADS",365,204,197,function()
-            menu.modelKind="head";filterChanged()
-        end)
-        button(content,"model_bodies",menu.modelKind=="body" and "> BODIES" or "BODIES",573,204,197,function()
-            menu.modelKind="body";filterChanged()
-        end)
-        button(content,"model_faction_previous","<",365,244,30,function()
-            menu.modelFaction=(menu.modelFaction-2)%#factions+1;filterChanged()
-        end)
-        button(content,"model_faction","FACTION: "..factions[menu.modelFaction],401,244,333,function()
-            menu.modelFaction=menu.modelFaction%#factions+1;filterChanged()
-        end)
-        button(content,"model_faction_next",">",740,244,30,function()
-            menu.modelFaction=menu.modelFaction%#factions+1;filterChanged()
-        end)
-        button(content,"model_class","CLASS: "..string.upper(roles[menu.modelRole]),365,279,197,function()
-            menu.modelRole=menu.modelRole%#roles+1;filterChanged()
-        end)
-        local catalog=game:gettheatermodelcatalog(menu.modelKind,
-            menu.modelFaction==1 and "" or factions[menu.modelFaction],
-            menu.modelRole==1 and "" or roles[menu.modelRole],menu.modelCollection,menu.modelPage,
-            detail.head or "",detail.body or "")
-        local collections=catalog.collections or {"All collections"}
-        button(content,"model_collection","SET: "..menu.modelCollection,573,279,197,function()
-            local current=1;for i,v in ipairs(collections) do if v==menu.modelCollection then current=i end end
-            menu.modelCollection=collections[current%#collections+1];filterChanged()
-        end)
-        local matches=catalog.items or {}
-        local pages=catalog.pages or 1
-        menu.modelPage=catalog.page or 1
-        local picked
-        for _,c in ipairs(matches) do if c.id==menu.modelPick then picked=c end end
-        if not picked then picked=matches[1];menu.modelPick=picked and picked.id end
-        for i,c in ipairs(matches) do
-            local y=309+(i-1)*47
-            -- Keep the native input/focus shell, but put both text lines in a
-            -- separate bounded column. Native label focus/up states reset a
-            -- one-off offset and would draw the name underneath the portrait.
-            local row=button(content,"model_choice_"..i,"",365,y,405,
-                function() menu.modelPick=c.id;redraw() end,{height=42})
-            row.modelChoice=c.id
-            local portrait=hasPortrait(c)
-            image(row,"model_thumbnail",6,3,36,36,portrait and {r=1,g=1,b=1} or {r=.08,g=.12,b=.09},portrait and c.icon or "white")
-            text(row,"model_placeholder_text",portrait and "" or (menu.modelKind=="head" and "HEAD" or "BODY"),9,18,30,8,green)
-            local copy=textArea(row,"model_copy",54,3,337,36)
-            fittedText(copy,"model_name",(menu.modelPick==c.id and "> " or "")..string.upper(label(c)),
-                2,3,333,15,12,menu.modelPick==c.id and green or grey,CoD.TextSettings.TitleFontTiny.Font)
-            fittedText(copy,"model_variant",c.faction.." / "..string.upper(c.role),2,24,333,10,10)
-        end
-        if #matches==0 then text(content,"model_no_matches","No appearances match. Try CLEAR FILTERS.",365,333,405,13) end
-        text(content,"model_count",(catalog.total or 0).." APPEARANCES   /   PAGE "..menu.modelPage.." OF "..pages,365,501,405,10,green)
-        button(content,"model_previous","< PREVIOUS",365,520,130,function()
-            menu.modelPage=(menu.modelPage-2)%pages+1;menu.modelPick=nil;redraw()
-        end)
-        button(content,"model_next","NEXT >",503,520,130,function()
-            menu.modelPage=menu.modelPage%pages+1;menu.modelPick=nil;redraw()
-        end)
-        button(content,"model_clear_filters","CLEAR FILTERS",641,520,129,function()
-            menu.modelFaction=1;menu.modelRole=1;menu.modelCollection="All collections";filterChanged()
-        end)
-
-        text(content,"model_target_name",detail.name or "SELECT A PLAYER",805,210,304,20,green)
-        if picked then
-            if hasPortrait(picked) then image(content,"model_portrait",879,243,152,152,{r=1,g=1,b=1},picked.icon)
-            else
-                image(content,"model_default_card",805,243,304,152,{r=.08,g=.12,b=.09})
-                text(content,"model_default_name",picked.faction,826,271,263,20,green)
-                text(content,"model_default_class",string.upper(picked.role),826,304,263,16)
-                text(content,"model_default_hint",string.upper(menu.modelKind).." / PORTRAIT UNAVAILABLE",826,369,263,11)
-            end
-            fittedText(content,"model_candidate_name",label(picked),805,410,304,17,13,green)
-            fittedText(content,"model_candidate_meta",picked.faction.." / "..string.upper(picked.role).." / "..picked.collection,805,434,304,11,10)
-        end
-        text(content,"model_equipped_label","CURRENT "..string.upper(menu.modelKind),805,464,304,11,green)
-        text(content,"model_equipped",label({label=catalog[menu.modelKind.."Label"] or "Recorded appearance"}),805,485,304,14)
-        button(content,"model_apply",busy and "LOADING APPEARANCE..." or "APPLY "..string.upper(menu.modelKind),
-            805,509,304,function()
-                if picked and selected~="" and not settings.modelLoading then return request("model_"..menu.modelKind,tostring(picked.id)) end
+        local function safeButton(id,value,x,y,w,fn,enabled)
+            local b=button(content,id,value,x,y,w,function(...)
+                if enabled then return fn(...) end
             end)
-        button(content,"model_focus","VIEW PLAYER IN SCENE",805,544,304,function() return request("model_focus") end)
-        button(content,"model_restore","RESTORE THIS PLAYER",75,560,250,function()
-            if not settings.modelLoading then return request("model_restore") end
+            b:processEvent({name=enabled and "enable" or "disable"})
+            return b
+        end
+        place(menu.help,75,145,1034,12)
+        place(menu.feedback,720,480,389,10)
+        menu.help:setText("CHOOSE A HEAD, THEN A TEAM AND CLASS TO PREVIEW. KEEP CHANGES WHEN YOU LIKE IT.")
+        button(content,"model_player_selector","PLAYER: "..(detail.name or "Choose player").."  >",75,177,440,function() pane("players") end)
+        button(content,"model_manage","MANAGE SWAPS",949,177,160,function() pane("manage") end)
+        button(content,"model_back","< EDITOR",720,177,150,function() menu:requestCategory("main","MAIN") end)
+        button(content,"model_looks",menu.wardrobeKind=="look" and "> LOOKS" or "LOOKS",75,215,278,function() browse("look") end)
+        button(content,"model_customize",menu.wardrobeKind~="look" and "> CUSTOMIZE" or "CUSTOMIZE",367,215,278,function() pane("customize") end)
+        local catalog=game:gettheaterwardrobe(menu.wardrobeKind,menu.wardrobeCategory,menu.wardrobeGroup,menu.modelPage,menu.wardrobeQuery,menu.wardrobeTeam)
+        button(content,"model_category",menu.wardrobeCategory=="All looks" and "ALL COLLECTIONS  >" or menu.wardrobeCategory.."  >",75,253,230,function() pane("categories") end)
+        button(content,"model_search",menu.wardrobeQuery=="" and "SEARCH..." or "SEARCH: "..menu.wardrobeQuery,317,253,258,function(_,event)
+            menu.wardrobeSearching=true
+            Engine.OpenScreenKeyboard(event and event.controller or 0,"Search looks",menu.wardrobeQuery,40,false,false)
         end)
-        button(content,"model_save","SAVE FOR THIS DEMO",365,560,197,function()
-            if not settings.modelLoading then return request("model_save") end
-        end)
-        button(content,"model_load","LOAD SAVED SWAPS",573,560,197,function()
-            if not settings.modelLoading then return request("model_load") end
-        end)
+        button(content,"model_clear_search","X",585,253,60,function() menu.wardrobeQuery="";browse() end)
+        if not menu.wardrobeSearchHandler then
+            menu.wardrobeSearchHandler=true
+            menu:registerEventHandler("text_input_complete",function(_,event)
+                if not menu.wardrobeSearching then return end
+                menu.wardrobeSearching=nil
+                if event.text then menu.wardrobeQuery=event.text;browse() end
+            end)
+        end
+        local choices={}
+        local heading="CHOOSE A LOOK"
+        local pages=1
+        local function option(title,subtitle,fn,icon)
+            choices[#choices+1]={label=title,subtitle=subtitle,choose=fn,icon=icon}
+        end
+        if menu.wardrobePane=="players" then
+            heading="CHOOSE PLAYER"
+            for _,a in ipairs(players) do
+                option(a.name~="" and a.name or "Player "..a.slot,a.visible and "In scene" or "Out of view at this time",function()
+                    action("model_select",a.key);menu.wardrobePane=nil;redraw()
+                end)
+            end
+        elseif menu.wardrobePane=="categories" then
+            heading="CHOOSE COLLECTION"
+            for _,category in ipairs(catalog.categories or {}) do
+                local title=category:gsub("LootDrop","Collection ")
+                option(title,"Browse looks",function() menu.wardrobeCategory=category;browse() end)
+            end
+        elseif menu.wardrobePane=="customize" then
+            heading="CUSTOMIZE INDIVIDUAL PARTS"
+            option("Head only","Keep the current uniform",function() browse("head") end)
+            option("Body only","Keep the current head",function() browse("body") end)
+        elseif menu.wardrobePane=="manage" then
+            heading="MANAGE SWAPS"
+            option("Save swaps","Save kept changes for this demo",function() if not busy and not settings.modelPreview then action("model_save") end end)
+            option("Load swaps","Load this demo's saved changes",function() if not busy and not settings.modelPreview then action("model_load") end end)
+            option("Restore player","Restore the recorded head and uniform",function() if not busy then action("model_restore") end end)
+        else
+            local stage=catalog.stage or "looks"
+            heading=stage=="teams" and "CHOOSE TEAM" or stage=="classes" and "CHOOSE CLASS" or stage=="variants" and "CHOOSE A VARIANT" or "CHOOSE A LOOK"
+            if stage=="teams" then heading=(menu.wardrobeLookName or "Head").."  /  TEAM"
+            elseif stage=="classes" then heading=(menu.wardrobeLookName or "Head").."  /  "..menu.wardrobeTeam.."  /  CLASS" end
+            pages=catalog.pages or 1
+            menu.modelPage=catalog.page or 1
+            for _,c in ipairs(catalog.items or {}) do
+                local title=label(c)
+                local sub="Choose team and class"
+                if stage=="teams" then title=c.team;sub="Choose class"
+                elseif stage=="classes" then title=string.upper(c.role);sub=menu.wardrobeTeam
+                elseif stage=="variants" then sub=c.faction.." / "..string.upper(c.role)
+                elseif menu.wardrobeKind=="body" then sub=tostring(c.variants or 1).." variants" end
+                option(title,sub,function()
+                    if stage=="looks" then
+                        menu.wardrobeLookPage=menu.modelPage
+                        menu.wardrobeLookName=label(c);menu.wardrobeGroup=c.group;menu.wardrobeTeam="";menu.modelPage=1
+                    elseif stage=="teams" then
+                        menu.wardrobeTeamPage=menu.modelPage
+                        menu.wardrobeTeam=c.team;menu.modelPage=1
+                    else
+                        if settings.modelLoading or selected=="" then return end
+                        menu.wardrobePreviewName=(menu.wardrobeLookName or label(c)).." / "..c.faction.." / "..string.upper(c.role)
+                        action("model_preview_"..menu.wardrobeKind,tostring(c.id))
+                    end
+                    redraw()
+                end,c.icon)
+            end
+        end
+        if menu.wardrobePane then pages=math.max(1,math.ceil(#choices/8));menu.modelPage=math.max(1,math.min(menu.modelPage,pages)) end
+        fittedText(content,"model_heading",heading,75,293,425,12,10,green)
+        menu.wardrobeBack=function()
+            if menu.wardrobePane then menu.wardrobePane=nil;menu.modelPage=1
+            elseif menu.wardrobeTeam~="" then menu.wardrobeTeam="";menu.modelPage=menu.wardrobeTeamPage or 1
+            else menu.wardrobeGroup="";menu.wardrobeLookName=nil;menu.modelPage=menu.wardrobeLookPage or 1 end
+            redraw()
+        end
+        if menu.wardrobeGroup~="" or menu.wardrobePane then
+            local backLabel=menu.wardrobePane and "< BACK" or menu.wardrobeTeam~="" and "< TEAMS" or "< LOOKS"
+            button(content,"model_browse_back",backLabel,529,287,116,menu.wardrobeBack)
+        end
+        local first=menu.wardrobePane and (menu.modelPage-1)*8+1 or 1
+        for i=first,math.min(first+7,#choices) do
+            local c=choices[i]
+            local slot=i-first
+            local card=button(content,"model_card_"..(slot+1),"",75+(slot%2)*292,322+math.floor(slot/2)*55,278,c.choose,{height=49})
+            local portrait=hasPortrait(c)
+            if portrait then image(card,"model_thumbnail",5,5,39,39,{r=1,g=1,b=1},c.icon) end
+            local inset=portrait and 51 or 10
+            local copy=textArea(card,"model_copy",inset,3,267-inset,43)
+            fittedText(copy,"model_name",c.label,1,2,264-inset,16,12,grey,CoD.TextSettings.TitleFontTiny.Font)
+            fittedText(copy,"model_variant",c.subtitle,1,27,264-inset,10,9)
+        end
+        if #choices==0 then text(content,"model_empty","No looks found. Try another search or collection.",85,370,550,12) end
+        text(content,"model_count",tostring(menu.wardrobePane and #choices or catalog.total or 0)..(menu.wardrobePane and " OPTIONS" or catalog.stage=="teams" and " TEAMS" or catalog.stage=="classes" and " CLASSES" or menu.wardrobeGroup=="" and " LOOKS" or " VARIANTS").."   /   "..menu.modelPage.." OF "..pages,75,562,330,10,grey)
+        button(content,"model_previous","<",457,550,88,function() menu.modelPage=(menu.modelPage-2)%pages+1;redraw() end)
+        button(content,"model_next",">",557,550,88,function() menu.modelPage=menu.modelPage%pages+1;redraw() end)
+        text(content,"model_preview_heading","LIVE PREVIEW",720,230,389,15,green)
+        fittedText(content,"model_preview_player",detail.name or "Choose a player",720,255,389,17,12,grey)
+        fittedText(content,"model_preview_name",settings.modelPreview and (menu.wardrobePreviewName or "Custom look") or "Your current look",720,436,389,17,12,green)
+        text(content,"model_preview_note",menu.wardrobeKind=="look" and "Headgear + matching faction / class uniform" or "Customize changes only the selected part",720,461,389,10,grey)
+        safeButton("model_focus","FRAME PLAYER",720,513,389,function() action("model_focus") end,selected~="")
+        safeButton("model_keep",busy and "LOADING..." or "KEEP CHANGES",720,556,189,function() action("model_keep") end,settings.modelPreview and not busy)
+        safeButton("model_cancel","CANCEL",920,556,189,function() action("model_cancel") end,settings.modelPreview or busy)
         local function hideUnused(parent)
             local child=parent:getFirstChild()
             while child do

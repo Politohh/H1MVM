@@ -78,6 +78,8 @@ namespace theater_camera
 	// Roll the camera along the whole spline path on its own timescale-scaled clock
 	// (needs >=2 markers). Always completes; no demo seek.
 	bool start_cinematic();
+	// Seek to the first marker and hold paused; Space starts replay-clock playback.
+	bool prepare_cinematic();
 	void stop_cinematic();
 	[[nodiscard]] bool is_cinematic_playing();
 

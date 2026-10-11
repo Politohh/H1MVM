@@ -87,7 +87,8 @@ namespace theater_camera
 		void update_freecam_names()
 		{
 			const bool hide = demo_playback::playing() && demo_playback::is_replay_armed() &&
-				demo_camera && demo_camera->current.integer == THEATER_CAMERA_FREECAM;
+				demo_camera && (demo_camera->current.integer == THEATER_CAMERA_FREECAM ||
+					demo_camera->current.integer == THEATER_CAMERA_DOLLY);
 			for (std::size_t i = 0; i < saved_names.size(); ++i)
 			{
 				auto* d = game::Dvar_FindVar(name_dvars[i]);
@@ -915,6 +916,21 @@ namespace theater_camera
 	camera_pose_t sample_pose_at(int demo_time)
 	{
 		return sample_dolly(demo_time);
+	}
+
+	bool prepare_cinematic()
+	{
+		if (!demo_playback::playing() || !demo_playback::is_replay_armed() ||
+			keyframes.size() < 2 || demo_playback::seeking()) return false;
+		const bool was_paused = demo_playback::paused();
+		if (!was_paused) demo_playback::toggle_pause();
+		if (!demo_playback::seek_to(keyframes.front().demo_time))
+		{
+			if (!was_paused) demo_playback::toggle_pause();
+			return false;
+		}
+		set_mode(THEATER_CAMERA_DOLLY);
+		return true;
 	}
 
 	bool start_cinematic()

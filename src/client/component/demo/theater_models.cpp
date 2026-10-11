@@ -8,6 +8,7 @@
 #include "demo_playback.hpp"
 #include "cod4_camera.hpp"
 #include "theater_camera.hpp"
+#include "theater_ui.hpp"
 #include "component/console.hpp"
 #include "component/command.hpp"
 #include "component/scheduler.hpp"
@@ -36,7 +37,9 @@ namespace theater_models
             void* bgs{};
         };
         struct swap { std::string head, body; };
-        struct load { std::string key, model, kind; std::chrono::steady_clock::time_point start; };
+        struct load { std::string key, model, kind; std::chrono::steady_clock::time_point start; swap target{}; };
+        struct preview_state { std::string key; std::optional<swap> before; };
+        std::optional<preview_state> preview;
         std::vector<choice> catalog;
         std::map<int, actor> actors;
         std::map<std::string, swap> swaps;
@@ -53,6 +56,14 @@ namespace theater_models
         nlohmann::json snapshot = nlohmann::json::object();
         int catalog_revision{};
         bool active() { return supported && demo_playback::playing() && demo_playback::is_replay_armed(); }
+        void cancel_preview()
+        {
+            if (!preview) return;
+            if (pending && pending->key == preview->key) pending.reset();
+            if (preview->before) swaps[preview->key] = *preview->before;
+            else swaps.erase(preview->key);
+            preview.reset();
+        }
         void** bgs_slot()
         {
             // Native BG builders resolve their callbacks through game TLS.
@@ -89,7 +100,7 @@ namespace theater_models
             const auto now = demo_playback::session_id();
             if (session == now) return;
             session = now;
-            actors.clear(); selected.clear(); pending.reset();
+            cancel_preview(); actors.clear(); selected.clear(); pending.reset();
             const auto current = demo_playback::current_path().string();
             if (current != path) { swaps.clear(); message.clear(); }
             path = current; // Keep edits through a fallback seek restart of this file.
@@ -159,7 +170,7 @@ namespace theater_models
             {
                 std::lock_guard lock(catalog_mutex);
                 for (const auto& c : catalog) catalog_json.push_back({{"id", c.id}, {"model", c.model}, {"kind", c.kind}, {"label", c.label},
-                    {"icon", c.icon}, {"faction", c.faction}, {"role", c.role}, {"collection", c.collection}});
+                    {"searchLabel", std::string(game::UI_SafeTranslateString(c.label.c_str()))}, {"icon", c.icon}, {"faction", c.faction}, {"role", c.role}, {"collection", c.collection}});
             }
             ++catalog_revision;
             console::info("[model swapper] %zu native head/body variants available\n", catalog.size());
@@ -306,12 +317,20 @@ namespace theater_models
         }
     }
     std::set<std::string> held_models() { return held; }
-    void reset() { pending.reset(); restoring.reset(); previous_swaps.clear(); swaps.clear(); message = "All player models restored"; }
+    void reset() { preview.reset(); pending.reset(); restoring.reset(); previous_swaps.clear(); swaps.clear(); message = "All player models restored"; }
     bool action(const std::string& name, const std::string& argument)
     {
         if (!name.starts_with("model_")) return false;
         if (!active()) throw std::runtime_error("Model swapping is available during demo playback only");
         sync_session(); discover();
+        if (name == "model_cancel") { cancel_preview(); message = "Preview cancelled"; return true; }
+        if (name == "model_keep")
+        {
+            if (pending) throw std::runtime_error("Wait for the preview to load");
+            preview.reset(); message = "Look kept for this demo"; return true;
+        }
+        if (preview && (name == "model_save" || name == "model_load"))
+            throw std::runtime_error("Keep or cancel your preview first");
         if (restoring && name != "model_select" && name != "model_focus" && name != "model_reset_all")
             throw std::runtime_error("Wait for the saved character fastfiles to finish loading");
         if (pending && (name == "model_save" || name == "model_load"))
@@ -320,7 +339,9 @@ namespace theater_models
         {
             bool found{}; for (const auto& [slot, a] : actors) if (a.key == argument) found = true;
             if (!found) throw std::runtime_error("Player is no longer in this snapshot");
-            selected = argument; message.clear(); return true;
+            cancel_preview(); selected = argument; message.clear();
+            if (auto* a = selection()) { try { focus(*a); } catch (const std::exception&) { message = "Player is out of view at this time"; } }
+            return true;
         }
         if (name == "model_reset_all") { reset(); return true; }
         if (name == "model_save")
@@ -357,7 +378,30 @@ namespace theater_models
         }
         auto* a = selection(); if (!a) throw std::runtime_error("Select an active player first");
         if (name == "model_focus") { focus(*a); message = "Previewing " + a->name + " in free camera"; return true; }
-        if (name == "model_restore") { swaps.erase(a->key); if (pending && pending->key == a->key) pending.reset(); message = "Original head and body restored"; return true; }
+        if (name == "model_restore") { cancel_preview(); swaps.erase(a->key); if (pending && pending->key == a->key) pending.reset(); message = "Original head and body restored"; return true; }
+        if (name == "model_preview_look" || name == "model_preview_head" || name == "model_preview_body")
+        {
+            if (pending) throw std::runtime_error("Wait for the preview to load");
+            const auto kind = name == "model_preview_body" ? "body" : "head";
+            const auto found = std::find_if(catalog.begin(), catalog.end(), [&](const auto& c) { return c.kind == kind && std::to_string(c.id) == argument; });
+            if (found == catalog.end()) throw std::runtime_error("Choose a catalog appearance");
+            swap target = swaps.contains(a->key) ? swaps.at(a->key) : swap{};
+            (kind == std::string_view("head") ? target.head : target.body) = found->model;
+            if (name == "model_preview_look")
+            {
+                const nlohmann::json head = {{"faction",found->faction},{"role",found->role}};
+                const auto* body = wardrobe_body(catalog_json, head);
+                if (!body) throw std::runtime_error("No matching uniform; use Customize for this head");
+                target.body = body->value("model", "");
+            }
+            if (!replace(a->original, target.head, target.body)) throw std::runtime_error("Player has no free head slot");
+            if (!target.head.empty()) acquire(target.head);
+            if (!target.body.empty()) acquire(target.body);
+            if (!preview) preview = preview_state{a->key, swaps.contains(a->key) ? std::optional(swaps.at(a->key)) : std::nullopt};
+            pending = load{a->key, "", "preview", std::chrono::steady_clock::now(), target};
+            try { focus(*a); } catch (const std::exception&) {}
+            message = "Loading preview..."; return true;
+        }
         if (name != "model_head" && name != "model_body") return false;
         const auto kind = name == "model_head" ? "head" : "body";
         const auto found = std::find_if(catalog.begin(), catalog.end(), [&](const auto& c) { return std::to_string(c.id) == argument && c.kind == kind; });
@@ -372,6 +416,7 @@ namespace theater_models
     {
         if (!supported) { snapshot = {{"modelMessage", "This executable does not support model swapping"}}; return; }
         sync_session();
+        if (preview && !theater_ui::editor_open()) cancel_preview();
         if (!active()) { actors.clear(); selected.clear(); if (!held.empty() || pending || restoring) release(); snapshot = nlohmann::json::object(); return; }
         discover();
         bool failed{};
@@ -395,11 +440,15 @@ namespace theater_models
         }
         if (pending)
         {
-            if (ready(pending->model))
+            if (pending->kind == "preview" ?
+                ((pending->target.head.empty() || ready(pending->target.head)) &&
+                 (pending->target.body.empty() || ready(pending->target.body))) : ready(pending->model))
             {
                 auto& s = swaps[pending->key];
-                (pending->kind == "head" ? s.head : s.body) = pending->model;
-                message = "Applied " + pending->kind + ". Preview on the selected player."; pending.reset();
+                if (pending->kind == "preview") { s = pending->target; message = "Preview only. Keep changes or cancel."; }
+                else { (pending->kind == "head" ? s.head : s.body) = pending->model;
+                    message = "Applied " + pending->kind + ". Preview on the selected player."; }
+                pending.reset();
             }
             else if (std::chrono::steady_clock::now() - pending->start > std::chrono::seconds(30))
             { message = "Character fastfile did not become ready; previous selection retained"; pending.reset(); }
@@ -444,10 +493,15 @@ namespace theater_models
             detail = {{"name", a->name}, {"originalHead", original_head}, {"originalBody", a->original.body}, {"head", current_head}, {"body", current.body}};
         }
         snapshot = {{"modelPlayers", roster}, {"modelCatalogRevision", catalog_revision}, {"modelSelected", selected},
-            {"modelDetail", detail}, {"modelLoading", pending.has_value() || restoring.has_value()}, {"modelMessage", message}};
+            {"modelDetail", detail}, {"modelLoading", pending.has_value() || restoring.has_value()}, {"modelPreview", preview.has_value()}, {"modelMessage", message}};
     }
     nlohmann::json state() { return snapshot; } // Copied only by the main-thread editor publisher.
     nlohmann::json choices() { std::lock_guard lock(catalog_mutex); return catalog_json; }
+    nlohmann::json wardrobe(const std::string& kind, const std::string& category, const std::string& group, int page, const std::string& query, const std::string& team)
+    {
+        std::lock_guard lock(catalog_mutex);
+        return wardrobe_page(catalog_json, kind, category, group, page, query, team);
+    }
     nlohmann::json choices_page(const std::string& kind, const std::string& faction, const std::string& role,
         const std::string& collection, int page, const std::string& head, const std::string& body)
     {

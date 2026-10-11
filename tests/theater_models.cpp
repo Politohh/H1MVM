@@ -34,6 +34,30 @@ int main()
     assert(faction["total"]==9 && faction["page"]==1 && faction["collections"].size()==2);
     assert(catalog_page(catalog,"head","SAS / Urban","sniper","Default",1,"","")["items"].empty());
     assert(catalog_page(catalog,"body","USMC","assault","Default",1,"","")["items"].size()==1);
+    const auto wardrobe_catalog = nlohmann::json::array({
+        {{"id",1},{"kind","body"},{"model","body_sas"},{"label","SAS / Urban assault"},{"faction","SAS / Urban"},{"role","assault"},{"collection","Default"}},
+        {{"id",2},{"kind","body"},{"model","body_usmc"},{"label","USMC sniper"},{"faction","USMC"},{"role","sniper"},{"collection","Default"}},
+        {{"id",3},{"kind","head"},{"label","LOOT_SHELLBACK"},{"searchLabel","Shellback"},{"faction","SAS / Urban"},{"role","assault"},{"collection","LootDrop1"}},
+        {{"id",4},{"kind","head"},{"label","LOOT_SHELLBACK"},{"searchLabel","Shellback"},{"faction","USMC"},{"role","sniper"},{"collection","LootDrop1"}},
+        {{"id",5},{"kind","head"},{"label","Unmatched"},{"faction","Other"},{"role","sniper"},{"collection","LootDrop1"}}
+    });
+    const auto looks=wardrobe_page(wardrobe_catalog,"look","All looks","",1);
+    assert(looks["total"]==1 && looks["items"][0]["variants"]==2);
+    const auto teams=wardrobe_page(wardrobe_catalog,"look","All looks",looks["items"][0]["group"],1);
+    assert(teams["stage"]=="teams" && teams["total"]==2);
+    assert(teams["items"][0]["team"]=="SAS / Urban" && teams["items"][1]["team"]=="USMC");
+    const auto variants=wardrobe_page(wardrobe_catalog,"look","All looks",looks["items"][0]["group"],1,"","USMC");
+    assert(variants["stage"]=="classes" && variants["total"]==1);
+    assert(variants["items"][0]["id"]==4 && variants["items"][0]["bodyId"]==2);
+    assert(wardrobe_page(wardrobe_catalog,"look","All looks",looks["items"][0]["group"],1,"","Other")["items"].empty());
+    // Search narrows heads, not the available teams/classes once a head is chosen.
+    assert(wardrobe_page(wardrobe_catalog,"look","All looks",looks["items"][0]["group"],1,"USMC")["total"]==2);
+    assert(wardrobe_page(wardrobe_catalog,"head","All looks","",1)["total"]==2); // Unpaired parts stay in Customize.
+    assert(wardrobe_page(wardrobe_catalog,"look","All looks","",1,"sHeLlBaCk")["total"]==1);
+    assert(wardrobe_page(wardrobe_catalog,"look","All looks","",1,"missing")["total"]==0);
+    assert(wardrobe_page(wardrobe_catalog,"look","Default","",1)["total"]==0);
+    assert(wardrobe_page(catalog,"head","All looks","",100000)["items"].size()<=8);
+    std::cout<<"PASS grouped wardrobe, exact class uniform pairing, unpaired parts and localized search\n";
     std::cout<<"PASS head/body composition, equipment/tag preservation, missing head slot and restore\n";
     std::cout<<"PASS bounded native catalog pages, 2615 variants, filters, page limits and equipped labels\n";
 }

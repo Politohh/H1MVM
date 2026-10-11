@@ -482,7 +482,8 @@ function Editor.create(parameters, back)
     menu.id = "h1_theater_editor"
     local function refreshDim()
         local darken = menu:getChildById("h1_theater_editor_darken")
-        if darken then darken:setAlpha(backgroundDim and 1 or 0) end
+        -- setAlpha replaces the native layer's opacity; it is not a multiplier.
+        if darken then darken:setAlpha(backgroundDim and .5 or 0) end
         if menu.theaterVignette then menu.theaterVignette:setAlpha(backgroundDim and 1 or 0) end
         menu.dimButton.textLabel:setText("BACKGROUND DIM: " .. (backgroundDim and "ON" or "OFF"))
     end
@@ -514,6 +515,7 @@ function Editor.create(parameters, back)
     end
     function menu:selectCategory(id, label)
         self.pendingCategory = nil
+        if self.category == "models" and id ~= "models" then request("model_cancel") end
         if (id == "models" or id == "weapons") and self.category == id then
             Editor.pages[id](self.content, self)
             return
@@ -541,7 +543,8 @@ function Editor.create(parameters, back)
     menu:populateCategories()
     menu:AddBackButton(function()
         Engine.PlaySound(CoD.SFX.MenuBack)
-        if menu.category == "models" or menu.category == "weapons" then menu:requestCategory("main", "MAIN")
+        if menu.category == "models" and menu.wardrobeBack and (menu.wardrobePane or (menu.wardrobeGroup or "") ~= "") then menu.wardrobeBack()
+        elseif menu.category == "models" or menu.category == "weapons" then menu:requestCategory("main", "MAIN")
         elseif menu.colorPicker or menu.skyPicker then menu:selectCategory(menu.category, string.upper(menu.category:gsub("_", " ")))
         else back() end
     end)
@@ -642,7 +645,7 @@ local function settingsPage(id)
         end
         if id == "camera" then
             nativeButton(content, "editor_add_key", "ADD DOLLY MARKER [K]", 793, 250, 316, function() return game:theateraction("add", 0) end)
-            nativeButton(content, "editor_play_path", "START / STOP DOLLY [J]", 793, 285, 316, function() return game:theateraction("cinematic", 0) end)
+            nativeButton(content, "editor_play_path", "PREPARE DOLLY [J]", 793, 285, 316, function() return game:theateraction("cinematic", 0) end)
             nativeButton(content, "editor_clear_keys", "CLEAR ALL MARKERS", 793, 320, 316, function() return game:theateraction("clear", 0) end)
             nativeButton(content, "editor_save_path", "EXPORT THIS DEMO'S CAMERA PATH", 793, 355, 316, function() return request("save_path") end)
             nativeButton(content, "editor_load_path", "IMPORT THIS DEMO'S CAMERA PATH", 793, 390, 316, function() return request("load_path") end)
@@ -735,7 +738,7 @@ function Editor.update(menu, data)
     local skyFeedback = menu.category == "sun" and settings.skyMessage or ""
     local dofFeedback = menu.category == "dof" and settings.dofMessage or ""
     menu.feedback:setText(dofFeedback ~= "" and dofFeedback or skyFeedback ~= "" and skyFeedback or settings.message ~= "" and settings.message or
-        (menu.category=="models" and settings.modelMessage or (menu.category=="weapons" or menu.category=="camos") and settings.weaponSwapMessage or
+        (menu.category=="models" and (settings.modelMessage~=menu.modelDismissedMessage and settings.modelMessage or "") or (menu.category=="weapons" or menu.category=="camos") and settings.weaponSwapMessage or
         menu.category=="sun" and settings.skyMessage or settings.sceneMessage) or "")
     if (menu.category == "bone_camera" or menu.category == "lights") and menu.sceneStatus then
         menu.sceneStatus:setText(menu.category == "bone_camera" and (settings.boneAttached and "ATTACHED" or "DETACHED") or

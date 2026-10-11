@@ -480,7 +480,7 @@ assert(root.menu.nativeOptions.menu_width == 310)
 local dimButton=assert(find(root.menu,"editor_background_dim"))
 local dimLayer=assert(find(root.menu,"h1_theater_editor_darken"))
 local vignette=assert(root.menu.theaterVignette)
-assert(dimLayer.alphaMultiplier==1 and vignette.alphaMultiplier==1)
+assert(dimLayer.alphaMultiplier==.5 and vignette.alphaMultiplier==1)
 dimButton:processEvent({name="button_action"})
 assert(dimLayer.alphaMultiplier==0 and vignette.alphaMultiplier==0 and dimLayer.style.alpha==.5,
     "dim off removes full-screen and edge shading without changing native opacity")
@@ -490,7 +490,7 @@ assert(find(root.menu,"editor_background_dim")==dimButton and dimLayer.alphaMult
 assert(root.menu.panel.style.alpha==1 and root.menu.content.style.alpha~=0,
     "removing dim preserves editor controls and timeline")
 dimButton:processEvent({name="button_action"})
-assert(dimLayer.alphaMultiplier==1 and vignette.alphaMultiplier==1)
+assert(dimLayer.alphaMultiplier==.5 and vignette.alphaMultiplier==1)
 root.menu:selectCategory("main","MAIN")
 tick()
 local function checkEditorLayout(titleId)
@@ -738,142 +738,115 @@ for _, spec in ipairs({{"BONE CAMERA","editor_bone_attach","bone_attach"}, {"BON
     find(root.menu,"native_"..spec[1]):processEvent({name="button_action"}); tick()
     assert(click(spec[2])[2]==spec[3])
 end
--- Character browser contracts: stable player identities, catalog paging,
--- native portraits/default cards, filters and apply/load guards.
+-- Wardrobe UI: reversible previews, grouped browsing, explicit player/part
+-- selection, keyboard search and bounded native widget reuse.
 editorData.modelPlayers={{key="actor:100",name="Alice",slot=18,visible=true},{key="actor:200",name="Bob",slot=19,visible=false}}
 editorData.modelSelected="actor:100"
 editorData.modelDetail={name="Alice",head="head_original",body="body_original"}
-editorData.modelCatalogRevision=1;editorData.modelLoading=false
-editorData.modelCatalog={}
-for i=1,15 do
-    editorData.modelCatalog[i]={id=i,kind="head",model="head_sas_ct_test_"..i,label="SAS head "..i,
-        icon=i==1 and "" or "h1_character_icon_010",faction="SAS / Urban",role="assault",collection="Default"}
-end
-editorData.modelCatalog[16]={id=100,kind="body",model="body_sas_ct_assault_mp_camo",label="SAS Urban assault",icon="",faction="SAS / Urban",role="assault",collection="Default"}
-tick();root.menu:selectCategory("models","MODEL SWAPPER");tick()
-checkEditorLayout()
-assert(find(root.menu,"model_default_card") and find(root.menu,"model_choice_2"):getChildById("model_thumbnail"))
-assert(#root.menu.list.children==0, "the full-width browser hides the editor category list")
-assert(click("model_player_2")[2]=="model_select" and commands[#commands][3]=="actor:200")
-assert(click("model_apply")[2]=="model_head" and commands[#commands][3]=="1")
-find(root.menu,"model_next"):processEvent({name="button_action"});tick();assert(root.menu.modelPage==2 and find(root.menu,"model_choice_1").modelChoice==5)
-mouseClick(find(root.menu,"model_choice_2"),90);tick()
-assert(click("model_apply")[3]=="6","reused card callback selects the new page's model")
-find(root.menu,"model_next"):processEvent({name="button_action"});tick();assert(root.menu.modelPage==3 and find(root.menu,"model_choice_1").modelChoice==9)
-find(root.menu,"model_next"):processEvent({name="button_action"});tick();assert(root.menu.modelPage==4 and find(root.menu,"model_choice_3").modelChoice==15)
-find(root.menu,"model_next"):processEvent({name="button_action"});tick();assert(root.menu.modelPage==1)
-find(root.menu,"model_bodies"):processEvent({name="button_action"});tick();assert(find(root.menu,"model_choice_1").modelChoice==100 and find(root.menu,"model_choice_2").modelHidden)
-assert(click("model_apply")[2]=="model_body" and commands[#commands][3]=="100")
-editorData.modelLoading=true;tick()
-local beforeLoad=#commands;mouseClick(find(root.menu,"model_apply"),70);assert(#commands==beforeLoad,"loading must block repeated model apply")
-mouseClick(find(root.menu,"model_save"),70);mouseClick(find(root.menu,"model_load"),70)
-assert(#commands==beforeLoad,"loading must block save/load of incomplete selections")
-editorData.modelLoading=false;tick()
-assert(click("model_focus")[2]=="model_focus")
-assert(click("model_restore")[2]=="model_restore")
-assert(click("model_save")[2]=="model_save" and click("model_load")[2]=="model_load")
-find(root.menu,"model_faction"):processEvent({name="button_action"});tick();assert(find(root.menu,"model_no_matches") and find(root.menu,"model_choice_1").modelHidden,"faction filter hides nonmatching cards")
-assert(find(root.menu,"model_count").text:find("0 APPEARANCES"))
-find(root.menu,"model_clear_filters"):processEvent({name="button_action"});tick();assert(find(root.menu,"model_choice_1"))
--- Real mouse callbacks keep their button alive through release, then redraw.
-for _,id in ipairs({"model_faction_next","model_faction_previous","model_class","model_collection",
-    "model_heads","model_bodies","model_next","model_previous","model_players_next","model_players_previous","model_clear_filters"}) do
-    local old=assert(find(root.menu,id),id)
-    mouseClick(old,15)
-    assert(not old.closed and root.menu.pendingCategory,"click queues refresh until release finishes")
-    tick()
-    assert(not old.closed and find(root.menu,id)==old and not root.menu.pendingCategory,"next poll refreshes the existing native button")
-end
-find(root.menu,"model_bodies"):processEvent({name="button_action"});tick()
-find(root.menu,"model_clear_filters"):processEvent({name="button_action"});tick()
-local selectedCard=find(root.menu,"model_choice_1")
-mouseClick(selectedCard,90);assert(not selectedCard.closed);tick();assert(not selectedCard.closed and find(root.menu,"model_choice_1")==selectedCard)
-local stableCard=find(root.menu,"model_choice_1")
-tick();tick();assert(find(root.menu,"model_choice_1")==stableCard,"ordinary replay polls preserve browser focus")
-local stableWidgets=elementCount
-for i=1,200 do
-    find(root.menu,"model_faction_next"):processEvent({name="button_action"});tick()
-end
-assert(elementCount<=stableWidgets+8,"repeated filters must reuse native widgets instead of exhausting the UI pool")
-find(root.menu,"model_clear_filters"):processEvent({name="button_action"});tick()
-assert(find(root.menu,"model_choice_1").style.height==42,"appearance cards reserve space for readable metadata")
-assert(find(root.menu,"model_choice_1").textLabel.style.alpha~=0,"native card labels remain visible during reuse")
-local function checkModelCard(row)
-    local thumbnail=find(row,"model_thumbnail")
-    local copy=assert(find(row,"model_copy"),"card text needs its own bounded column")
-    local title=assert(find(copy,"model_name"))
-    local meta=assert(find(copy,"model_variant"))
-    assert(copy.stencil and row.textLabel.text=="","native label must not paint under the thumbnail")
-    local original=title.text
-    for _,event in ipairs({"button_over","button_up","button_disable","button_over_disable",
-        "visual_focused_lowlighted","visual_lowlighted","visual_unlighted"}) do
-        row.textLabel:processEvent({name=event})
-        assert(title.text==original and title.style.left==2,"native states must not move card copy")
-        for _,resolution in ipairs({{1024,768},{1280,720},{1920,1080},{2560,1440},{3440,1440},{3840,2160}}) do
-            local scale=math.min(resolution[1]/1280,resolution[2]/720)
-            assert(copy.style.left*scale>(thumbnail.style.left+thumbnail.style.width)*scale)
-            assert((copy.style.left+copy.style.width)*scale<row.style.width*scale)
-            assert((title.style.top+title.style.height)*scale<meta.style.top*scale)
-            assert((meta.style.top+meta.style.height)*scale<copy.style.height*scale)
+editorData.modelCatalogRevision=1;editorData.modelLoading=false;editorData.modelPreview=false
+function game:gettheaterwardrobe(kind,category,group,page,query,team)
+    local stage=group=="" and "looks" or kind=="body" and "variants" or team=="" and "teams" or "classes"
+    local items={}
+    if query~="absent" then
+        for i=1,(group=="" and 8 or 2) do
+            items[i]={id=(page-1)*8+i,label=group=="" and "Look "..((page-1)*8+i) or "Shellback",group="testgroup",team=i==1 and "SAS / Urban" or "USMC",
+                faction="SAS / Urban",role=i==1 and "assault" or "sniper",variants=30,
+                icon=i==1 and "" or "h1_character_icon_010"}
         end
     end
-    for _,line in ipairs({title,meta}) do
-        local _,_,width=luiglobals.GetTextDimensions(line.text,line.style.font,line.style.height)
-        assert(width<=line.style.width+.001,"card text must fit after reuse")
-        assert(line.style.left>0 and line.style.left+line.style.width<copy.style.width,
-            "text needs a small inset from the clipping edges")
-    end
+    return {items=items,stage=stage,page=page,pages=2,total=query=="absent" and 0 or 16,categories={"All looks","Default","LootDrop1"}}
 end
-checkModelCard(find(root.menu,"model_choice_1"))
-find(root.menu,"model_heads"):processEvent({name="button_action"});tick()
-checkModelCard(find(root.menu,"model_choice_1")) -- HEAD placeholder
-checkModelCard(find(root.menu,"model_choice_2")) -- native portrait
-local reused=find(root.menu,"model_choice_1")
-local reusedCopy=find(reused,"model_copy")
-local oldLabel=editorData.modelCatalog[5].label
-editorData.modelCatalog[5].label="SAS "..string.rep("Woodland ",24).."assault"
-find(root.menu,"model_next"):processEvent({name="button_action"});tick()
-assert(find(root.menu,"model_choice_1")==reused and find(reused,"model_copy")==reusedCopy)
-checkModelCard(reused)
-assert(find(reused,"model_name").text:sub(1,5)=="> SAS" and find(reused,"model_name").text:sub(-3)=="...")
-editorData.modelCatalog[5].label=oldLabel
-find(root.menu,"model_previous"):processEvent({name="button_action"});tick()
-checkModelCard(reused)
-assert(find(reused,"model_name").text=="> SAS HEAD 1" and find(reused,"model_name").style.height==15,
-    "reused short names regain normal size and complete text")
--- A valid catalog icon is not necessarily resident in the replay. Exercise
--- valid -> missing -> valid -> missing without replacing the card or preview.
-local portraitCard=find(root.menu,"model_choice_2")
-mouseClick(portraitCard,90);tick()
-local preview=assert(find(root.menu,"model_portrait"))
-assert(not preview.modelHidden and preview.editorImageLayout.material=="h1_character_icon_010")
-local portraitWidgets=elementCount
-for _,missing in ipairs({true,false,true,false}) do
-    missingMaterials.h1_character_icon_010=missing
-    root.menu:requestCategory("models","MODEL SWAPPER");tick()
-    assert(find(root.menu,"model_choice_2")==portraitCard and find(root.menu,"model_portrait")==preview)
-    assert(find(portraitCard,"model_thumbnail").editorImageLayout.material==
-        (missing and "white" or "h1_character_icon_010"))
-    assert(find(portraitCard,"model_placeholder_text").text==(missing and "HEAD" or ""))
-    assert((preview.modelHidden or false)==missing)
-    assert((find(root.menu,"model_default_card").modelHidden or false)==not missing)
-    if missing then
-        assert(find(root.menu,"model_default_hint").text=="HEAD / PORTRAIT UNAVAILABLE")
-        assert(click("model_apply")[3]=="2","missing portrait must not hide or disable a usable model")
-    end
-end
-assert(elementCount==portraitWidgets,"portrait availability changes must reuse the native widget tree")
-editorData.modelCatalog[16].icon="missing_body_portrait"
-missingMaterials.missing_body_portrait=true
-find(root.menu,"model_bodies"):processEvent({name="button_action"});tick()
-assert(find(find(root.menu,"model_choice_1"),"model_placeholder_text").text=="BODY")
-assert(find(root.menu,"model_default_hint").text=="BODY / PORTRAIT UNAVAILABLE")
-assert(click("model_apply")[3]=="100")
-editorData.modelCatalog[16].icon=""
+Engine.OpenScreenKeyboard=function(_,_,initial) _G.searchInitial=initial end
+tick();root.menu:selectCategory("models","MODEL SWAPPER");tick()
 checkEditorLayout()
-print("PASS detailed character browser: player identity, portraits/default cards, head/body apply, paging, faction filter, load guard, save/restore and layout")
-root.menu:processEvent({name = "button_secondary"}); tick(); tick()
-assert(root.menu.category=="main" and #root.menu.list.children==16, "browser Back restores the category hub")
+assert(#root.menu.list.children==0)
+local function modelClick(id)
+    local element=assert(find(root.menu,id),id)
+    mouseClick(element,15);tick()
+    assert(not element.closed,"native widget must survive its input dispatch: "..id)
+    return element
+end
+modelClick("model_player_selector");assert(root.menu.wardrobePane=="players")
+assert(click("model_card_2")[2]=="model_select" and commands[#commands][3]=="actor:200");tick()
+local initial=#commands
+find(root.menu,"model_card_2"):processEvent({name="button_over"});tick()
+assert(#commands==initial,"hover cannot preview")
+modelClick("model_card_2")
+assert(#commands==initial and root.menu.wardrobeGroup=="testgroup","head choice only opens teams")
+modelClick("model_card_1")
+assert(#commands==initial and root.menu.wardrobeTeam=="SAS / Urban","team choice only opens classes")
+modelClick("model_card_2")
+assert(commands[#commands][2]=="model_preview_look" and commands[#commands][3]=="2")
+root.menu:processEvent({name="button_secondary"});tick()
+assert(root.menu.wardrobeTeam=="" and root.menu.wardrobeGroup=="testgroup","class Back returns to teams")
+modelClick("model_card_2")
+assert(root.menu.wardrobeTeam=="USMC")
+modelClick("model_browse_back");modelClick("model_browse_back")
+assert(root.menu.wardrobeGroup=="","team Back returns to looks")
+modelClick("model_card_2");modelClick("model_card_1")
+editorData.modelPreview=true;tick()
+assert(click("model_keep")[2]=="model_keep")
+assert(click("model_cancel")[2]=="model_cancel")
+editorData.modelLoading=true;tick()
+local loadingCount=#commands
+mouseClick(find(root.menu,"model_card_1"),15);mouseClick(find(root.menu,"model_keep"),15)
+assert(#commands==loadingCount,"cannot keep or replace a loading preview")
+assert(click("model_cancel")[2]=="model_cancel","cancel remains available during load")
+editorData.modelLoading=false;editorData.modelPreview=false;tick()
+modelClick("model_customize");modelClick("model_card_1")
+assert(root.menu.wardrobeKind=="head")
+modelClick("model_card_1");modelClick("model_card_1")
+assert(click("model_card_1")[2]=="model_preview_head");tick()
+modelClick("model_customize");modelClick("model_card_2")
+assert(root.menu.wardrobeKind=="body")
+modelClick("model_card_1")
+assert(click("model_card_1")[2]=="model_preview_body");tick()
+modelClick("model_looks");modelClick("model_next")
+assert(root.menu.modelPage==2)
+local noPreview=#commands
+modelClick("model_card_1");assert(#commands==noPreview)
+modelClick("model_browse_back");assert(root.menu.modelPage==2,"Back preserves the chosen head page")
+modelClick("model_search")
+root.menu:processEvent({name="text_input_complete",text="absent"});tick()
+assert(root.menu.wardrobeQuery=="absent" and find(root.menu,"model_card_1").modelHidden)
+assert(find(root.menu,"model_empty"))
+modelClick("model_clear_search")
+modelClick("model_category");modelClick("model_card_3")
+assert(root.menu.wardrobeCategory=="LootDrop1")
+modelClick("model_manage")
+assert(click("model_card_1")[2]=="model_save")
+editorData.modelPreview=true;tick()
+local manageCount=#commands
+mouseClick(find(root.menu,"model_card_1"),15);mouseClick(find(root.menu,"model_card_2"),15)
+assert(#commands==manageCount,"unsaved previews cannot leak into save/load")
+editorData.modelPreview=false;tick()
+assert(click("model_card_2")[2]=="model_load")
+assert(click("model_card_3")[2]=="model_restore")
+modelClick("model_looks")
+local stableCard=find(root.menu,"model_card_1")
+modelClick("model_category");modelClick("model_browse_back")
+modelClick("model_player_selector");modelClick("model_browse_back")
+local warm=elementCount
+for i=1,100 do
+    modelClick("model_next");modelClick("model_previous")
+    modelClick("model_category");modelClick("model_browse_back")
+end
+assert(elementCount==warm and find(root.menu,"model_card_1")==stableCard,"wardrobe must reuse its eight cards")
+for i=1,8 do
+    local card=find(root.menu,"model_card_"..i)
+    assert(card.textLabel.text=="")
+    local copy=find(card,"model_copy")
+    assert(copy.stencil)
+    for _,id in ipairs({"model_name","model_variant"}) do
+        local t=find(card,id)
+        local _,_,width=luiglobals.GetTextDimensions(t.text,t.style.font,t.style.height)
+        assert(width<=t.style.width+.001)
+    end
+end
+checkEditorLayout()
+root.menu:processEvent({name="button_secondary"});tick();tick()
+assert(root.menu.category=="main" and commands[#commands][2]=="model_cancel","leaving wardrobe cancels unkept preview")
+print("PASS wardrobe: grouped cards, search, live preview guards, keep/cancel, Customize, manage, bounded widgets and layout")
 editorData.weaponSwapSource="h1_remington700_mp_a#none_f#base"
 editorData.weaponSwapLabel="R700";editorData.weaponSwapLoading=false;editorData.weaponSwapCount=0
 tick();root.menu:requestCategory("weapons","WEAPON SWAPPER");tick()
