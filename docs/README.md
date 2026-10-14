@@ -6,6 +6,7 @@ Start with the [project README](../README.md) for installation and a first repla
 
 | Guide | Contents |
 | --- | --- |
+| [SP Bots experiment (WIP)](../experiments/sp-bots/README.md) | Opt-in local Private Match prototype, build/setup, implemented behavior, limitations and validation evidence. |
 | [Theater library](theater-library.md) | Import recordings, convert COD4 demos, browse and play results. |
 | [Playback, cameras and editor](native-theater.md) | Timeline shortcuts, free camera, dolly paths, visual settings and capture controls. |
 | [Model Swapper](theater-model-swapper.md) | Select replay players, apply native heads/bodies, preview and save demo-specific appearances. |

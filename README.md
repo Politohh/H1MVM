@@ -8,6 +8,16 @@ An **H1-Mod client with an integrated demo system and a COD4-to-H1 demo converte
 
 **[Download](https://github.com/Politohh/h1-cod4-demo/releases/latest)** · **[Documentation](docs/README.md)** · **[Changelog](CHANGELOG.md)** · **[Report an issue](https://github.com/Politohh/h1-cod4-demo/issues/new/choose)**
 
+### SP Bots experiment — working WIP
+
+An opt-in prototype adds campaign-style animation and behavior to MP agents in
+local Private Match, for playing against bots and recording cinematics.
+Development is paused at **Preview 19**. It is not a complete SP AI port or a
+finished release: poses, tactical decisions, compatibility and stability still
+need work. Normal builds do not include the experimental overlay.
+
+**[SP Bots README: setup, build, features, limitations, evidence and implementation](experiments/sp-bots/README.md)**
+
 ## Made for replay and cinematic work
 
 | Feature | What you can do |
