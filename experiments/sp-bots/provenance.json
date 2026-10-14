@@ -1,0 +1,136 @@
+{
+  "baseline": "3dd619fb7ed6125b7be7fdd7c0b6f40ad514dfbd",
+  "preview": "19",
+  "preview_exe_sha256": "ab37c580cfe815cf7af81d80a88cb524de2447b09c15e4a288fa223b1fc6bda1",
+  "changes": "Diagnostic output paths made relative to game working directory; LF line endings; portable build/package wrappers. Gameplay and GSC logic unchanged. Removed pre-existing trailing spaces in copied C++ files.",
+  "files": {
+    "aim_controller_probe.hpp": {
+      "preview19_sha256": "74978fdd56e9c419da813abe3d7295197613e3fe5a847096f0dc02e01306a3e5",
+      "repository_sha256": "045198ae6180addec50d4e4cde7a9940bdf860b68472d4dfeced31296eee791e"
+    },
+    "animation_schema.hpp": {
+      "preview19_sha256": "281c9712c34c9708fec921e9d65e8d676cbe20135ee9db668a5413203bdd0aab",
+      "repository_sha256": "944539f0f2f870380a6135a9111a89f516b75bb9c740d87c2547e6df4d66c13a"
+    },
+    "animation_schema_test.cpp": {
+      "preview19_sha256": "042c4fddb68ddff316486bf953f4d130ec369b642efcddaa7d98ef970b6a95ea",
+      "repository_sha256": "f7c1a4bd44b992b1b9f06882ef73aeb0d019fe959544671c27673062d16e838f"
+    },
+    "auth_research.cpp": {
+      "preview19_sha256": "7ead6e45856c60f44513969a8566dfafb244f8aa612a2b21bd93c91bdc8624b2",
+      "repository_sha256": "13cf6f212f1e604e789f760cd0f897774708775491fab7a4cadf0e31cc621ac2"
+    },
+    "campaign_index.hpp": {
+      "preview19_sha256": "2284ec5ffbbc7407d61844799be9b1cf052e2633fc8eda677ff38c394fe258a0",
+      "repository_sha256": "1958bf3c420cd517c1ed3a814169476372144091a90091d91f751f6061830733"
+    },
+    "campaign_reader.hpp": {
+      "preview19_sha256": "f6c63028e049dd513e4a60257ee265d1aa2d2145b3fbccde13da886d61d05d01",
+      "repository_sha256": "f6c63028e049dd513e4a60257ee265d1aa2d2145b3fbccde13da886d61d05d01"
+    },
+    "demo_playback_research.cpp": {
+      "preview19_sha256": "df96665fecace5aec71d3269d722fd0c688fc056fddbcce73194a8b333fc7212",
+      "repository_sha256": "685e803c827d79a82d613e736bd19f1895d3a759b30612344b2e90c87f2f2052"
+    },
+    "demo_utils_research.cpp": {
+      "preview19_sha256": "8574e4b16ab436e410d2a6fbccd88603022b470c0b7ad90d5694e9f943b39180",
+      "repository_sha256": "0c454ef4cbc5a9c04fb15407a9acda3891cbf76e23cf13b80ed1b11444861756"
+    },
+    "fastfiles_research.cpp": {
+      "preview19_sha256": "7ba98aa709f96041bc8440dcd2bcf9a4321cc58e87b71d6676e0014f525e26d3",
+      "repository_sha256": "b7c9388068f13a1798cbdaad908ec5d89577c0d457077371ee4c5d592e1cea0e"
+    },
+    "logger_research.cpp": {
+      "preview19_sha256": "79c141b06f890edd304a6a2443822f8efffb96813ab6e89086eb2e6b3ec1c7c4",
+      "repository_sha256": "42280473c5264f6b4729cae462c8205e42dc681529f1095d5a0954f47f4cfff7"
+    },
+    "mp_rig_adapter.hpp": {
+      "preview19_sha256": "06c6ea0babe9837113188d9c98d6cdece3236778b9e657bc900aec7d854d2fd0",
+      "repository_sha256": "06c6ea0babe9837113188d9c98d6cdece3236778b9e657bc900aec7d854d2fd0"
+    },
+    "muzzle_fx_probe.hpp": {
+      "preview19_sha256": "06f776db3dd10f41ebc29cd2bd4f53d5e8bbbc9ccd97dd8d27d0b54d7ff0f9d8",
+      "repository_sha256": "7f1a9c02de81ae1697343107c5820344b8cb43e3fc4d847bc246bfe043dffaa8"
+    },
+    "party_research.cpp": {
+      "preview19_sha256": "d2aa2dd559ceeb27d509d6632e40a4b183dd6c2dad079f4e56a8c6db0e5dc0a0",
+      "repository_sha256": "1c5c6c0dce5c31dd4f3e2957ea42d0ce0d5a482e7f094016144ecc6c54bc0c81"
+    },
+    "peer_capabilities.hpp": {
+      "preview19_sha256": "5f7b972107c591207e25f2165fe56f5a587115713a3eaeea1b37d256e5f1762e",
+      "repository_sha256": "5f7b972107c591207e25f2165fe56f5a587115713a3eaeea1b37d256e5f1762e"
+    },
+    "spai_aim.hpp": {
+      "preview19_sha256": "7a068ff276515f0b5d7bb451e9b940bc43b21fa33aa5dcb2a9b22f80558367d3",
+      "repository_sha256": "7a068ff276515f0b5d7bb451e9b940bc43b21fa33aa5dcb2a9b22f80558367d3"
+    },
+    "spai_character_assets.hpp": {
+      "preview19_sha256": "6b23a179ec588fe858973c2b494c4a7bf600e1b9bcb444ca678bb67aa41d7cc7",
+      "repository_sha256": "0cadaabeb5cff263f369e0e6212ab8bcc51d2c0055c52401b8762e6433aaaddc"
+    },
+    "spai_component.cpp": {
+      "preview19_sha256": "b1436c6127c909223a8d45b0af34af7e13cd2010b3545173929a93b26bd835ae",
+      "repository_sha256": "89af394f93f6d828bc6b6d230a317d98b015b72325a1227531d29cbf0d81e08e"
+    },
+    "spai_recording.hpp": {
+      "preview19_sha256": "e84cc2aac726c4c6acd9470ff9bb45a0aa44f016d7b4373c54c96e1137ee819e",
+      "repository_sha256": "e84cc2aac726c4c6acd9470ff9bb45a0aa44f016d7b4373c54c96e1137ee819e"
+    },
+    "spai_remote.hpp": {
+      "preview19_sha256": "8266a72756b18dfe72b6116f152b34c468ae852aa613b7cc8ab70244b9effd73",
+      "repository_sha256": "e158348376600e64c505d8f70e944cad231ace41470decb03d0ecaced63bf587"
+    },
+    "spai_replay.hpp": {
+      "preview19_sha256": "2fd94c9356225f71dfd67e9e9d699507ec061aa0cc7a22378acaf833b831072a",
+      "repository_sha256": "7f4b744846012a6641bc26788f30e51e220e81eb2ed6cf6a01b845270de9d184"
+    },
+    "spai_rig_variants.hpp": {
+      "preview19_sha256": "92677a0f83fe8f14f5fb24c2feb778d33bd3528af1bd1ad79619258a1d032ca6",
+      "repository_sha256": "a6caf8bd6790641ffa55fdca836d2d184915c2e32bf70d1a2615370c855ff371"
+    },
+    "spai_score_client.hpp": {
+      "preview19_sha256": "b071829045a200ed0fb6973b20c82c40a807a31312668b723e5868be892fe4a9",
+      "repository_sha256": "7d64022a0b03d523e16ebbeb678e6b8dda47231339d5ac2b36c21eb33b8c417f"
+    },
+    "spai_score_transport.hpp": {
+      "preview19_sha256": "fb6c129a596b4301ed36142cffe25913396d73d23756571e1f3fbec83b126fe3",
+      "repository_sha256": "fb6c129a596b4301ed36142cffe25913396d73d23756571e1f3fbec83b126fe3"
+    },
+    "spai_scores.hpp": {
+      "preview19_sha256": "0369d4eb091e90cc9f660a2a2c25d34893c7ac1de2f2a609c3f168d4afe528b8",
+      "repository_sha256": "0369d4eb091e90cc9f660a2a2c25d34893c7ac1de2f2a609c3f168d4afe528b8"
+    },
+    "theater_library_research.cpp": {
+      "preview19_sha256": "9eb1b3d5f8340157eb859818f084b263391b3a6238f208cc584b56943ccfe09e",
+      "repository_sha256": "9eb1b3d5f8340157eb859818f084b263391b3a6238f208cc584b56943ccfe09e"
+    },
+    "ui_scripting_research.cpp": {
+      "preview19_sha256": "3af92dad7bb41816b62b86cfa229b0dedcfb8552038712482057db65c20f00ab",
+      "repository_sha256": "238b1bb092cb0ec1ac6ada8f785b8b725fa080556115508e12cf6ef9c1e17038"
+    },
+    "spai_menu.lua": {
+      "preview19_sha256": "791084a4d2ec9c6c4aa75d5cd97f1b396fd48611eda4ca9b0b04257591df05a8",
+      "repository_sha256": "791084a4d2ec9c6c4aa75d5cd97f1b396fd48611eda4ca9b0b04257591df05a8"
+    },
+    "spai_scoreboard.lua": {
+      "preview19_sha256": "a963a4f6db7f0a7910b4a0b9d4b2bf4bbd2600d6fb2620678a0c2225c0ac93e5",
+      "repository_sha256": "a963a4f6db7f0a7910b4a0b9d4b2bf4bbd2600d6fb2620678a0c2225c0ac93e5"
+    },
+    "startup_lobby.lua": {
+      "preview19_sha256": "c0eae61642bbb4ce98168fecc970e0cac97aa6125b15bec2d406e8a92e085a1c",
+      "repository_sha256": "61d35f6ad96856c009a7f5da74ed31ca16558c598902eafdb54ee88bd502b21c"
+    },
+    "spai_entry.gsc": {
+      "preview19_sha256": "357e837c94873a8daad8a9d1f6108458a48a5f48b0a6acfd790740b7f5a6e289",
+      "repository_sha256": "999feee2599e7e780e0bac825bacc46b52a634b231fd838742153303953df6fa"
+    },
+    "spai_match.gsc": {
+      "preview19_sha256": "f6fc34f6aa54bde99e87d7d6ca1aadd3f23e777b0774e0a85ab4ddcd216ce054",
+      "repository_sha256": "53cffddc2587be647a296666903c632497de6df2c206d4f85e00c1c667f0c602"
+    },
+    "spai_behavior.gsc": {
+      "preview19_sha256": "32af7c4f0137776e9dc4a58696c195a5dfd45f43fb28333ca6b9692a294dc8ac",
+      "repository_sha256": "b1b5aa34e9950568ddac1e6c62371e3aedcdba617f9e1fe26bd108351e2c75c9"
+    }
+  }
+}

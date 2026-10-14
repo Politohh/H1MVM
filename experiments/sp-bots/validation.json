@@ -1,0 +1,87 @@
+{
+  "goal_complete": false,
+  "visual_accepted": false,
+  "evidence": {
+    "reaction-clips-client-01": {
+      "executable_sha256": "acf2f6ded6d8e72cd71c0b58ebf91cf83503c829f462a9ccea1491d5fef2ac7d",
+      "native_base_sha256": "0fb3b3a699c3a194adea53503e7cb496919c49cc8bc49804685f66ea67a134ac",
+      "log_sha256": "fa7f8784edae460322b27fe4557ca3a00898191229311b0ece6a63672df50b92",
+      "completed": true,
+      "exit_code": 0,
+      "scope": "Ten appended clips load and advance on three actors with two MP faction rigs. Finite server bone samples; not rendered quality, movement or death lifecycle acceptance.",
+      "visual_verified": false
+    },
+    "reaction-motion-client-03": {
+      "executable_sha256": "f69d125f8875450d428562ba14d6439dc48861b98f8bbccd017f78e6837d1526",
+      "native_base_sha256": "0fb3b3a699c3a194adea53503e7cb496919c49cc8bc49804685f66ea67a134ac",
+      "log_sha256": "77a4a7c1fc41fe89bd55198d49667e795ba5f625779c63d3d752600549e6797c",
+      "completed": true,
+      "exit_code": 0,
+      "scope": "Fixture-only bot placement on checked ground; native stumble travels full clear path and partial obstructed path, preserving gravity/collision. Contextual reaction selection; no host relocation. Not visual or natural combat acceptance.",
+      "visual_verified": false
+    },
+    "reaction-death-client-02": {
+      "executable_sha256": "efaf9985617f0d4aeaa9988dda54d17abdc5c3edbcf5ec591813ae0f02eb0655",
+      "native_base_sha256": "0fb3b3a699c3a194adea53503e7cb496919c49cc8bc49804685f66ea67a134ac",
+      "log_sha256": "8f5660966af0b2dbd5fc18213340117714d02e500235f5ffd69055ddf3b6aea8",
+      "completed": true,
+      "exit_code": 0,
+      "scope": "100 standing selections from five non-repeating choices; head/crouch/run contexts preserved; three new forced death clips advance on native client corpses and transition to ragdoll with exact three kills/deaths/respawns. Not natural death distribution or visual acceptance.",
+      "visual_verified": false
+    },
+    "reaction-recording-client-01": {
+      "executable_sha256": "d590191ef79f750fd5bc2b86ca7835d68cd600dbd712fef6a0407f29cb520216",
+      "native_base_sha256": "0fb3b3a699c3a194adea53503e7cb496919c49cc8bc49804685f66ea67a134ac",
+      "log_sha256": "278b417d5fa871ef7bf38f53b009c87c552292ae0b1f120e1de0f718b7b0c117",
+      "completed": true,
+      "exit_code": 0,
+      "scope": "60 seconds natural local combat followed by forced reaction movement and three death lifecycle fixtures. Complete schema8 recording; prior recordings unchanged. Not visual acceptance.",
+      "visual_verified": false
+    },
+    "reaction-playback-client-01": {
+      "executable_sha256": "9a33a31b404d934a5bef9b8f7df803546a94383b3491ca6d1baf7192bbb97e01",
+      "native_base_sha256": "0fb3b3a699c3a194adea53503e7cb496919c49cc8bc49804685f66ea67a134ac",
+      "log_sha256": "059413999de25bcc6f58dea0acd52c9e4bf6d471310f66c789518cb32cf79d9d",
+      "completed": true,
+      "exit_code": 0,
+      "scope": "Complete schema8 replay forward and rewind to five seconds, resume to final second. New stumble and three death clips advance in native actor/corpse trees both passes. Recorded scores and native muzzle events present; no live AI population.",
+      "visual_verified": false
+    },
+    "reaction-legacy7-client-01": {
+      "executable_sha256": "3977593485c25b45b8f436a136ab7d30e6e4e6e73f68037c6523b01426db8b41",
+      "native_base_sha256": "0fb3b3a699c3a194adea53503e7cb496919c49cc8bc49804685f66ea67a134ac",
+      "log_sha256": "199ddd03d9db26ba58c949e03d90523c2ac707dc36bba8d2445ad373df385585",
+      "completed": true,
+      "exit_code": 0,
+      "scope": "Legacy schema7 recording on schema8 binary: old24-state native trees, recorded aim controllers, scores and muzzle events retained through forward/rewind. No live population. Not rendered acceptance.",
+      "visual_verified": false
+    }
+  },
+  "repository_port_checks": {
+    "release_x64_build": true,
+    "schema_assertions_passed": true,
+    "source_identity_after_declared_changes": true,
+    "production_gsc_text_matches_preview19": true,
+    "documentation_links": true,
+    "package": {
+      "source_exe_sha256": "0ea8ebcc69391ec3a374bc9e6e2d8e4af966dad85ebb2a21b1310e9d496b8dda",
+      "executable_sha256": "4538fa63c0a4943ed3172780268fbba263f1f9cadba861385d49b41e28c85d44",
+      "script_sha256": "bc8bbf5df1086f6305cdd91759cc8bd4ce3926a2db958304ac3d23c5a8e2714b",
+      "script_path": "cdata/scripts/mp/zz_spai_probe.gsc",
+      "bundle_header_sha256": "bfcfa3b4be889e495d30a5fe6aa8b300e550fa1dae978e0854dd1aea8aa3b07b",
+      "files": 454,
+      "preserved_files": 450,
+      "purpose": "Isolated opt-in research fixture; not a release or final Private Match controller.",
+      "ui_sha256": "791084a4d2ec9c6c4aa75d5cd97f1b396fd48611eda4ca9b0b04257591df05a8",
+      "scoreboard_sha256": "a963a4f6db7f0a7910b4a0b9d4b2bf4bbd2600d6fb2620678a0c2225c0ac93e5",
+      "replaced_files": {
+        "cdata/ui_scripts/patches/startup_lobby.lua": {
+          "before": "43d235cb085d85dddc42da57f288a1fad3e29f58337472b4680fbcbfe8f85c07",
+          "after": "61d35f6ad96856c009a7f5da74ed31ca16558c598902eafdb54ee88bd502b21c"
+        }
+      }
+    },
+    "runtime_gameplay_retested": false,
+    "scope": "Repository build and bundle readback passed. No game launch during publication; historical preview gameplay evidence remains separate."
+  }
+}
