@@ -3,6 +3,8 @@ setlocal
 cd /d "%~dp0.."
 call tests\setup-msvc.cmd
 if not "%errorlevel%"=="0" exit /b 1
+call tests\test-ui-value-lifetime.cmd
+if not "%errorlevel%"=="0" exit /b 1
 call tests\run-cod4-fov.cmd
 if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c++20 /EHsc /W4 /O2 /I src\client tests\theater_dof.cpp /Fe:build\theater_dof_test.exe /Fo:build\theater_dof_test.obj
