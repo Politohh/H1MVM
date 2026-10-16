@@ -3,6 +3,7 @@
 **Record, replay and create cinematics in Call of Duty: Modern Warfare Remastered.**
 
 [![Release](https://img.shields.io/github/v/release/Politohh/H1MVM?label=download&sort=date)](https://github.com/Politohh/H1MVM/releases/latest)
+[![Total downloads](https://img.shields.io/github/downloads/Politohh/H1MVM/total?label=total%20downloads)](https://github.com/Politohh/H1MVM/releases)
 [![Windows x64](https://img.shields.io/badge/platform-Windows%20x64-0078D4)](#installation)
 [![GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
