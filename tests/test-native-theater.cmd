@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0.."
-call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul
+call tests\setup-msvc.cmd
 if not "%errorlevel%"=="0" exit /b 1
 call tests\run-cod4-fov.cmd
 if not "%errorlevel%"=="0" exit /b 1

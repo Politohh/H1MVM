@@ -1,4 +1,10 @@
-# Single-file Theater client
+# H1MVM single-file release
+
+The first H1MVM release is **v1.0**. Its game version label and Windows product
+metadata read **H1MVM v1.0**. The executable stays named `h1-mod.exe` so existing
+shortcuts and tooling continue to work. Existing `h1-mod` settings and cache paths
+are retained. Updates come from [H1MVM Releases](https://github.com/Politohh/H1MVM/releases/latest),
+not the inherited upstream updater. SP Bots remains a separate experimental build.
 
 Put `h1-mod.exe` in your existing Modern Warfare Remastered game directory and launch it.
 The original MWR game installation is still required. No separate client support pack,
@@ -72,3 +78,24 @@ run `tools/index-theater-skies.py <game> <verified-sky-manifest> data/sky-preset
 using a development Python environment with `lz4`. The generator verifies all extracted
 pixels against the original preset manifest before writing an index. An unsupported
 archive version or pixel mismatch is rejected at runtime rather than displaying bad data.
+
+## Publishing a clean release
+
+Commit and review the source changes first, merge them to `main`, and build from
+the exact release tag on a clean tree. For v1.0 the tag is `v1.0`, the GitHub release
+title is `H1MVM v1.0`, and the standard output is `build/bin/x64/Release/h1-mod.exe`.
+Do not use the experimental SP Bots output as the standard client.
+
+```powershell
+git checkout v1.0
+.\tools\premake5.exe vs2022
+msbuild build\h1-mod.sln /m /p:Configuration=Release /p:Platform=x64
+python tools/package-single-file.py v1.0 C:\Releases\H1MVM-v1.0
+```
+
+The packager refuses a dirty checkout, a tag that does not match HEAD, stale
+generated version metadata, a missing H1MVM display string, or embedded payloads
+that differ from the verified build inputs. It writes the EXE, SHA-256 checksum
+and release provenance. Run the staged EXE with `-bundle-check` using a fresh
+`H1_RUNTIME_CACHE` directory and inspect its report before uploading. Keep build,
+offline-test, bundle-integrity and actual in-game checks distinct in release notes.

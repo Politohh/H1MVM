@@ -55,7 +55,7 @@ VS_VERSION_INFO VERSIONINFO
 #ifdef PRERELEASE
  FILEFLAGS VS_FF_PRERELEASE
 #else
-#ifndef CI
+#if GIT_DIRTY
  FILEFLAGS VS_FF_PRIVATEBUILD
 #else
  FILEFLAGS 0x0L
@@ -63,23 +63,23 @@ VS_VERSION_INFO VERSIONINFO
 #endif
 #endif
  FILEOS 0x40004L
- FILETYPE VFT_DLL
+ FILETYPE VFT_APP
  FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "H1-Mod"
-            VALUE "FileDescription", "H1-Mod"
+            VALUE "CompanyName", "H1MVM contributors"
+            VALUE "FileDescription", H1MVM_VERSION
             VALUE "FileVersion", VERSION_FILE
-            VALUE "InternalName", "H1-Mod"
+            VALUE "InternalName", "H1MVM"
             VALUE "LegalCopyright", "Copyright © 2024 Aurora. All rights reserved."
             VALUE "Licence", "GPLv3"
-            VALUE "Info", "https://auroramod.dev"
+            VALUE "Info", "https://github.com/Politohh/H1MVM"
             VALUE "OriginalFilename", "h1-mod.exe"
-            VALUE "ProductName", "h1-mod"
-            VALUE "ProductVersion", VERSION_PRODUCT
+            VALUE "ProductName", "H1MVM"
+            VALUE "ProductVersion", H1MVM_VERSION
         END
     END
     BLOCK "VarFileInfo"

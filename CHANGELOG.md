@@ -1,8 +1,25 @@
 # Changelog
 
+## H1MVM v1.0 — 2026-10-16
+
+[Release](https://github.com/Politohh/H1MVM/releases/tag/v1.0)
+
+First public release under the H1MVM name, based on the latest client source.
+
+- Brand the in-game version, console, dialogs and Windows executable metadata as H1MVM. Release builds use the clean `v1.0` tag, without a development/dirty suffix.
+- Ship one EXE with verified Theater UI, facial/sniper support and FFmpeg. Keep the `h1-mod.exe` filename and existing settings/cache locations for compatibility.
+- Include direct multiplayer lobby startup, decoded splitter events and weapon icons, click-based demo selection, simplified DOF controls and continuous cursor focus.
+- Include the wardrobe flow (head → team → class), native portraits where available, live preview, background dim toggle, weapon/camo swapping and vision presets.
+- Prepare the first dolly frame with J, then start with Space; suppress player names during freecam and dolly.
+- Disable the inherited updater's manual download path as well as automatic checks, so it cannot replace H1MVM with upstream binaries/data.
+- Rewrite installation/build documentation and replace inherited remote-deployment CI with offline regression checks.
+- Preserve SP Bots Preview 19 as a separately built, paused experiment. **The standard v1.0 EXE does not include SP Bots.** See its README for known behavior, evidence and substantial remaining work.
+
+Historical releases below used the project's previous name and packaging.
+
 ## 2026.10.09
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.09)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.09)
 
 - Reduce the single-EXE download from approximately 600 MB to 50 MB while retaining the complete facial/sniper support assets and all four Theater capture codecs.
 - Read the 45 stock sky presets from the installed MWR game archives when selected, verify their pixel hashes and cache them locally. Sky loading runs in the background; missing or incompatible archives leave the original sky visible with an editor message.
@@ -13,7 +30,7 @@ Validation: local Release/x64 build, complete bundle extraction and hash checks,
 
 ## 2026.10.08.2
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.08.2)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.08.2)
 
 - Bundle all required client support assets into one EXE, including COD4 facial clips and rest rigs, classic sniper animations, scope, skies and FFmpeg. Verify and repair the extracted cache on launch.
 
@@ -25,7 +42,7 @@ Release/x64 build, sniper and Theater regressions passed. Offline evaluation of 
 
 ## 2026.10.08.1
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.08.1)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.08.1)
 
 - Fixed Model Swapper appearance names drawing underneath HEAD/BODY tiles. Titles and faction/class details now use a separate clipped text column, with text fitting recalculated when cards are reused. Long names keep their beginnings and shorten at the end.
 - Fit the selected appearance's title and details to the preview panel. Preserve widget reuse and deferred navigation for safe paging and filtering.
@@ -35,7 +52,7 @@ The regression harness covers card layout, focus-state resets, long-name reuse, 
 
 ## 2026.10.08
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.08)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.08)
 
 - Added the saved `cod4_fov` toggle for live multiplayer, devmaps and replays. Hip weapon framing follows `cg_fov`, fully aimed FOV stays fixed, and `cg_fovScale` affects both. It also preserves the late zoom transition used by `cod4_snipers`.
 - Stabilized Model Swapper navigation by deferring category changes until button dispatch finishes, reusing widgets and fetching only four visible appearance cards from the native catalog. Filters and paging no longer rebuild the entire menu or copy the full catalog into Lua on every refresh.
@@ -58,7 +75,7 @@ Release/x64 compilation, splitter checks on the 27-minute Crash source/conversio
 
 ## 2026.10.07.3
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07.3)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.07.3)
 
 - Added indexed backward seeking for converted COD4 replays. Left Arrow, the five-second Back button and backward timeline scrubs jump to a nearby full snapshot instead of restarting at the beginning. The index builds during playback; existing conversions do not require reconversion.
 - Restore the selected frame's recorded camera data and reset native snapshot/prediction history before catch-up. Paused state and playback speed are preserved. Native H1 recordings and unsupported/discontinuous ranges retain the restart fallback.
@@ -67,7 +84,7 @@ Release/x64 compilation and offline seek checks passed, including the reported 2
 
 ## 2026.10.07.2
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07.2)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.07.2)
 
 - Fixed Theater dropping a queued Play request back to the online menu when the client is disconnected and its frontend lobby is unloaded. Theater now remains open until playback starts and reports a deferred launch.
 - Read duration/timeline metadata from the bounded native footer, avoiding a packet-by-packet scan of large recordings at library refresh and playback startup.
@@ -78,7 +95,7 @@ Release/x64 build and offline metadata, compression, Theater UI and event alloca
 
 ## 2026.10.07.1
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07.1)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.07.1)
 
 - Fixed conversion and direct COD4 preview aborting on `destructible_car` kill notifications. Car-explosion deaths preserve recorded attribution and timing using a native generic death notification; no unrelated weapon is substituted.
 
@@ -86,7 +103,7 @@ Release/x64 build and offline checks passed against the reported Crash recording
 
 ## 2026.10.07
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.07)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.07)
 
 - Added optional classic COD4 sniper playback on remastered M40A3, R700, Barrett, M21 and Dragunov models, including original actions, recoil parameters and flat scopes.
 - Moved sniper scene zoom to the final 5% of ADS and removed the scope opacity fade on release.
@@ -99,7 +116,7 @@ Release/x64 builds and offline sniper, match-data, facial and Theater UI checks 
 
 ## 2026.10.06
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.06)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.06)
 
 - Added the native **Play Online → Theater** library for H1 and COD4 recordings, with map previews, recording titles, paging, import, conversion and playback actions.
 - Restricted library scanning to the game's `demos` folder and saved newly converted recordings directly there.
@@ -112,7 +129,7 @@ Release/x64 build and offline Theater, metadata, facial, player-slot and camera 
 
 ## 2026.10.03
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.03) · [Source revision](https://github.com/Politohh/h1-cod4-demo/tree/7242c58d70af0a4bb59cb5f1305c99640fe5c56e)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.03) · [Source revision](https://github.com/Politohh/H1MVM/tree/7242c58d70af0a4bb59cb5f1305c99640fe5c56e)
 
 - Added CoD4x protocol 21 recording support and expanded actor animation mappings.
 - Added native MWR helicopter flight and airstrike conversion, including attached jet effects and bomb trajectories.
@@ -126,7 +143,7 @@ Latest jet-motion and team-emblem corrections await visual playback confirmation
 
 ## 2026.10.01
 
-[Release](https://github.com/Politohh/h1-cod4-demo/releases/tag/demo-2026.10.01) · [Source revision](https://github.com/Politohh/h1-cod4-demo/tree/99d191f119c107c7a84931ab3c5998ee69cf8f37)
+[Release](https://github.com/Politohh/H1MVM/releases/tag/demo-2026.10.01) · [Source revision](https://github.com/Politohh/H1MVM/tree/99d191f119c107c7a84931ab3c5998ee69cf8f37)
 
 - Packaged the H1 demo client with its required runtime scripts and separate crash symbols.
 - Included recording/playback, F9 controls, pause/seek/speed, free camera and camera paths.

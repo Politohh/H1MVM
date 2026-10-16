@@ -24,8 +24,7 @@ namespace branding
 		utils::hook::detour ui_get_formatted_build_number_hook;
 		const char* ui_get_formatted_build_number_stub()
 		{
-			const auto build_num = ui_get_formatted_build_number_hook.invoke<const char*>();
-			return utils::string::va("%s (%s)", VERSION, build_num);
+			return H1MVM_VERSION;
 		}
 
 		void draw_branding()
@@ -42,9 +41,9 @@ namespace branding
 			}
 
 #ifdef _DEBUG
-			const auto text = "h1-mod: " VERSION " (" __DATE__ " " __TIME__ ")";
+			const auto text = H1MVM_VERSION " (" __DATE__ " " __TIME__ ")";
 #else
-			const auto text = "h1-mod: " VERSION;
+			const auto text = H1MVM_VERSION;
 #endif
 
 			const auto placement = game::ScrPlace_GetViewPlacement();
@@ -75,7 +74,7 @@ namespace branding
 
 			scheduler::once([]()
 			{
-				branding = dvars::register_bool("branding", true, game::DVAR_FLAG_SAVED, "Show brainding in the top left corner");
+				branding = dvars::register_bool("branding", true, game::DVAR_FLAG_SAVED, "Show branding in the top left corner");
 			}, scheduler::renderer);
 			scheduler::loop(draw_branding, scheduler::renderer);
 

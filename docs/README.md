@@ -7,10 +7,11 @@ Start with the [project README](../README.md) for installation and a first repla
 | Guide | Contents |
 | --- | --- |
 | [SP Bots experiment (WIP)](../experiments/sp-bots/README.md) | Opt-in local Private Match prototype, build/setup, implemented behavior, limitations and validation evidence. |
+| [Single-file release](single-file-release.md) | Installation, embedded support files, cache behavior and release build inputs. |
 | [Theater library](theater-library.md) | Import recordings, convert COD4 demos, browse and play results. |
 | [Playback, cameras and editor](native-theater.md) | Timeline shortcuts, free camera, dolly paths, visual settings and capture controls. |
 | [Model Swapper](theater-model-swapper.md) | Select replay players, apply native heads/bodies, preview and save demo-specific appearances. |
-| [Classic COD4 snipers](cod4-snipers.md) | Original animations on remastered models, local input preparation and scope customization. |
+| [Classic COD4 snipers](cod4-snipers.md) | Original animations on remastered models, developer input preparation and scope customization. |
 | [COD4 FOV](cod4-fov.md) | Hip weapon framing tied to `cg_fov`, fixed ADS endpoints and `cg_fovScale` behavior. |
 | [Personalization and local Depot](personalization.md) | Head/body selectors, local inventory, crafting, collection rewards and profile backups. |
 | [Build and contribute](../CONTRIBUTING.md) | Source setup, regression checks and useful bug reports. |

@@ -9,8 +9,8 @@ but animation quality, tactical decisions and stability still need work.
 
 The source is on `main` so the experiment can be inspected and continued.
 Normal client builds do **not** include this overlay. Build it explicitly using
-the instructions below. No new public binary release is implied by this source
-checkpoint; older downloadable releases may not contain SP Bots.
+the instructions below. The standard H1MVM v1.0 release does not include SP Bots. This source
+checkpoint remains available for separate experimental builds.
 
 ## What this experiment actually does
 

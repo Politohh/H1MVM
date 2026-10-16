@@ -506,7 +506,7 @@ namespace patches
 			utils::hook::call(0x1CBD06_b, sv_execute_client_message_stub);
 
 			// Change default hostname and make it replicated
-			dvars::override::register_string("sv_hostname", "^2H1-Mod^7 Default Server", game::DVAR_FLAG_REPLICATED);
+			dvars::override::register_string("sv_hostname", "^2H1MVM^7 Default Server", game::DVAR_FLAG_REPLICATED);
 
 			// Dont free server/client memory on asset loading (fixes crashing on map rotation)
 			utils::hook::nop(0x132474_b, 5);

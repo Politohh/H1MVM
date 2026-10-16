@@ -351,8 +351,8 @@ namespace updater
 
 	bool auto_updates_enabled()
 	{
-		// Auto-update check removed (inherited annoyance: pings the update server on every launch).
-		// Re-enable by returning cl_auto_update->current.enabled if it's ever wanted again.
+		// H1MVM releases are installed manually from GitHub. Never replace this
+		// client with a binary or data files from the inherited upstream updater.
 		return false;
 	}
 
@@ -432,6 +432,13 @@ namespace updater
 
 	void start_update_check()
 	{
+		if (!auto_updates_enabled())
+		{
+			reset_data();
+			set_update_check_status(true, false, "Download H1MVM updates from github.com/Politohh/H1MVM/releases/latest");
+			return;
+		}
+
 		cancel_update();
 		reset_data();
 
@@ -527,6 +534,12 @@ namespace updater
 
 	void start_update_download()
 	{
+		if (!auto_updates_enabled())
+		{
+			set_update_download_status(true, false, "Install H1MVM releases manually; the upstream updater is disabled.");
+			return;
+		}
+
 		console::debug("[Updater] starting update download\n");
 
 		if (!is_update_check_done() || !get_update_check_status() || is_update_cancelled())
@@ -623,7 +636,7 @@ namespace updater
 		void post_unpack() override
 		{
 			delete_old_file();
-			cl_auto_update = dvars::register_bool("cg_auto_update", true, game::DVAR_FLAG_SAVED, 
+			cl_auto_update = dvars::register_bool("cg_auto_update", false, game::DVAR_FLAG_SAVED,
 				"Automatically check for updates");
 		}
 	};
