@@ -9,6 +9,8 @@ First public release under the H1MVM name, based on the latest client source.
 - Brand the in-game version, console, dialogs and Windows executable metadata as H1MVM. Release builds use the clean `v1.0` tag, without a development/dirty suffix.
 - Ship one EXE with verified Theater UI, facial/sniper support and FFmpeg. Keep the `h1-mod.exe` filename and existing settings/cache locations for compatibility.
 - Include direct multiplayer lobby startup, decoded splitter events and weapon icons, click-based demo selection, simplified DOF controls and continuous cursor focus.
+- Dismiss startup loading overlays when private-lobby navigation completes, including reused menus and frontend reloads.
+- Preserve Lua registry references when UI values move, preventing premature release of values used by Theater updates.
 - Include the wardrobe flow (head → team → class), native portraits where available, live preview, background dim toggle, weapon/camo swapping and vision presets.
 - Prepare the first dolly frame with J, then start with Space; suppress player names during freecam and dolly.
 - Disable the inherited updater's manual download path as well as automatic checks, so it cannot replace H1MVM with upstream binaries/data.

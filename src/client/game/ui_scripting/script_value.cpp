@@ -38,7 +38,11 @@ namespace ui_scripting
 		{
 			this->release();
 			this->value_ = other.value_;
-			other.value_.t = game::hks::TNONE;
+			// The registry reference owns the Lua object's lifetime. Transfer it
+			// with the value, otherwise the moved-from destructor unroots a value
+			// still in use (including script_value constructor temporaries).
+			this->ref_ = std::exchange(other.ref_, 0);
+			other.value_ = {game::hks::TNONE, {}};
 		}
 
 		return *this;
@@ -70,9 +74,10 @@ namespace ui_scripting
 	{
 		if (this->ref_)
 		{
-			game::hks::hksi_luaL_unref(*game::hks::lua_state, -10000, this->ref_);
-			this->value_.t = game::hks::TNONE;
+			const auto ref = std::exchange(this->ref_, 0);
+			game::hks::hksi_luaL_unref(*game::hks::lua_state, -10000, ref);
 		}
+		this->value_ = {game::hks::TNONE, {}};
 	}
 
 	/***************************************************************

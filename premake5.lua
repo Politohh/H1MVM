@@ -168,6 +168,9 @@ newaction {
 			-- get revision number via git
 			local proc = assert(io.popen("git rev-list --count HEAD", "r"))
 			local revNumber = assert(proc:read('*a')):gsub("%s+", "")
+			-- Exact release tags carry the release version, not a source commit count.
+			local exactRelease = revDirty == 0 and gitDescribeOutput == tagName
+			if exactRelease then revNumber = "0" end
 
 			print ("Update " .. oldVersion .. " -> " .. gitDescribeOutputQuoted)
 
@@ -194,7 +197,7 @@ newaction {
 			versionHeader:write("#define VERSION_PRODUCT_RC " .. table.concat(vertonumarr(tagName, revNumber, 3), ",") .. "\n")
 			versionHeader:write("#define VERSION_PRODUCT " .. cstrquote(table.concat(vertonumarr(tagName, revNumber, 3), ".")) .. "\n")
 			versionHeader:write("#define VERSION_FILE_RC " .. table.concat(vertonumarr(tagName, revNumber, 4), ",") .. "\n")
-			versionHeader:write("#define VERSION_FILE " .. cstrquote(table.concat(vertonumarr(tagName, revNumber, 4), ".")) .. "\n")
+			versionHeader:write("#define VERSION_FILE " .. cstrquote(exactRelease and tagName:gsub("^v", "") or table.concat(vertonumarr(tagName, revNumber, 4), ".")) .. "\n")
 			versionHeader:write("\n")
 			versionHeader:write("// Alias definitions\n")
 			versionHeader:write("#define VERSION GIT_DESCRIBE\n")

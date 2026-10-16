@@ -6,6 +6,15 @@ if not Engine.InFrontend() then
 end
 
 local covers = {}
+local finish
+local function lobbyReady(name)
+    return name == "menu_xboxlive" or name == "menu_xboxlive_privatelobby"
+        or name == "menu_xboxlive_lobby" or name == "h1_theater_library"
+end
+local function leaveStartup()
+    return not Engine.InFrontend() or not game:startuplobbyloading()
+        or lobbyReady(LUI.FlowManager.GetTopOpenAndVisibleMenuName())
+end
 local function loadingView(menu)
     if menu.startupLoadingView then return end
     -- Construct before the first render. Overscan covers the safe-area margins
@@ -26,9 +35,17 @@ local function loadingView(menu)
     menu:addElement(cover)
     menu.startupLoadingView=cover
     covers[#covers+1]=cover
+    -- Connection popups can outlive the entry menu that originally owned the
+    -- startup timer. Each cover must be able to retire itself during navigation.
+    local ticks=0
+    cover:registerEventHandler("h1_startup_cover",function()
+        ticks=ticks+1
+        if leaveStartup() or ticks>2400 then finish() end
+    end)
+    cover:addElement(LUI.UITimer.new(50,"h1_startup_cover"))
 end
 
-local function finish()
+finish = function()
     game:finishstartuplobby()
     for _,cover in ipairs(covers) do cover:close() end
     covers={}
@@ -38,6 +55,21 @@ LUI.onmenuopen("menu_xboxlive", function()
     finish()
 end)
 LUI.onmenuopen("h1_theater_library", finish)
+LUI.onmenuopen("menu_xboxlive_privatelobby", finish)
+LUI.onmenuopen("menu_xboxlive_lobby", finish)
+
+-- Native frontend rebuilds may replace a registered menu builder. Observe the
+-- successful lobby navigation as well, instead of relying on that builder hook.
+local requestAddMenu=LUI.FlowManager.RequestAddMenu
+local function navigationComplete(name,...)
+    if lobbyReady(name) then finish() end
+    return ...
+end
+LUI.FlowManager.RequestAddMenu=function(element,name,...)
+    return navigationComplete(name,requestAddMenu(element,name,...))
+end
+-- A rebuilt frontend VM may resume an already-open lobby without adding it.
+if lobbyReady(LUI.FlowManager.GetTopOpenAndVisibleMenuName()) then finish() end
 
 -- Only reskin progress dialogs during this startup. Native timers, data-fetch
 -- events and cancellation handlers continue running. Errors/EULA are untouched.
@@ -65,7 +97,7 @@ LUI.onmenuopen("mp_main_menu", function(menu)
     local timer = LUI.UITimer.new(50, "h1_startup_lobby")
     menu:registerEventHandler("h1_startup_lobby", function()
         ticks=ticks+1
-        if not game:startuplobbyloading() or ticks>2400 then
+        if leaveStartup() or ticks>2400 then
             finish();timer:close();return
         end
         local top=LUI.FlowManager.GetTopOpenAndVisibleMenuName()
