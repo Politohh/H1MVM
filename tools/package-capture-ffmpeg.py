@@ -73,7 +73,7 @@ def main():
         "Complete corresponding source is retained in this distribution's source/ directory\n"
         "for separate release distribution. It is not needed to run the client.\n"
         "Upstream FFmpeg: https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz\n"
-        "Client build recipe: https://github.com/Politohh/h1-cod4-demo/tree/main/tools\n"
+        "Client build recipe: https://github.com/Politohh/H1MVM/tree/main/tools\n"
         "Built using w64devkit 2.10.0 / GCC 16.2.0, NASM 2.16.03, CMake 3.31.10 (x265)\n"
         "and CMake 4.4.3 (SVT-AV1).\n")
     print(json.dumps(info, indent=2))

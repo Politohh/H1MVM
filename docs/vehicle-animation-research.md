@@ -2,7 +2,7 @@
 
 Historical implementation notes and validation evidence from September 2026.
 The investigation used `F:\Dev\h1-cod4-demo` and repository
-`https://github.com/Politohh/h1-cod4-demo`. For current features and setup,
+`https://github.com/Politohh/H1MVM`. For current features and setup,
 see the [documentation index](README.md). Dated builds and local evidence
 paths below describe the investigation checkpoint.
 

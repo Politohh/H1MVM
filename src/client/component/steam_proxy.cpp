@@ -46,7 +46,7 @@ namespace steam_proxy
 
 			try
 			{
-				this->start_mod("\xF0\x9F\x8E\xAE" " H1-Mod: "s + (game::environment::is_sp() ? "Singleplayer" : "Multiplayer"), app_id);
+				this->start_mod("\xF0\x9F\x8E\xAE" " H1MVM: "s + (game::environment::is_sp() ? "Singleplayer" : "Multiplayer"), app_id);
 			}
 			catch (std::exception& e)
 			{

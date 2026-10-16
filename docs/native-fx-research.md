@@ -23,7 +23,7 @@ for context, not a statement that all work is complete. Car handoff is at
 [vehicle-animation-research.md](vehicle-animation-research.md).
 
 The investigation used the COD4-to-H1 demo converter in `F:\Dev\h1-cod4-demo`, repository
-`https://github.com/Politohh/h1-cod4-demo`. The verified
+`https://github.com/Politohh/H1MVM`. The verified
 character mapping implementation is commit `62c5eefa315fc2cd80ea6eeee2ba75d54e029129`.
 Read the current Git status and `docs/cod4-mapping-coverage.md` before changing code.
 Preserve unrelated untracked research files. Follow the workspace's AGENTS.md
@@ -114,7 +114,7 @@ Source demos are in `C:\Games\cod4_game_files\main\demos`:
   second recorded client, with missing optional props already reported.
 - `BLOC_cod4_to_h1_idle.dm_1`: Bloc; ghillie character/hands regression sample.
 - Other readable recordings include `D1ablo_cic7_infinite.dm_1` and
-  `lemunz_cod4_CodexTest.dm_1`; inspect their actual events before selecting tests.
+  a local COD4 test recording; inspect their actual events before selecting tests.
 
 The previous build passed stock character mappings across nine readable demos,
 850 class/map combinations and 95,270 camera samples. Eight other files have

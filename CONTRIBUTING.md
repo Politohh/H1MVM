@@ -7,8 +7,13 @@ This fork focuses on H1 demo playback, COD4 conversion and cinematic tools. Keep
 Requirements: Windows, Git, Visual Studio 2022 with **Desktop development with C++**, and a Windows SDK.
 
 ```powershell
-git clone --recurse-submodules https://github.com/Politohh/h1-cod4-demo.git
-cd h1-cod4-demo
+git clone --recurse-submodules https://github.com/Politohh/H1MVM.git
+cd H1MVM
+```
+
+Configure the required runtime inputs using [the single-file build guide](docs/single-file-release.md#building) before generating. These original asset inputs are not in the source checkout. A source ZIP alone cannot produce the complete release EXE.
+
+```powershell
 .\generate.bat
 ```
 
@@ -18,7 +23,7 @@ Open `build/h1-mod.sln` and build **Release / x64**, or run this from a Visual S
 msbuild build\h1-mod.sln /m /p:Configuration=Release /p:Platform=x64
 ```
 
-Output: `build/bin/x64/Release/h1-mod.exe`. With H1 closed, back up the installed client, replace the executable, and copy the contents of `data/cdata/` into the game's `h1-mod/` folder. The TLS helper is embedded in the executable.
+Output: `build/bin/x64/Release/h1-mod.exe`. With H1 closed, back up the installed client and replace only that executable. Runtime support files and the TLS helper are embedded. The executable and legacy settings/cache directories retain their `h1-mod` names for compatibility.
 
 For an existing checkout, run `git submodule update --init --recursive` before generating. To reproduce a published release, check out its tag first. GitHub's source ZIP does not include the dependency submodules.
 

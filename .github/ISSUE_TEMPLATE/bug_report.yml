@@ -6,7 +6,7 @@ body:
     id: version
     attributes:
       label: Release or commit
-      placeholder: demo-2026.10.06 or a commit hash
+      placeholder: H1MVM v1.0 or a commit hash
     validations:
       required: true
   - type: dropdown

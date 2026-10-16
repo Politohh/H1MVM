@@ -356,7 +356,7 @@ namespace console
 		void post_unpack() override
 		{
 			ShowWindow(GetConsoleWindow(), SW_SHOW);
-			SetConsoleTitle("H1-Mod: " VERSION);
+			SetConsoleTitle(H1MVM_VERSION);
 
 			con.kill_event = CreateEvent(NULL, TRUE, FALSE, NULL);
 

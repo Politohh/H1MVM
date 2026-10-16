@@ -68,6 +68,8 @@ def main():
     with executable.open("rb") as source, mmap.mmap(source.fileno(), 0, access=mmap.ACCESS_READ) as binary:
         if binary.find(args.tag.encode() + b"\0") < 0:
             raise ValueError("EXE does not contain the exact release version")
+        if binary.find(("H1MVM " + args.tag).encode() + b"\0") < 0:
+            raise ValueError("EXE does not contain the H1MVM release display name")
     payloads = {}
     for name, identifier, source in (
             ("runtime", 313, ROOT / "build/runtime-assets.bin"),

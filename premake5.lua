@@ -198,6 +198,7 @@ newaction {
 			versionHeader:write("\n")
 			versionHeader:write("// Alias definitions\n")
 			versionHeader:write("#define VERSION GIT_DESCRIBE\n")
+			versionHeader:write("#define H1MVM_VERSION \"H1MVM \" GIT_DESCRIBE\n")
 			versionHeader:write("#define SHORTVERSION VERSION_PRODUCT\n")
 			versionHeader:close()
 			local versionHeader = assert(io.open(wks.location .. "/src/version.hpp", "w"))

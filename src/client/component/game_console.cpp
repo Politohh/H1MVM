@@ -230,7 +230,7 @@ namespace game_console
 			con.globals.left_x = con.screen_min[0] + 6.0f;
 
 			draw_input_box(1, dvars::con_inputBoxColor->current.vector);
-			draw_input_text_and_over("H1-Mod: " VERSION ">", color_title);
+			draw_input_text_and_over(H1MVM_VERSION ">", color_title);
 
 			con.globals.left_x = con.globals.x;
 			con.globals.auto_complete_choice[0] = 0;
@@ -396,7 +396,7 @@ namespace game_console
 				const auto width = (con.screen_max[0] - con.screen_min[0]) - 12.0f;
 				const auto height = ((con.screen_max[1] - con.screen_min[1]) - 32.0f) - 12.0f;
 
-				game::R_AddCmdDrawText("H1-Mod 1.15", 0x7FFFFFFF, console_font, x,
+				game::R_AddCmdDrawText(H1MVM_VERSION, 0x7FFFFFFF, console_font, x,
 					((height - 16.0f) + y) + console_font->pixelHeight, 1.0f, 1.0f, 0.0f, color_title, 0);
 
 				draw_output_scrollbar(x, y, width, height, output);
