@@ -291,6 +291,11 @@ pchsource "src/client/std_include.cpp"
 
 linkoptions {"/IGNORE:4254", "/DYNAMICBASE:NO", "/SAFESEH:NO", "/LARGEADDRESSAWARE", "/PDBCompress"}
 
+-- d3d11.dll is delay-loaded so the dxvk component can load the bundled DXVK before anything
+-- brings the system D3D11 into the process (src/client/component/dxvk.cpp)
+linkoptions {"/DELAYLOAD:d3d11.dll"}
+links {"delayimp"}
+
 -- v145+ toolset flags some warnings the demo code + vendored deps hit that older MSVC didn't;
 -- fatalwarnings{"All"} makes them fatal, so silence the benign ones:
 --   C4875 - non-string-literal arg to [[gsl::suppress]] (vendored GSL headers) [v145]

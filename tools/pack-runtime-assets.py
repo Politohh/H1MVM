@@ -100,12 +100,25 @@ def collect(config):
         for source in sorted(ffmpeg_notices.rglob("*")):
             if source.is_file():
                 add("licenses/ffmpeg/" + source.relative_to(ffmpeg_notices).as_posix(), source)
+    add_dxvk(add, config, release=True)
     add("licenses/h1-mod.txt", ROOT / "LICENSE")
     add("SINGLE-FILE-README.md", ROOT / "docs/single-file-release.md")
     for source in sorted((ROOT / "deps").glob("*/LICENSE*")):
         if source.is_file():
             add("licenses/" + source.parent.name + "/" + source.name, source)
     return files
+
+
+def add_dxvk(add, config, release):
+    # DXVK (zlib licence), loaded instead of the system D3D11 when the GPU can run it
+    # (src/client/component/dxvk.cpp). Release builds pin both DLLs by SHA-256, like FFmpeg.
+    source = Path(config["dxvk"])
+    hashes = config.get("dxvk_sha256", {})
+    for name in ("d3d11.dll", "dxgi.dll"):
+        if release and name not in hashes:
+            raise ValueError("Missing dxvk_sha256 entry for " + name)
+        add("dxvk/x64/" + name, source / "x64" / name, hashes.get(name))
+    add("licenses/dxvk/LICENSE", source / "LICENSE")
 
 
 def pack(config):

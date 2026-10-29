@@ -56,7 +56,10 @@ set `H1_RUNTIME_CACHE` to an absolute disposable directory to test a fresh cache
 Prepare the pinned facial and sniper sources with the existing tools in this repository.
 Provide an inputs JSON containing `facial` (directory with `raw/` and
 `facial-source-provenance.json`), `snipers`, `scope`, `scope_sha256`,
-`ffmpeg` (static Windows binary), and `ffmpeg_sha256`.
+`ffmpeg` (static Windows binary), `ffmpeg_sha256`, `dxvk` (a folder with `x64/d3d11.dll`
+and `x64/dxgi.dll` from an official DXVK 3 release archive, plus `LICENSE` from the same
+release tag, since the archive has none) and `dxvk_sha256`
+(`{"d3d11.dll": "...", "dxgi.dll": "..."}`).
 The FFmpeg distribution must include its `LICENSE` and `README.txt` beside `bin/`.
 Additional files under its `licenses/` directory are also embedded. See
 `docs/capture-ffmpeg.md` for the smaller capture-only build and validation recipe.
