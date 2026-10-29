@@ -4,6 +4,32 @@
 
 namespace cod4
 {
+    // CoD4's strafe clips: the legs / both clips under "strafing left / right" in the movetype
+    // sections of mp/playeranim.script (common_mp.ff; the DEATH section's are not movetypes), which
+    // BG_ParseCommands flags 0x10 / 0x20. BG_PlayerAngles swings the legs of a body playing one to
+    // its view yaw, not view + movementDir: a strafing body faces where it looks, whatever
+    // movementDir says. MWR's own BG_UpdateMovementDir does the same (velocity yaw -/+ 90 while
+    // strafing).
+    inline bool is_strafe_animation(unsigned animation)
+    {
+        static constexpr std::array<std::string_view, 48> clips{
+            "pb_combatrun_left_loop", "pb_combatrun_left_loop_grenade", "pb_combatrun_left_loop_pistol", "pb_combatrun_left_rpg",
+            "pb_combatrun_right_loop", "pb_combatrun_right_loop_grenade", "pb_combatrun_right_loop_pistol", "pb_combatrun_right_rpg",
+            "pb_combatwalk_left_loop_pistol", "pb_combatwalk_right_loop_pistol", "pb_crouch_hold_run_left", "pb_crouch_hold_run_right",
+            "pb_crouch_run_left", "pb_crouch_run_left_grenade", "pb_crouch_run_left_pistol", "pb_crouch_run_left_rpg",
+            "pb_crouch_run_right", "pb_crouch_run_right_grenade", "pb_crouch_run_right_pistol", "pb_crouch_run_right_rpg",
+            "pb_crouch_shoot_run_left", "pb_crouch_shoot_run_right", "pb_crouch_walk_left_pistol", "pb_crouch_walk_left_rpg",
+            "pb_crouch_walk_right_pistol", "pb_crouch_walk_right_rpg", "pb_hold_run_left", "pb_hold_run_right",
+            "pb_prone_crawl_left", "pb_prone_crawl_left_hold", "pb_prone_crawl_right", "pb_prone_crawl_right_hold",
+            "pb_prone_grenade_crawl_left", "pb_prone_grenade_crawl_right", "pb_stand_shoot_walk_left", "pb_stand_shoot_walk_right",
+            "pb_stumble_grenade_left", "pb_stumble_grenade_right", "pb_stumble_left", "pb_stumble_pistol_left",
+            "pb_stumble_pistol_right", "pb_stumble_pistol_walk_left", "pb_stumble_pistol_walk_right", "pb_stumble_right",
+            "pb_stumble_walk_left", "pb_stumble_walk_right", "pb_walk_left_rpg_ads", "pb_walk_right_rpg_ads"};
+        const auto index = animation & 511u;
+        if (index >= source_body_animations.size()) return false;
+        return std::find(clips.begin(), clips.end(), source_body_animations[index]) != clips.end();
+    }
+
     inline std::string_view actor_animation_name(unsigned animation, std::string_view weapon,
         const std::map<std::string_view, unsigned>& catalog)
     {

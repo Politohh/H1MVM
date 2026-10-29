@@ -93,7 +93,7 @@ int main(int argc, char** argv)
         check(cod4::actor_flags(0xA0002) == 0x140002, "New corpse cannot play its native death clip");
         check(cod4::actor_flags(0x20002) == 0x40002, "Settled corpse replays its death clip");
         check(cod4::actor_flags(0x220002) == 0x40002, "COD4 voice icon incorrectly enables death playback");
-        check(cod4::actor_flags(0x40040) == 0x80040, "Friend ADS/firing flags not translated");
+        check(cod4::actor_flags(0x40040) == 0x880000, "Friend ADS/firing flags not translated");
         // Smooth the recorded 20 Hz actor snapshots without blending teleports,
         // visibility removals, or a different player into the same entity slot.
         cod4::world_track motion;

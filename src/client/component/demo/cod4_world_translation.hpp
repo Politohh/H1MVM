@@ -70,6 +70,9 @@ namespace cod4
                 * (6283.1853071795864769f / duration);
             break;
         case 5: break;
+        // TR_ACCELERATE / TR_DECELERATE / TR_PHYSICS (q_shared.h): drawn where it is. A throw here
+        // failed the whole snapshot.
+        case 6: case 7: case 8: position_factor = velocity_factor = 0; break;
         default: throw std::runtime_error("Unsupported COD4 projectile trajectory");
         }
         trajectory_sample sample;
@@ -107,6 +110,9 @@ namespace cod4
         write_native(result, 10, std::uint8_t{4});
         write_native(result, 12, std::int8_t{-1});
         write_native(result, 76, weapon);
+        // EF_NODRAW (0x20, the same bit in MWR): an exploded grenade or rocket keeps its entity about
+        // 300 ms with it set (G_FreeEntityAfterEvent), and CoD4's CG_Missile skips it then.
+        write_native(result, 92, source.get(8) & 0x20u);
         write_native(result, 168, source.get(84)); // lerp.u.missile.launchTime
         const auto position = sample_trajectory(source, 12, time);
         const bool stationary = source.get(12) == 0 || source.get(12) == 1;
@@ -163,6 +169,13 @@ namespace cod4
         h1_client result{};
         write_native(result, 0, static_cast<std::uint8_t>(source.get(0)));
         write_native(result, 2, static_cast<std::uint16_t>(source.get(80)));
+        // Rank and prestige for name tags and the scoreboard: MWR's client info update
+        // (0x33067C) reads rank as an int16 at +4 and prestige as a byte at +6 into
+        // bgs.clientinfo rank_mp / prestige_mp, then builds the rank icon (0x4E4360); +0xCC is
+        // a display-level override, left 0. CoD4 sends rank (0-based: 54 is level 55) at +80 and
+        // prestige at +84. With only the +2 write every name tag read level 1.
+        write_native(result, 4, static_cast<std::int16_t>(source.get(80)));
+        write_native(result, 6, static_cast<std::uint8_t>(source.get(84)));
         write_native(result, 12, std::uint16_t{2047});
         write_native(result, 16, body);
         for (unsigned i = 0; i < attachments.size(); ++i)
@@ -179,6 +192,22 @@ namespace cod4
         // clientState.team at +8, maintaining characterInfo +12/+16.
         // The adjacent 0x32E770 path uses AGENT state (+76), not clients.
         write_native(result, 8, source.get(4));
+        // Dead Silence (CoD4 specialty_quieter: clientState perks +88 & 0x100, cg_event.cpp): that
+        // player's quiet steps, landings, jump and gear. MWR's CG_EntityEvent (0xF9540) tests bit 12
+        // of client info +0x18, which 0x32E880 copies from clientState +0x50 (+0x4C..+0x58 to
+        // +0x14..+0x20). Without it every Dead Silence player was heard at full volume.
+        // Deep Impact (specialty_bulletpenetration, perks & 0x20): CoD4's client draws that player's bullet
+        // impacts through walls up to perk_bulletPenetrationMultiplier times deeper (cg_weapons.cpp).
+        // MWR's bullet code does the same with its own specialty_bulletpenetration, perk 41 = word +0x18 bit 9
+        // (0x11DD34: test of the attacker's +0x94 & 0x200, then x perk_bulletPenetrationMultiplier, 2 as CoD4's).
+        // UAV Jammer (specialty_gpsjammer, perks & 1): CoD4's RadarPingEnemyPlayer never pings that
+        // player on the radar. MWR's own UAV Jammer is specialty_radarimmune, perk 52 = word +0x18
+        // bit 20, and its RadarPingEnemyPlayer (0x3010F0) skips the same way (0x30113D test actor+0x6C, 0x100000).
+        std::uint32_t perks1{};
+        if (source.get(88) & 0x100u) perks1 |= 1u << 12;
+        if (source.get(88) & 0x20u) perks1 |= 1u << 9;
+        if (source.get(88) & 0x1u) perks1 |= 1u << 20;
+        if (perks1) write_native(result, 0x50, perks1);
         return result;
     }
 }

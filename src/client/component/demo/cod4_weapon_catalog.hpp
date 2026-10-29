@@ -16,7 +16,9 @@ namespace cod4
     // Standard iw_11.iwd MP identities mapped to MWR's native BG weapon
     // definitions and mp/attachkits.csv. No source models or clips are imported.
     // gl_<rifle> is the alternate mode of that rifle's native GL kit.
-    inline constexpr std::array<weapon_mapping, 108> weapon_mappings{{
+    // Killstreak vehicle weapons and destructible_car keep their CoD4 names in MWR
+    // (BG_FindWeaponIndexForName returns exactly that name).
+    inline constexpr std::array<weapon_mapping, 112> weapon_mappings{{
         {"airstrike_mp", "airstrike_mp", "none", body_family::hold, false},
         {"ak47_acog_mp", "h1_ak47_mp", "acog", body_family::rifle, false},
         {"ak47_gl_mp", "h1_ak47_mp", "gl", body_family::rifle, false},
@@ -36,12 +38,15 @@ namespace cod4
         {"briefcase_bomb_mp", "briefcase_bomb_mp", "none", body_family::hold, false},
         {"c4_mp", "h1_c4_mp", "none", body_family::hold, false},
         {"claymore_mp", "h1_claymore_mp", "none", body_family::hold, false},
+        {"cobra_20mm_mp", "cobra_20mm_mp", "none", body_family::hold, false},
+        {"cobra_ffar_mp", "cobra_ffar_mp", "none", body_family::hold, false},
         {"colt45_mp", "h1_colt45_mp", "none", body_family::pistol, false},
         {"colt45_silencer_mp", "h1_colt45_mp", "silencer", body_family::pistol, false},
         {"concussion_grenade_mp", "h1_concussiongrenade_mp", "none", body_family::hold, false},
         {"defaultweapon_mp", "defaultweapon_mp", "none", body_family::rifle, false},
         {"deserteaglegold_mp", "h1_deserteagle55_mp", "none", body_family::pistol, false},
         {"deserteagle_mp", "h1_deserteagle_mp", "none", body_family::pistol, false},
+        {"destructible_car", "destructible_car", "none", body_family::hold, false},
         {"dragunov_acog_mp", "h1_dragunov_mp", "acog", body_family::sniper, false},
         {"dragunov_mp", "h1_dragunov_mp", "none", body_family::sniper, false},
         {"flash_grenade_mp", "h1_flashgrenade_mp", "none", body_family::hold, false},
@@ -64,6 +69,7 @@ namespace cod4
         {"gl_m16_mp", "h1_m16_mp", "gl", body_family::rifle, true},
         {"gl_m4_mp", "h1_m4_mp", "gl", body_family::rifle, true},
         {"helicopter_mp", "helicopter_mp", "none", body_family::hold, false},
+        {"hind_ffar_mp", "hind_ffar_mp", "none", body_family::hold, false},
         {"m1014_grip_mp", "h1_m1014_mp", "grip", body_family::shotgun, false},
         {"m1014_mp", "h1_m1014_mp", "none", body_family::shotgun, false},
         {"m1014_reflex_mp", "h1_m1014_mp", "reflex", body_family::shotgun, false},

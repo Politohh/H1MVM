@@ -14,10 +14,11 @@ namespace cod4
 
     inline unsigned translate_movement_flags(unsigned source)
     {
-        // Stance, ladder, ADS, backward movement and walking share these bits.
-        // COD4's sprint/shellshock bits moved to 0x4000/0x8000 in MWR.
-        return (source & 0x7Bu) | ((source & 0x8000u) ? 0x4000u : 0u)
-            | ((source & 0x4000u) ? 0x8000u : 0u);
+        // Stance, ladder, ADS, backward movement and walking share these bits. COD4's
+        // jumping (0x4000) and sprinting (0x8000) are MWR's 0x2000 and 0x4000 (MWR
+        // Jump_Start 0x2BD922, sprint start 0x2CFB8B).
+        return (source & 0x7Bu) | ((source & 0x4000u) ? 0x2000u : 0u)
+            | ((source & 0x8000u) ? 0x4000u : 0u);
     }
 
     inline int translate_body_heading(const camera_frame& movement)

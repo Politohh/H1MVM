@@ -84,11 +84,19 @@ namespace cod4
     }
     inline unsigned actor_flags(unsigned source)
     {
+        // COD4's eFlags to H1's bit by bit. The same in both: teleport 0x2, crouch 0x4,
+        // prone 0x8, EF_NODRAW 0x20.
         // H1 PS-to-entity (0x2C3CF0) places dead at bit 18 and ADS at 19.
         // COD4 BG_RunLerpFrameRate tests bit 19 before playing a death clip;
         // H1 BG_SetLerpFrameAnimation (0x2BA5E5) uses bit 20. Without it H1
         // sets the clip time to 1.0, skipping the death animation entirely.
-        return (source & 0x1ffffu) | ((source & 0x20000u) ? 0x40000u : 0u)
+        // COD4's firing 0x40 (torso swing clamp 45, anim condition 6) is H1's 0x800000:
+        // H1's weapon code sets it while the attack button is held (0x2DA91B); H1's 0x40
+        // means something else. Dropped, as H1 has other meanings for those bits: COD4's
+        // connection-interrupted 0x80, turret 0x100 / 0x200, lighting lock 0x400, aim
+        // assist 0x800, laser 0x4000 and mantling 0x8000 (H1 tests 0x4000 / 0x8000 as a
+        // pair throughout its client and in its snapshot writer).
+        return (source & 0x2eu) | ((source & 0x40u) ? 0x800000u : 0u) | ((source & 0x20000u) ? 0x40000u : 0u)
             | ((source & 0x40000u) ? 0x80000u : 0u) | ((source & 0x80000u) ? 0x100000u : 0u);
     }
     struct actor_motion
@@ -169,7 +177,10 @@ namespace cod4
         {
             camera_frame heading;
             heading.angles = motion.angles;
-            heading.movement_dir = static_cast<int>(source.get(88));
+            // legsAnim (+204): a strafing body's legs face its view (is_strafe_animation). Bots
+            // flip movementDir between -90 and +90 every snapshot while strafing, and MWR swung the
+            // legs 180 degrees each time.
+            heading.movement_dir = is_strafe_animation(source.get(204)) ? 0 : static_cast<int>(source.get(88));
             write_native(result, 168, translate_body_heading(heading));
             write_native(result, 172, source.get(84));
             if (events)

@@ -25,6 +25,7 @@ namespace cod4_snipers
         game::dvar_t* enabled{}, *scopes{}, *fov_enabled{};
         bool layout_supported{}, projection_supported{};
         game::Material* overlay{};
+        bool overlay_tried{};   // CoD4's scope image looked for (release bundles only)
         utils::hook::detour zoom_fraction_hook;
         utils::hook::detour gun_fov_hook;
         thread_local bool hip_projection{};
@@ -268,21 +269,38 @@ namespace cod4_snipers
             if (!flat_scope() || local_client != 0 || !cg
                 || theater_camera::get_mode() != theater_camera::THEATER_CAMERA_FIRST_PERSON) return;
             const auto weapon = field<unsigned>(cg, 916);
-            if (!scoped_definition(weapon)) return;
+            const auto* scoped = scoped_definition(weapon);
+            if (!scoped) return;
             const auto alpha = cod4::sniper::scope_alpha(field<float>(cg, 924),
                 scope_direction.sample(demo_playback::session_id(), weapon,
                     game::mp::cl->serverTime, field<float>(cg, 924)));
             if (alpha <= 0) return;
-            if (!overlay)
+            // CoD4's scope image is in release bundles only; without it, the rifle's own MWR 2D overlay
+            // (WeaponDef overlay.shader), else MWR's M40A3 one. The image is looked for once.
+            game::Material* image = overlay;
+            if (!image && !overlay_tried)
             {
+                overlay_tried = true;
                 std::string bytes;
-                if (!runtime_assets::read("cod4_snipers/scope.png", &bytes)) return;
-                // $white's blend state ignores texture alpha. Use the native
-                // 2D scope's complete render state, including its alpha blend.
-                const auto* base = game::Material_RegisterHandle("scope_overlay_m40a3");
-                if (!base || !base->name || std::string_view(base->name) != "scope_overlay_m40a3") return;
-                overlay = materials::create_material("cod4_sniper_scope", base);
-                if (!materials::setup_material_image(overlay, bytes)) { materials::free_material(overlay); overlay = nullptr; return; }
+                if (runtime_assets::read("cod4_snipers/scope.png", &bytes))
+                {
+                    // $white's blend state ignores texture alpha. Use the native
+                    // 2D scope's complete render state, including its alpha blend.
+                    const auto* base = game::Material_RegisterHandle("scope_overlay_m40a3");
+                    if (base && base->name && std::string_view(base->name) == "scope_overlay_m40a3")
+                    {
+                        overlay = materials::create_material("cod4_sniper_scope", base);
+                        if (!materials::setup_material_image(overlay, bytes)) { materials::free_material(overlay); overlay = nullptr; }
+                    }
+                }
+                image = overlay;
+            }
+            if (!image)
+            {
+                image = scoped->overlay.shader;
+                if (!image || !image->name || game::DB_IsXAssetDefault(game::ASSET_TYPE_MATERIAL, image->name))
+                    image = game::Material_RegisterHandle("scope_overlay_m40a3");
+                if (!image) return;
             }
             const auto* placement = game::ScrPlace_GetViewPlacement();
             const float width = placement->realViewportSize[0], height = placement->realViewportSize[1];
@@ -292,11 +310,14 @@ namespace cod4_snipers
             float tint[]{1, 1, 1, alpha}, black[]{0, 0, 0, alpha};
             if (left > 0)
             {
-                // Sample the opaque black corner using the scope's render state.
-                game::R_AddCmdDrawStretchPic(x, y, left, height, 0, 0, 0, 0, black, overlay);
-                game::R_AddCmdDrawStretchPic(x + left + size, y, left, height, 0, 0, 0, 0, black, overlay);
+                // CoD4's image: sample its opaque black corner with the scope's render state. MWR's
+                // overlay's corner needn't be opaque, so the bars are plain black there.
+                auto* bars = image == overlay ? image : game::Material_RegisterHandle("white");
+                const float s1 = image == overlay ? 0.f : 1.f, t1 = s1;
+                game::R_AddCmdDrawStretchPic(x, y, left, height, 0, 0, s1, t1, black, bars);
+                game::R_AddCmdDrawStretchPic(x + left + size, y, left, height, 0, 0, s1, t1, black, bars);
             }
-            game::R_AddCmdDrawStretchPic(x + left, y, size, size, 0, 0, 1, 1, tint, overlay);
+            game::R_AddCmdDrawStretchPic(x + left, y, size, size, 0, 0, 1, 1, tint, image);
             ++scope_draws;
         }
     }
