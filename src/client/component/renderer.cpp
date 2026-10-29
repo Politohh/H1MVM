@@ -267,6 +267,36 @@ namespace renderer
 			a.jmp(SELECT_VALUE(0x5CF20A_b, 0x6E7722_b));
 		}
 
+		// The same missing backEndData behind the technique's buffer binds (MP 0x6ADFC0, flags
+		// 0x1000 and 0x4000 read source->backEndData + 0x540C68 / + 0x540C70): an early preload
+		// frame reaching such a technique crashed at 0x6ADFEE. With no backEndData yet the bind
+		// is skipped, as the stub above skips its buffer.
+		void r_preload_bind_1000_stub(utils::hook::assembler& a)
+		{
+			const auto is_zero = a.newLabel();
+			a.mov(rax, qword_ptr(rcx));
+			a.mov(r8, qword_ptr(rax, 0x2B00));
+			a.test(r8, r8);
+			a.jz(is_zero);
+			a.mov(rax, qword_ptr(r8, 0x540C68));
+			a.jmp(0x6ADFF5_b);
+			a.bind(is_zero);
+			a.jmp(0x6AE02A_b); // the 0x4000 bind
+		}
+
+		void r_preload_bind_4000_stub(utils::hook::assembler& a)
+		{
+			const auto is_zero = a.newLabel();
+			a.mov(rax, qword_ptr(r14));
+			a.mov(rcx, qword_ptr(rax, 0x2B00));
+			a.test(rcx, rcx);
+			a.jz(is_zero);
+			a.mov(rax, qword_ptr(rcx, 0x540C70));
+			a.jmp(0x6AE044_b);
+			a.bind(is_zero);
+			a.jmp(0x6AE079_b); // the function's tail
+		}
+
 #ifdef _DEBUG
 		void VectorSubtract(const float va[3], const float vb[3], float out[3])
 		{
@@ -560,8 +590,14 @@ namespace renderer
 					true, game::DVAR_FLAG_SAVED, "Use custom red-dot brightness values");
 			}
 
-			// patch r_preloadShaders crash at init
+			// patch r_preloadShaders crash at init: the first frame's preload runs before the source
+			// state's backEndData is set, and subdiv techniques bind a buffer through it
 			utils::hook::jump(SELECT_VALUE(0x5CF1F1_b, 0x6E76F1_b), utils::hook::assemble(r_preload_shaders_stub), true);
+			if (game::environment::is_mp())
+			{
+				utils::hook::jump(0x6ADFE4_b, utils::hook::assemble(r_preload_bind_1000_stub), true);
+				utils::hook::jump(0x6AE033_b, utils::hook::assemble(r_preload_bind_4000_stub), true);
+			}
 			dvars::override::register_bool("r_preloadShaders", false, game::DVAR_FLAG_SAVED);
 
 #ifdef _DEBUG
