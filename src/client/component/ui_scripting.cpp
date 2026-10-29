@@ -146,7 +146,11 @@ namespace ui_scripting
 			}
 		}
 
-		std::unordered_set<std::string> list_scripts(const std::string& script_dir, bool use_rawfiles)
+		// In a fixed order: by folder name, whatever the root. Scripts that replace or wrap the same
+		// menu builder or callback depend on which loads last. In an unordered_set the order followed
+		// the paths' hashes, which change with the runtime bundle's folder (one per build) and the
+		// install path, so the same scripts could load in a different order on another build or PC.
+		std::vector<std::string> list_scripts(const std::string& script_dir, bool use_rawfiles)
 		{
 			std::unordered_set<std::string> list;
 
@@ -178,7 +182,13 @@ namespace ui_scripting
 				}
 			}
 
-			return list;
+			std::vector<std::string> ordered(list.begin(), list.end());
+			std::ranges::sort(ordered, [](const std::string& a, const std::string& b)
+			{
+				const auto name_a = std::filesystem::path(a).filename().string(), name_b = std::filesystem::path(b).filename().string();
+				return name_a != name_b ? name_a < name_b : a < b;
+			});
+			return ordered;
 		}
 
 		bool script_exists(const std::string& script, bool use_fs)
